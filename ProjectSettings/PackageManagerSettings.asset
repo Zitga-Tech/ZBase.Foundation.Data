@@ -30,7 +30,7 @@ MonoBehaviour:
     m_Name: package.openupm.com
     m_Url: https://package.openupm.com
     m_Scopes:
-    - com.cysharp.unitask
+    - com.cathei.bakingsheet
     - com.openupm
     - org.nuget.system.runtime.compilerservices.unsafe
     m_IsDefault: 0

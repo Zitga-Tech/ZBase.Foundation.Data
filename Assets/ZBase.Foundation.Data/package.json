@@ -1,0 +1,12 @@
+{
+  "name": "com.zbase.foundation.data",
+  "displayName": "ZBase.Foundation.Data",
+  "version": "1.0.0",
+  "unity": "2022.2",
+  "documentationUrl": "https://github.com/Zitga-Tech/ZBase.Foundation.Data/blob/main/README.md",
+  "type": "library",
+  "dependencies": {
+    "org.nuget.system.runtime.compilerservices.unsafe": "6.0.0",
+    "com.cathei.bakingsheet": "4.1.1"
+  }
+}
