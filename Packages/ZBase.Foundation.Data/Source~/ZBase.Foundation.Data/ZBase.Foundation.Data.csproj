@@ -12,62 +12,15 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Mvvm\Union\UnionConverters.t4.tt">
-        <Generator>TextTemplatingFileGenerator</Generator>
-        <LastGenOutput>UnionConverters.t4.cs</LastGenOutput>
-      </None>
-      <None Update="Mvvm\ViewBinding\Adapters\AnyToBoolAdapters.t4.tt">
-        <Generator>TextTemplatingFileGenerator</Generator>
-        <LastGenOutput>AnyToBoolAdapters.t4.cs</LastGenOutput>
-      </None>
-      <None Update="Mvvm\ViewBinding\Adapters\AnyToFloatsAdapters.t4.tt">
-        <Generator>TextTemplatingFileGenerator</Generator>
-        <LastGenOutput>AnyToFloatsAdapters.t4.cs</LastGenOutput>
-      </None>
-      <None Update="Mvvm\ViewBinding\Adapters\AnyToIntAdapters.t4.tt">
-        <Generator>TextTemplatingFileGenerator</Generator>
-        <LastGenOutput>AnyToIntAdapters.t4.cs</LastGenOutput>
-      </None>
-      <None Update="Mvvm\ViewBinding\Adapters\AnyToStringAdapters.t4.tt">
-        <Generator>TextTemplatingFileGenerator</Generator>
-        <LastGenOutput>AnyToStringAdapters.t4.cs</LastGenOutput>
-      </None>
-    </ItemGroup>
-
-    <ItemGroup>
       <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="Mvvm\Union\UnionConverters.t4.cs">
-        <DesignTime>True</DesignTime>
-        <AutoGen>True</AutoGen>
-        <DependentUpon>UnionConverters.t4.tt</DependentUpon>
-      </Compile>
-      <Compile Update="Mvvm\ViewBinding\Adapters\AnyToBoolAdapters.t4.cs">
-        <DesignTime>True</DesignTime>
-        <AutoGen>True</AutoGen>
-        <DependentUpon>AnyToBoolAdapters.t4.tt</DependentUpon>
-      </Compile>
-      <Compile Update="Mvvm\ViewBinding\Adapters\AnyToFloatsAdapters.t4.cs">
-        <DesignTime>True</DesignTime>
-        <AutoGen>True</AutoGen>
-        <DependentUpon>AnyToFloatsAdapters.t4.tt</DependentUpon>
-      </Compile>
-      <Compile Update="Mvvm\ViewBinding\Adapters\AnyToIntAdapters.t4.cs">
-        <DesignTime>True</DesignTime>
-        <AutoGen>True</AutoGen>
-        <DependentUpon>AnyToIntAdapters.t4.tt</DependentUpon>
-      </Compile>
-      <Compile Update="Mvvm\ViewBinding\Adapters\AnyToStringAdapters.t4.cs">
-        <DesignTime>True</DesignTime>
-        <AutoGen>True</AutoGen>
-        <DependentUpon>AnyToStringAdapters.t4.tt</DependentUpon>
-      </Compile>
+      <Folder Include="Data/Common/" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Data\Common\" />
+        <ProjectReference Include="../BakingSheet/BakingSheet.csproj" />
     </ItemGroup>
 
     <Target Name="CopySourceFiles" AfterTargets="Build">

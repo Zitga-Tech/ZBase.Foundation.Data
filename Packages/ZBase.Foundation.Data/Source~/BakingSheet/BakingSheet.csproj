@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <Nullable>disable</Nullable>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <DefineConstants>$(DefineConstants);UNITY_EDITOR</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <DefineConstants>$(DefineConstants);UNITY_EDITOR</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="ExcelDataReader" Version="3.6.0" />
+        <PackageReference Include="ExcelDataReader.DataSet" Version="3.6.0" />
+        <PackageReference Include="Google.Apis" Version="1.60.0" />
+        <PackageReference Include="Google.Apis.Auth" Version="1.60.0" />
+        <PackageReference Include="Google.Apis.Core" Version="1.60.0" />
+        <PackageReference Include="Google.Apis.Drive.v3" Version="1.60.0.3034" />
+        <PackageReference Include="Google.Apis.Sheets.v4" Version="1.60.0.2979" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="NReco.Csv" Version="1.0.1" />
+        <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
+        <PackageReference Include="Unity3D" Version="2.1.2" />
+    </ItemGroup>
+
+</Project>
