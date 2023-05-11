@@ -192,6 +192,15 @@
         "com.unity.modules.imgui": "1.0.0"
       }
     },
+    "com.zbase.foundation.data": {
+      "version": "file:ZBase.Foundation.Data",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "org.nuget.system.runtime.compilerservices.unsafe": "6.0.0",
+        "com.cathei.bakingsheet": "4.1.1"
+      }
+    },
     "org.nuget.system.runtime.compilerservices.unsafe": {
       "version": "6.0.0",
       "depth": 0,
