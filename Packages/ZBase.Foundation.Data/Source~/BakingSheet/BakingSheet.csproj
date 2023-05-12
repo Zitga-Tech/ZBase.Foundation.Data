@@ -28,4 +28,17 @@
         <PackageReference Include="Unity3D" Version="2.1.2" />
     </ItemGroup>
 
+    <Target Name="DeleteSourceFiles" AfterTargets="Build" BeforeTargets="CopySourceFiles">
+        <RemoveDir Directories="$(ProjectDir)../../BakingSheet.Exposed/Src/" />
+    </Target>
+
+    <Target Name="CopySourceFiles" AfterTargets="Build">
+        <ItemGroup>
+            <DataAuthoringFiles Include="$(ProjectDir)/BakingSheet.Exposed/**/*.*" />
+        </ItemGroup>
+        <Copy SourceFiles="@(DataAuthoringFiles)"
+              DestinationFolder="$(ProjectDir)../../BakingSheet.Exposed/Src/%(RecursiveDir)"
+              SkipUnchangedFiles="true" Retries="3"
+              RetryDelayMilliseconds="300" />
+    </Target>
 </Project>

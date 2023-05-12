@@ -1,0 +1,1 @@
+[assembly: ZBase.Foundation.Data.SkipGeneratorForAssembly]
