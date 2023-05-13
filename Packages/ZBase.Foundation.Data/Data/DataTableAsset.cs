@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace ZBase.Foundation.Data
@@ -13,13 +12,13 @@ namespace ZBase.Foundation.Data
         [SerializeField, SerializeReference]
         private TDataTable _dataTable;
 
-        public ReadOnlyMemory<TData> Rows
+        public TDataTable Ref
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => _dataTable.Rows;
+            get => _dataTable;
         }
 
-        protected void SetDataTable(TDataTable dataTable)
+        internal void SetDataTable(TDataTable dataTable)
         {
             _dataTable = dataTable;
         }

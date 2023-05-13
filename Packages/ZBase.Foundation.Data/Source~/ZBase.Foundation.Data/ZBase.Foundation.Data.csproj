@@ -25,16 +25,19 @@
         <ItemGroup>
             <DataFiles Include="$(ProjectDir)/Data/**/*.*" />
             <DataAuthoringFiles Include="$(ProjectDir)/Data.Authoring/**/*.*" />
-            <AssemblyInfoFile Include="$(ProjectDir)/AssemblyInfo.cs" />
+            <AssemblyInfoSkipGeneratorFile Include="$(ProjectDir)/AssemblyInfo+SkipGeneratorForAssembly.cs" />
+            <AssemblyInfoInternalsVisibleToFile Include="$(ProjectDir)/AssemblyInfo+InternalsVisibleTo+Authoring.cs" />
         </ItemGroup>
         
         <Copy SourceFiles="@(DataFiles)" DestinationFolder="$(ProjectDir)../../Data/%(RecursiveDir)" SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="300" />
 
-        <Copy SourceFiles="@(AssemblyInfoFile)" DestinationFolder="$(ProjectDir)../../Data/" SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="300" />
+        <Copy SourceFiles="@(AssemblyInfoSkipGeneratorFile)" DestinationFolder="$(ProjectDir)../../Data/" SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="300" />
+
+        <Copy SourceFiles="@(AssemblyInfoInternalsVisibleToFile)" DestinationFolder="$(ProjectDir)../../Data/" SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="300" />
         
         <Copy SourceFiles="@(DataAuthoringFiles)" DestinationFolder="$(ProjectDir)../../Data.Authoring/%(RecursiveDir)" SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="300" />
 
-        <Copy SourceFiles="@(AssemblyInfoFile)" DestinationFolder="$(ProjectDir)../../Data.Authoring/" SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="300" />
+        <Copy SourceFiles="@(AssemblyInfoSkipGeneratorFile)" DestinationFolder="$(ProjectDir)../../Data.Authoring/" SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="300" />
     </Target>
     
 </Project>

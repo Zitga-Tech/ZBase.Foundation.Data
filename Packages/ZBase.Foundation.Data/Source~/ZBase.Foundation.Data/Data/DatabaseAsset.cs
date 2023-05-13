@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace ZBase.Foundation.Data
 {
-    public sealed class DataTableContainerAsset : ScriptableObject
+    public sealed class DatabaseAsset : ScriptableObject
     {
         [SerializeField]
         private DataTableAsset[] _tableAssets = new DataTableAsset[0];
