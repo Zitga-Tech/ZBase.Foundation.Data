@@ -19,7 +19,7 @@ namespace ZBase.Foundation.Data
             get => _dataTable.Rows;
         }
 
-        internal void SetDataTable(TDataTable dataTable)
+        protected void SetDataTable(TDataTable dataTable)
         {
             _dataTable = dataTable;
         }

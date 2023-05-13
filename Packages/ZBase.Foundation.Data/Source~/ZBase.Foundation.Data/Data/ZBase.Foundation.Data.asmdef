@@ -1,0 +1,14 @@
+{
+    "name": "ZBase.Foundation.Data",
+    "rootNamespace": "ZBase.Foundation.Data",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,24 @@
+{
+    "name": "ZBase.Foundation.Data.Authoring",
+    "rootNamespace": "ZBase.Foundation.Data.Authoring",
+    "references": [
+        "ZBase.Foundation.Data",
+        "BakingSheet",
+        "BakingSheet.Csv",
+        "BakingSheet.Excel",
+        "BakingSheet.Json",
+        "BakingSheet.Google",
+        "BakingSheet.ScriptableObject"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

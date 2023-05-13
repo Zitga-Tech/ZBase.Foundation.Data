@@ -29,7 +29,7 @@
     </ItemGroup>
 
     <Target Name="DeleteSourceFiles" AfterTargets="Build" BeforeTargets="CopySourceFiles">
-        <RemoveDir Directories="$(ProjectDir)../../BakingSheet.Exposed/Src/" />
+        <RemoveDir Directories="$(ProjectDir)../../BakingSheet.Exposed/" />
     </Target>
 
     <Target Name="CopySourceFiles" AfterTargets="Build">
@@ -37,7 +37,7 @@
             <DataAuthoringFiles Include="$(ProjectDir)/BakingSheet.Exposed/**/*.*" />
         </ItemGroup>
         <Copy SourceFiles="@(DataAuthoringFiles)"
-              DestinationFolder="$(ProjectDir)../../BakingSheet.Exposed/Src/%(RecursiveDir)"
+              DestinationFolder="$(ProjectDir)../../BakingSheet.Exposed/%(RecursiveDir)"
               SkipUnchangedFiles="true" Retries="3"
               RetryDelayMilliseconds="300" />
     </Target>

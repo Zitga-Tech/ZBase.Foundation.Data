@@ -17,19 +17,24 @@
     </ItemGroup>
 
     <Target Name="DeleteSourceFiles" AfterTargets="Build" BeforeTargets="CopySourceFiles">
-        <RemoveDir Directories="$(ProjectDir)../../Data/Src/" />
-        <RemoveDir Directories="$(ProjectDir)../../Data.Authoring/Src/" />
+        <RemoveDir Directories="$(ProjectDir)../../Data/" />
+        <RemoveDir Directories="$(ProjectDir)../../Data.Authoring/" />
     </Target>
 
     <Target Name="CopySourceFiles" AfterTargets="Build">
         <ItemGroup>
             <DataFiles Include="$(ProjectDir)/Data/**/*.*" />
             <DataAuthoringFiles Include="$(ProjectDir)/Data.Authoring/**/*.*" />
+            <AssemblyInfoFile Include="$(ProjectDir)/AssemblyInfo.cs" />
         </ItemGroup>
         
-        <Copy SourceFiles="@(DataFiles)" DestinationFolder="$(ProjectDir)../../Data/Src/%(RecursiveDir)" SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="300" />
+        <Copy SourceFiles="@(DataFiles)" DestinationFolder="$(ProjectDir)../../Data/%(RecursiveDir)" SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="300" />
+
+        <Copy SourceFiles="@(AssemblyInfoFile)" DestinationFolder="$(ProjectDir)../../Data/" SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="300" />
         
-        <Copy SourceFiles="@(DataAuthoringFiles)" DestinationFolder="$(ProjectDir)../../Data.Authoring/Src/%(RecursiveDir)" SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="300" />
+        <Copy SourceFiles="@(DataAuthoringFiles)" DestinationFolder="$(ProjectDir)../../Data.Authoring/%(RecursiveDir)" SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="300" />
+
+        <Copy SourceFiles="@(AssemblyInfoFile)" DestinationFolder="$(ProjectDir)../../Data.Authoring/" SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="300" />
     </Target>
     
 </Project>

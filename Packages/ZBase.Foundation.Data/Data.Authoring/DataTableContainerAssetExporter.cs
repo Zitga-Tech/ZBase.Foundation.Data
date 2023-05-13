@@ -14,9 +14,9 @@ using Microsoft.Extensions.Logging;
 
 namespace ZBase.Foundation.Data.Authoring
 {
-    public class DataTableContainerAssetExporter<TAsset, TDataTable, TData>
+    public class DataTableContainerAssetExporter<TDataAsset, TDataTable, TData>
         : ISheetExporter, ISheetFormatter
-        where TAsset : DataTableAsset<TDataTable, TData>
+        where TDataAsset : DataTableAsset<TDataTable, TData>
         where TDataTable : IDataTable<TData>
         where TData : IData
     {
@@ -31,46 +31,32 @@ namespace ZBase.Foundation.Data.Authoring
 
         public IFormatProvider FormatProvider => CultureInfo.InvariantCulture;
 
-        public SheetContainerScriptableObject Result { get; private set; }
+        public DataTableContainerAsset Result { get; private set; }
 
         public Task<bool> Export(SheetConvertingContext context)
         {
-            var rowToSO = new Dictionary<ISheetRow, SheetRowScriptableObject>();
+            var bakingRowToAssetMap = new Dictionary<ISheetRow, SheetRowScriptableObject>();
+            var bakingContainerAsset = GenerateBakingContainerAsset(context, this, bakingRowToAssetMap);
+            MapBakingReferences(context, bakingRowToAssetMap);
 
-            var containerSO = GenerateAssets(_savePath, context, this, rowToSO);
+            var containerAsset = GenerateDataTableContainerAsset(_savePath, bakingContainerAsset);
+            SaveAssets(containerAsset);
 
-            MapReferences(context, rowToSO);
-
-            SaveAssets(containerSO);
-
-            Result = containerSO;
-
+            Result = containerAsset;
             return Task.FromResult(true);
         }
 
-        private static SheetContainerScriptableObject GenerateAssets(
-              string savePath
-            , SheetConvertingContext context
+        private static SheetContainerScriptableObject GenerateBakingContainerAsset(
+              SheetConvertingContext context
             , ISheetFormatter formatter
-            , Dictionary<ISheetRow, SheetRowScriptableObject> rowToSO
+            , Dictionary<ISheetRow, SheetRowScriptableObject> assetMap
         )
         {
-            if (AssetDatabase.IsValidFolder(savePath) == false)
-            {
-                savePath = AssetDatabase.CreateFolder(
-                      Path.GetDirectoryName(savePath)
-                    , Path.GetFileName(savePath)
-                );
-            }
-
             var valueContext = new SheetValueConvertingContext(formatter, new SheetContractResolver());
             var containerSO = ScriptableObject.CreateInstance<SheetContainerScriptableObject>();
-            var existingRowSO = new Dictionary<string, SheetRowScriptableObject>();
 
             foreach (var pair in context.Container.GetSheetProperties())
             {
-                existingRowSO.Clear();
-
                 using (context.Logger.BeginScope(pair.Key))
                 {
                     if (pair.Value.GetValue(context.Container) is not ISheet sheet)
@@ -78,45 +64,18 @@ namespace ZBase.Foundation.Data.Authoring
                         continue;
                     }
 
-                    var sheetPath = Path.Combine(savePath, $"{sheet.Name}.asset");
                     var sheetSO = ScriptableObject.CreateInstance<SheetScriptableObject>();
                     sheetSO.name = sheet.Name;
                     sheetSO.SetTypeInfoEx(sheet.RowType.FullName);
 
-                    foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(sheetPath))
-                    {
-                        if (asset is not SheetRowScriptableObject rowSO)
-                        {
-                            continue;
-                        }
-
-                        existingRowSO.Add(rowSO.name, rowSO);
-                    }
-
-                    sheetSO.ClearEx();
-
                     foreach (var row in sheet)
                     {
-                        string rowIdStr = valueContext.ValueToString(row.Id.GetType(), row.Id);
-
-                        if (existingRowSO.TryGetValue(rowIdStr, out var rowSO) == false)
-                        {
-                            rowSO = ScriptableObject.CreateInstance<JsonSheetRowScriptableObject>();
-                            AssetDatabase.AddObjectToAsset(rowSO, sheetSO);
-                        }
-
+                        var rowIdStr = valueContext.ValueToString(row.Id.GetType(), row.Id);
+                        var rowSO = ScriptableObject.CreateInstance<JsonSheetRowScriptableObject>();
                         rowSO.name = rowIdStr;
                         rowSO.SetRowEx(row);
-
                         sheetSO.AddEx(rowSO);
-                        rowToSO.Add(row, rowSO);
-                        existingRowSO.Remove(rowIdStr);
-                    }
-
-                    // clear removed scriptable objects
-                    foreach (var rowSO in existingRowSO.Values)
-                    {
-                        AssetDatabase.RemoveObjectFromAsset(rowSO);
+                        assetMap.Add(row, rowSO);
                     }
 
                     containerSO.AddEx(sheetSO);
@@ -126,9 +85,9 @@ namespace ZBase.Foundation.Data.Authoring
             return containerSO;
         }
 
-        private static void MapReferences(
+        private static void MapBakingReferences(
               SheetConvertingContext context
-            , Dictionary<ISheetRow, SheetRowScriptableObject> rowToSO
+            , Dictionary<ISheetRow, SheetRowScriptableObject> assetMap
         )
         {
             foreach (var pair in context.Container.GetSheetProperties())
@@ -148,18 +107,18 @@ namespace ZBase.Foundation.Data.Authoring
                     {
                         if (typeof(IUnitySheetReference).IsAssignableFrom(node.ValueType))
                         {
-                            MapReferencesInSheet(context, sheet, node, indexes, SheetReferenceMapping, rowToSO);
+                            MapBakingReferencesInSheet(context, sheet, node, indexes, SheetReferenceMapping, assetMap);
                         }
                         else if (typeof(IUnitySheetDirectAssetPath).IsAssignableFrom(node.ValueType))
                         {
-                            MapReferencesInSheet(context, sheet, node, indexes, AssetReferenceMapping, 0);
+                            MapBakingReferencesInSheet(context, sheet, node, indexes, AssetReferenceMapping, 0);
                         }
                     }
                 }
             }
         }
 
-        private static void MapReferencesInSheet<TState>(
+        private static void MapBakingReferencesInSheet<TState>(
               SheetConvertingContext context
             , ISheet sheet
             , PropertyNode node
@@ -254,16 +213,45 @@ namespace ZBase.Foundation.Data.Authoring
             path.Asset = asset;
         }
 
-        private static void SaveAssets(SheetContainerScriptableObject containerSO)
+        private static string MakeFolderPath(string savePath)
         {
-            EditorUtility.SetDirty(containerSO);
-
-            foreach (var sheetSO in containerSO.Sheets)
+            if (AssetDatabase.IsValidFolder(savePath) == false)
             {
-                EditorUtility.SetDirty(sheetSO);
+                savePath = AssetDatabase.CreateFolder(
+                      Path.GetDirectoryName(savePath)
+                    , Path.GetFileName(savePath)
+                );
+            }
 
-                foreach (var rowSO in sheetSO.Rows)
-                    EditorUtility.SetDirty(rowSO);
+            return savePath;
+        }
+
+        private static DataTableContainerAsset GenerateDataTableContainerAsset(
+              string savePath
+            , SheetContainerScriptableObject bakingContainerAsset
+        )
+        {
+            savePath = MakeFolderPath(savePath);
+
+            var containerAssetPath = Path.Combine(savePath, "_Container.asset");
+            var containerAsset = AssetDatabase.LoadAssetAtPath<DataTableContainerAsset>(containerAssetPath);
+            
+            if (containerAsset == false)
+            {
+                containerAsset = ScriptableObject.CreateInstance<DataTableContainerAsset>();
+                AssetDatabase.CreateAsset(containerAsset, containerAssetPath);
+            }
+
+            return containerAsset;
+        }
+
+        private static void SaveAssets(DataTableContainerAsset container)
+        {
+            EditorUtility.SetDirty(container);
+
+            foreach (var table in container.TableAssets.Span)
+            {
+                EditorUtility.SetDirty(table);
             }
 
             AssetDatabase.SaveAssets();
