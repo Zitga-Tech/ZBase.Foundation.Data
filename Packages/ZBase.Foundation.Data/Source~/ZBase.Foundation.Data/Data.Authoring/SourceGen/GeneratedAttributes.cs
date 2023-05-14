@@ -8,14 +8,17 @@ namespace ZBase.Foundation.Data.Authoring.SourceGen
     [AttributeUsage(AttributeTargets.Class)]
     public sealed class GeneratedSheetAttribute : Attribute
     {
-        public Type IdType { get; }
-
         public Type DataTableType { get; }
 
-        public GeneratedSheetAttribute(Type idType, Type dataTableType)
+        public Type IdType { get; }
+
+        public Type DataType { get; }
+
+        public GeneratedSheetAttribute(Type dataTableType, Type idType, Type dataType)
         {
-            this.IdType = idType;
             this.DataTableType = dataTableType;
+            this.IdType = idType;
+            this.DataType = dataType;
         }
     }
 

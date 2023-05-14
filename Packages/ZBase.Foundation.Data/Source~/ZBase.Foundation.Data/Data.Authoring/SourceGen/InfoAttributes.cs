@@ -14,6 +14,17 @@ namespace ZBase.Foundation.Data.Authoring.SourceGen
     }
 
     [AttributeUsage(AttributeTargets.Property)]
+    public sealed class DataIdInfoAttribute : Attribute
+    {
+        public Type IdType { get; }
+
+        public DataIdInfoAttribute(Type idType)
+        {
+            this.IdType = idType;
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Property)]
     public sealed class DataTableInfoAttribute : Attribute
     {
         public Type DataTableType { get; }

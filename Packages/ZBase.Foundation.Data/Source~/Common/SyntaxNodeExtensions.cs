@@ -471,11 +471,12 @@ namespace ZBase.Foundation.SourceGen
         /// <returns></returns>
         public static bool HasAttributeCandidate(this SyntaxNode syntaxNode, string attributeNameSpace, string attributeName)
         {
-            if (syntaxNode.TryGetFirstChildByKind(SyntaxKind.AttributeList, out var fieldAttributeList)
-                && fieldAttributeList.TryGetFirstChildByKind(SyntaxKind.Attribute, out var fieldAttribute))
+            if (syntaxNode.TryGetFirstChildByKind(SyntaxKind.AttributeList, out var attributeList)
+                && attributeList.TryGetFirstChildByKind(SyntaxKind.Attribute, out var attribute))
             {
-                var attribute = fieldAttribute as AttributeSyntax;
-                if (attribute.Name.IsTypeNameCandidate(attributeNameSpace, attributeName))
+                var attributeSyntax = attribute as AttributeSyntax;
+
+                if (attributeSyntax.Name.IsTypeNameCandidate(attributeNameSpace, attributeName))
                 {
                     return true;
                 }

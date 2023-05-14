@@ -15,10 +15,10 @@ using ZBase.Foundation.Data.Authoring.SourceGen;
 
 namespace ZBase.Foundation.Data.Authoring
 {
-    public class DatabaseAssetExporter<TDataAsset, TDataTable, TData>
+    public class DatabaseAssetExporter<TDataAsset, TDataTable, TId, TData>
         : ISheetExporter, ISheetFormatter
-        where TDataAsset : DataTableAsset<TDataTable, TData>
-        where TDataTable : IDataTable<TData>
+        where TDataAsset : DataTableAsset<TDataTable, TId, TData>
+        where TDataTable : IDataTable<TId, TData>
         where TData : IData
     {
         private readonly string _savePath;

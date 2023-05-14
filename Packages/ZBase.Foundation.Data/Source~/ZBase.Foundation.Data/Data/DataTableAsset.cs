@@ -9,8 +9,8 @@ namespace ZBase.Foundation.Data
         internal abstract void SetDataTable(object obj);
     }
 
-    public abstract class DataTableAsset<TDataTable, TData> : DataTableAsset
-        where TDataTable : IDataTable<TData>
+    public abstract class DataTableAsset<TDataTable, TId, TData> : DataTableAsset
+        where TDataTable : IDataTable<TId, TData>
         where TData : IData
     {
         [SerializeField, SerializeReference]

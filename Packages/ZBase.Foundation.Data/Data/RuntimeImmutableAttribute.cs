@@ -2,7 +2,6 @@
 
 namespace ZBase.Foundation.Data
 {
-    public sealed class RuntimeImmutableAttribute : Attribute
-    {
-    }
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
+    public sealed class RuntimeImmutableAttribute : Attribute { }
 }
