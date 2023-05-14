@@ -20,13 +20,13 @@ namespace ZBase.Foundation.Data.Authoring.SourceGen
     }
 
     [AttributeUsage(AttributeTargets.Class)]
-    public sealed class GeneratedSheetRow : Attribute
+    public sealed class GeneratedSheetRowAttribute : Attribute
     {
         public Type IdType { get; }
 
         public Type DataType { get; }
 
-        public GeneratedSheetRow(Type idType, Type dataType)
+        public GeneratedSheetRowAttribute(Type idType, Type dataType)
         {
             this.IdType = idType;
             this.DataType = dataType;
@@ -34,28 +34,11 @@ namespace ZBase.Foundation.Data.Authoring.SourceGen
     }
 
     [AttributeUsage(AttributeTargets.Class)]
-    public sealed class GeneratedSheetRowArray : Attribute
-    {
-        public Type IdType { get; }
-
-        public Type DataType { get; }
-
-        public Type ArrayElemType { get; }
-
-        public GeneratedSheetRowArray(Type idType, Type dataType, Type arrayElemType)
-        {
-            this.IdType = idType;
-            this.DataType = dataType;
-            this.ArrayElemType = arrayElemType;
-        }
-    }
-
-    [AttributeUsage(AttributeTargets.Class)]
-    public sealed class GeneratedSheetRowElem : Attribute
+    public sealed class GeneratedListElementAttribute : Attribute
     {
         public Type DataType { get; }
 
-        public GeneratedSheetRowElem(Type dataType)
+        public GeneratedListElementAttribute(Type dataType)
         {
             this.DataType = dataType;
         }

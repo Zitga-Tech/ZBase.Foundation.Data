@@ -5,33 +5,33 @@ namespace ZBase.Foundation.Data.Authoring.SourceGen
     [AttributeUsage(AttributeTargets.Property)]
     public sealed class DataInfoAttribute : Attribute
     {
-        public Type Type { get; }
+        public Type DataType { get; }
 
-        public DataInfoAttribute(Type type)
+        public DataInfoAttribute(Type dataType)
         {
-            this.Type = type;
+            this.DataType = dataType;
         }
     }
 
     [AttributeUsage(AttributeTargets.Property)]
     public sealed class DataTableInfoAttribute : Attribute
     {
-        public Type Type { get; }
+        public Type DataTableType { get; }
 
-        public DataTableInfoAttribute(Type type)
+        public DataTableInfoAttribute(Type dataTableType)
         {
-            this.Type = type;
+            this.DataTableType = dataTableType;
         }
     }
 
     [AttributeUsage(AttributeTargets.Property)]
     public sealed class DataTableAssetInfoAttribute : Attribute
     {
-        public Type Type { get; }
+        public Type DataTableAssetType { get; }
 
-        public DataTableAssetInfoAttribute(Type type)
+        public DataTableAssetInfoAttribute(Type dataTableAssetType)
         {
-            this.Type = type;
+            this.DataTableAssetType = dataTableAssetType;
         }
     }
 }

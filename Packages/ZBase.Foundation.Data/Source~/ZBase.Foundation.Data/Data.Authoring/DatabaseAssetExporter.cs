@@ -52,31 +52,26 @@ namespace ZBase.Foundation.Data.Authoring
               IReadOnlyDictionary<string, PropertyInfo> sheetProperties
             , out IReadOnlyDictionary<string, Type> dataTableTypes
             , out IReadOnlyDictionary<string, Type> dataTableAssetTypes
-            , out IReadOnlyDictionary<string, Type> clonerTypes
         )
         {
             var dataTableTypesBuilder = new Dictionary<string, Type>();
             var dataTableAssetTypesBuilder = new Dictionary<string, Type>();
-            var clonerTypesBuilder = new Dictionary<string, Type>();
-
+            
             foreach (var (name, property) in sheetProperties)
             {
-                //if (TryGetAttribute<GeneratedSheetForDataTableAttribute>(property, out var dtAttrib))
-                //{
-                //    dataTableTypesBuilder[name] = dtAttrib.DataTableType;
-                //}
+                if (TryGetAttribute<DataTableInfoAttribute>(property, out var dtInfoAttrib))
+                {
+                    dataTableTypesBuilder[name] = dtInfoAttrib.DataTableType;
+                }
 
-                //if (TryGetAttribute<GeneratedDataTableAssetAttribute>(property, out var dtaAttrib))
-                //{
-                //    dataTableAssetTypesBuilder[name] = dtaAttrib.DataTableAssetType;
-                //}
-
-                //if ()
+                if (TryGetAttribute<DataTableAssetInfoAttribute>(property, out var dtaInfoAttrib))
+                {
+                    dataTableAssetTypesBuilder[name] = dtaInfoAttrib.DataTableAssetType;
+                }
             }
 
             dataTableTypes = dataTableTypesBuilder;
             dataTableAssetTypes = dataTableAssetTypesBuilder;
-            clonerTypes = clonerTypesBuilder;
         }
 
         private static bool TryGetAttribute<T>(PropertyInfo property, out T attribute)

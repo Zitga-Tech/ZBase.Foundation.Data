@@ -42,8 +42,11 @@ namespace RumbleDefense
         [SerializeField]
         private int _vitality;
 
-        [SerializeField]
+        [SerializeField, VerticalArray]
         private HeroStatMultiplier[] _multipliers;
+
+        [SerializeField]
+        private string[] _descriptions;
     }
 
     [RuntimeImmutable]
@@ -63,6 +66,98 @@ namespace RumbleDefense
     public partial struct HeroDataTable : IDataTable<HeroData>
     {
     }
+}
+
+namespace DataSourceGenCodeDesign
+{
+#pragma warning disable
+
+    using System.Collections.Generic;
+    using Cathei.BakingSheet;
+    using RumbleDefense;
+    using ZBase.Foundation.Data.Authoring.SourceGen;
+
+    [GeneratedSheet(typeof(HeroId), typeof(HeroDataTable))]
+    public partial class HeroDataTableSheet : Sheet<HeroId, HeroDataTableSheet.HeroDataSheetRow>
+    {
+        [GeneratedSheetRow(typeof(HeroId), typeof(HeroData))]
+        public partial class HeroDataSheetRow : SheetRow<HeroId>
+        {
+            public string Name { get; set; }
+
+            public int Strength { get; set; }
+
+            public int Intelligence { get; set; }
+
+            public int Vitality { get; set; }
+
+            public VerticalList<HeroStatMultiplierListElement> Multipliers { get; set; }
+
+            public List<string> Descriptions { get; set; }
+        }
+
+        [GeneratedListElement(typeof(HeroStatMultiplier))]
+        public partial class HeroStatMultiplierListElement
+        {
+            public float StatMultiplier { get; set; }
+
+            public int RequiredExp { get; set; }
+
+            public string RequiredItem { get; set; }
+        }
+
+        private static HeroStatMultiplier[] ToArray(VerticalList<HeroStatMultiplierListElement> list)
+        {
+            var count = list.Count;
+            var array = new HeroStatMultiplier[count];
+
+            for (var i = 0; i < count; i++)
+            {
+                var element = list[i];
+                ref var item = ref array[i];
+                item = new HeroStatMultiplier();
+
+                item.SetValues(
+                    element.StatMultiplier
+                    , element.RequiredExp
+                    , element.RequiredItem
+                );
+            }
+
+            return array;
+        }
+
+        public HeroDataTable ToHeroDataTable()
+        {
+            var sheetRows = this.Items;
+            var count = sheetRows.Count;
+
+            var dataTable = new HeroDataTable();
+            var rows = new HeroData[count];
+            
+            for (var i = 0; i < count; i++)
+            {
+                var sheetRow = sheetRows[i];
+                ref var row = ref rows[i];
+                row = new HeroData();
+
+                row.SetValues(
+                      sheetRow.Id
+                    , sheetRow.Name
+                    , sheetRow.Strength
+                    , sheetRow.Intelligence
+                    , sheetRow.Vitality
+                    , ToArray(sheetRow.Multipliers)
+                    , sheetRow.Descriptions.ToArray()
+                );
+            }
+
+            dataTable.SetRows(rows);
+            return dataTable;
+        }
+    }
+
+#pragma warning enable
 }
 
 namespace RumbleDefense
@@ -108,6 +203,12 @@ namespace RumbleDefense
             get => this._multipliers;
         }
 
+        public ReadOnlyMemory<string> Descriptions
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => this._descriptions;
+        }
+
 #if UNITY_EDITOR
         [Obsolete("This method is not intended to be used directly by user code.")]
         internal void SetValues(
@@ -117,6 +218,7 @@ namespace RumbleDefense
             , int _intelligence
             , int _vitality
             , HeroStatMultiplier[] _multipliers
+            , string[] _descriptions
         )
         {
             this._id = _id;
@@ -125,6 +227,7 @@ namespace RumbleDefense
             this._intelligence = _intelligence;
             this._vitality = _vitality;
             this._multipliers = _multipliers;
+            this._descriptions = _descriptions;
         }
 #endif
     }
@@ -177,52 +280,12 @@ namespace RumbleDefense
 
 #if UNITY_EDITOR
         [Obsolete("This method is not intended to be used directly by user code.")]
-        internal void SetValues(
+        internal void SetRows(
               HeroData[] _rows
         )
         {
             this._rows = _rows;
         }
 #endif
-    }
-}
-
-namespace DataSourceGenCodeDesign
-{
-    using Cathei.BakingSheet;
-    using RumbleDefense;
-    using ZBase.Foundation.Data.Authoring.SourceGen;
-
-    [GeneratedSheet(typeof(HeroId), typeof(HeroDataTable))]
-    public partial class HeroDataTableSheet : Sheet<HeroId, HeroDataTableSheet.HeroDataRowArray>
-    {
-        public HeroDataTable ToHeroDataTable()
-        {
-            var dataTable = new HeroDataTable();
-            
-            return dataTable;
-        }
-
-        [GeneratedSheetRowArray(typeof(HeroId), typeof(HeroData), typeof(HeroStatMultiplier))]
-        public partial class HeroDataRowArray : SheetRowArray<HeroId, HeroStatMultiplierElem>
-        {
-            public string Name { get; set; }
-
-            public int Strength { get; set; }
-
-            public int Intelligence { get; set; }
-
-            public int Vitality { get; set; }
-        }
-
-        [GeneratedSheetRowElem(typeof(HeroStatMultiplier))]
-        public partial class HeroStatMultiplierElem : SheetRowElem
-        {
-            public float StatMultiplier { get; set; }
-
-            public int RequiredExp { get; set; }
-
-            public string RequiredItem { get; set; }
-        }
     }
 }
