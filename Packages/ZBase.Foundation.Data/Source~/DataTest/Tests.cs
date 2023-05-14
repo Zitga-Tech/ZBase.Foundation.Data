@@ -1,5 +1,4 @@
 ﻿using System;
-
 namespace DataTest
 {
     public class Program
@@ -8,12 +7,14 @@ namespace DataTest
         {
         }
     }
+
 }
 
-namespace RumbleDefense
+
+namespace ProjectRumbleDefense
 {
-    using ZBase.Foundation.Data;
     using UnityEngine;
+    using ZBase.Foundation.Data;
 
     public enum HeroId
     {
@@ -23,9 +24,7 @@ namespace RumbleDefense
         ID0004,
         ID0005,
     }
-
-    [RuntimeImmutable]
-    public partial struct HeroData : IData
+    public class HeroDataRow : IData
     {
         [SerializeField, DataId]
         private HeroId _id;
@@ -44,185 +43,243 @@ namespace RumbleDefense
 
         [SerializeField]
         private HeroStatMultiplier[] _multipliers;
+
+        [SerializeField, VerticalArray]
+        private Vector2[] _multipliers2;
+
+        [RuntimeImmutable]
+        public partial struct HeroStatMultiplier : IData
+        {
+            [SerializeField]
+            private float _statMultiplier;
+
+            [SerializeField]
+            private int _requiredExp;
+
+            [SerializeField]
+            private string _requiredItem;
+        }
+
     }
 
-    [RuntimeImmutable]
-    public partial struct HeroStatMultiplier : IData
+    public class HeroDataTable : IDataTable<HeroDataRow>
     {
-        [SerializeField]
-        private float _statMultiplier;
 
-        [SerializeField]
-        private int _requiredExp;
-
-        [SerializeField]
-        private string _requiredItem;
-    }
-
-    [RuntimeImmutable]
-    public partial struct HeroDataTable : IDataTable<HeroData>
-    {
     }
 }
+//namespace RumbleDefense
+//{
+//    using ZBase.Foundation.Data;
+//    using UnityEngine;
 
-namespace RumbleDefense
-{
-    using System.Runtime.CompilerServices;
-    using UnityEngine;
+//    public enum HeroId
+//    {
+//        ID0001,
+//        ID0002,
+//        ID0003,
+//        ID0004,
+//        ID0005,
+//    }
 
-    partial struct HeroData
-    {
-        public HeroId Id
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => this._id;
-        }
+//    [RuntimeImmutable]
+//    public partial struct HeroData : IData
+//    {
+//        [SerializeField, DataId]
+//        private HeroId _id;
 
-        public string Name
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => this._name;
-        }
+//        [SerializeField]
+//        private string _name;
 
-        public int Strength
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => this._strength;
-        }
+//        [SerializeField]
+//        private int _strength;
 
-        public int Intelligence
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => this._intelligence;
-        }
+//        [SerializeField]
+//        private int _intelligence;
 
-        public int Vitality
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => this._vitality;
-        }
+//        [SerializeField]
+//        private int _vitality;
 
-        public ReadOnlyMemory<HeroStatMultiplier> Multipliers
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => this._multipliers;
-        }
+//        [SerializeField]
+//        private HeroStatMultiplier[] _multipliers;
+//    }
 
-#if UNITY_EDITOR
-        [Obsolete("This method is not intended to be used directly by user code.")]
-        internal void SetValues(
-              HeroId _id
-            , string _name
-            , int _strength
-            , int _intelligence
-            , int _vitality
-            , HeroStatMultiplier[] _multipliers
-        )
-        {
-            this._id = _id;
-            this._name = _name;
-            this._strength = _strength;
-            this._intelligence = _intelligence;
-            this._vitality = _vitality;
-            this._multipliers = _multipliers;
-        }
-#endif
-    }
+//    [RuntimeImmutable]
+//    public partial struct HeroStatMultiplier : IData
+//    {
+//        [SerializeField]
+//        private float _statMultiplier;
 
-    partial struct HeroStatMultiplier
-    {
-        public float StatMultiplier
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => this._statMultiplier;
-        }
+//        [SerializeField]
+//        private int _requiredExp;
 
-        public int RequiredExp
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => this._requiredExp;
-        }
+//        [SerializeField]
+//        private string _requiredItem;
+//    }
 
-        public string RequiredItem
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => this._requiredItem;
-        }
+//    [RuntimeImmutable]
+//    public partial struct HeroDataTable : IDataTable<HeroData>
+//    {
+//    }
+//}
 
-#if UNITY_EDITOR
-        [Obsolete("This method is not intended to be used directly by user code.")]
-        internal void SetValues(
-              float _statMultiplier
-            , int _requiredExp
-            , string _requiredItem
-        )
-        {
-            this._statMultiplier = _statMultiplier;
-            this._requiredExp = _requiredExp;
-            this._requiredItem = _requiredItem;
-        }
-#endif
-    }
+//namespace DataSourceGenCodeDesign
+//{
+//    using Cathei.BakingSheet;
+//    using RumbleDefense;
+//    using ZBase.Foundation.Data.Authoring.SourceGen;
 
-    partial struct HeroDataTable
-    {
-        [SerializeField]
-        private HeroData[] _rows;
+//    [GeneratedSheet(typeof(HeroId), typeof(HeroDataTable))]
+//    public partial class HeroDataTableSheet : Sheet<HeroId, HeroDataTableSheet.HeroDataRowArray>
+//    {
+//        public HeroDataTable ToHeroDataTable()
+//        {
+//            var dataTable = new HeroDataTable();
 
-        public ReadOnlyMemory<HeroData> Rows
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => this._rows;
-        }
+//            return dataTable;
+//        }
 
-#if UNITY_EDITOR
-        [Obsolete("This method is not intended to be used directly by user code.")]
-        internal void SetValues(
-              HeroData[] _rows
-        )
-        {
-            this._rows = _rows;
-        }
-#endif
-    }
-}
+//        [GeneratedSheetRowArray(typeof(HeroId), typeof(HeroData), typeof(HeroStatMultiplier))]
+//        public partial class HeroDataRowArray : SheetRowArray<HeroId, HeroStatMultiplierElem>
+//        {
+//            public string Name { get; set; }
 
-namespace DataSourceGenCodeDesign
-{
-    using Cathei.BakingSheet;
-    using RumbleDefense;
-    using ZBase.Foundation.Data.Authoring.SourceGen;
+//            public int Strength { get; set; }
 
-    [GeneratedSheet(typeof(HeroId), typeof(HeroDataTable))]
-    public partial class HeroDataTableSheet : Sheet<HeroId, HeroDataTableSheet.HeroDataRowArray>
-    {
-        public HeroDataTable ToHeroDataTable()
-        {
-            var dataTable = new HeroDataTable();
-            
-            return dataTable;
-        }
+//            public int Intelligence { get; set; }
 
-        [GeneratedSheetRowArray(typeof(HeroId), typeof(HeroData), typeof(HeroStatMultiplier))]
-        public partial class HeroDataRowArray : SheetRowArray<HeroId, HeroStatMultiplierElem>
-        {
-            public string Name { get; set; }
+//            public int Vitality { get; set; }
+//        }
 
-            public int Strength { get; set; }
+//        [GeneratedSheetRowElem(typeof(HeroStatMultiplier))]
+//        public partial class HeroStatMultiplierElem : SheetRowElem
+//        {
+//            public float StatMultiplier { get; set; }
 
-            public int Intelligence { get; set; }
+//            public int RequiredExp { get; set; }
 
-            public int Vitality { get; set; }
-        }
+//            public string RequiredItem { get; set; }
+//        }
+//    }
+//}
 
-        [GeneratedSheetRowElem(typeof(HeroStatMultiplier))]
-        public partial class HeroStatMultiplierElem : SheetRowElem
-        {
-            public float StatMultiplier { get; set; }
+//namespace RumbleDefense
+//{
+//    using System.Runtime.CompilerServices;
+//    using UnityEngine;
 
-            public int RequiredExp { get; set; }
+//    partial struct HeroData
+//    {
+//        public HeroId Id
+//        {
+//            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+//            get => this._id;
+//        }
 
-            public string RequiredItem { get; set; }
-        }
-    }
-}
+//        public string Name
+//        {
+//            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+//            get => this._name;
+//        }
+
+//        public int Strength
+//        {
+//            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+//            get => this._strength;
+//        }
+
+//        public int Intelligence
+//        {
+//            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+//            get => this._intelligence;
+//        }
+
+//        public int Vitality
+//        {
+//            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+//            get => this._vitality;
+//        }
+
+//        public ReadOnlyMemory<HeroStatMultiplier> Multipliers
+//        {
+//            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+//            get => this._multipliers;
+//        }
+
+//#if UNITY_EDITOR
+//        [Obsolete("This method is not intended to be used directly by user code.")]
+//        internal void SetValues(
+//              HeroId _id
+//            , string _name
+//            , int _strength
+//            , int _intelligence
+//            , int _vitality
+//            , HeroStatMultiplier[] _multipliers
+//        )
+//        {
+//            this._id = _id;
+//            this._name = _name;
+//            this._strength = _strength;
+//            this._intelligence = _intelligence;
+//            this._vitality = _vitality;
+//            this._multipliers = _multipliers;
+//        }
+//#endif
+//    }
+
+//    partial struct HeroStatMultiplier
+//    {
+//        public float StatMultiplier
+//        {
+//            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+//            get => this._statMultiplier;
+//        }
+
+//        public int RequiredExp
+//        {
+//            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+//            get => this._requiredExp;
+//        }
+
+//        public string RequiredItem
+//        {
+//            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+//            get => this._requiredItem;
+//        }
+
+//#if UNITY_EDITOR
+//        [Obsolete("This method is not intended to be used directly by user code.")]
+//        internal void SetValues(
+//              float _statMultiplier
+//            , int _requiredExp
+//            , string _requiredItem
+//        )
+//        {
+//            this._statMultiplier = _statMultiplier;
+//            this._requiredExp = _requiredExp;
+//            this._requiredItem = _requiredItem;
+//        }
+//#endif
+//    }
+
+//    partial struct HeroDataTable
+//    {
+//        [SerializeField]
+//        private HeroData[] _rows;
+
+//        public ReadOnlyMemory<HeroData> Rows
+//        {
+//            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+//            get => this._rows;
+//        }
+
+//#if UNITY_EDITOR
+//        [Obsolete("This method is not intended to be used directly by user code.")]
+//        internal void SetValues(
+//              HeroData[] _rows
+//        )
+//        {
+//            this._rows = _rows;
+//        }
+//#endif
+//    }
+//}

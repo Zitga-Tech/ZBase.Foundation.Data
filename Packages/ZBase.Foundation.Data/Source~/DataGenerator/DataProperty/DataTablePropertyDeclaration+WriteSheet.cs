@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Immutable;
 using ZBase.Foundation.SourceGen;
+
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace ZBase.Foundation.Data.DataSourceGen
@@ -126,30 +127,72 @@ namespace ZBase.Foundation.Data.DataSourceGen
             {
                 p.PrintBeginLine()
                     .Print($"public class {className}")
-                    .Print($": global::Cathei.BakingSheet.Sheet<{className}.{typeName}>")
+                    .Print($": global::Cathei.BakingSheet.Sheet<{typeRef.IdType.ToFullName()}, {className}.{typeName}>")
                     .PrintEndLine();
                 p.OpenScope();
                 {
                     p.PrintBeginLine()
                    .Print($"public class {typeName}")
-                   .Print($": global::Cathei.BakingSheet.SheetRow")
+                   .Print($": global::Cathei.BakingSheet.SheetRow<{typeRef.IdType.ToFullName()}>")
                    .PrintEndLine();
 
                     p.OpenScope();
                     {
-                        foreach (var property in typeRef.Properties)
+                        foreach (var field in typeRef.Fields)
                         {
-                            p.PrintLine($"public {property.Type} {property.Name} {{get; private set;}}");
+                            if (field.Type is not IArrayTypeSymbol arrayType)
+                            {
+                                p.PrintLine($"public {field.Type} {field.ToPropertyName()} {{get; private set;}}");
+                            }
+                            else
+                            {
+                                string elemTypeName;
+
+                                if (typeRef.ElementTypes.Contains(arrayType.ElementType))
+                                {
+                                    elemTypeName = arrayType.ElementType.Name;
+                                }
+                                else
+                                {
+                                    elemTypeName = arrayType.ElementType.ToFullName();
+                                }
+
+                                if (field.HasAttribute(VERTICAL_LIST_ATTRIBUTE))
+                                {
+                                    p.PrintLine($"public {VERTICAL_LIST_TYPE}<{elemTypeName}> {field.ToPropertyName()} {{get; private set;}}");
+                                }
+                                else
+                                {
+                                    p.PrintLine($"public {LIST_TYPE}<{elemTypeName}> {field.ToPropertyName()} {{get; private set;}}");
+                                }
+                            }
+                        }
+                    }
+                    p.CloseScope();
+
+                    foreach (var elementType in typeRef.ElementTypes)
+                    {
+                        var elemMembers = elementType.GetMembers();
+                        p.PrintLine($"public class {elementType.Name}");
+                        p.OpenScope();
+                        {
+                            foreach (var member in elemMembers)
+                            {
+                                if (member is IFieldSymbol memberField)
+                                {
+                                    p.PrintLine($"public {memberField.Type} {memberField.ToPropertyName()} {{get; private set;}}");
+                                }
+                            }
+                            p.CloseScope();
 
                         }
                     }
                     p.CloseScope();
                 }
                 p.CloseScope();
-            }
-            p.CloseScope();
 
-            return p.Result;
+                return p.Result;
+            }
         }
 
         private static string WriteCodeContainer(string assemblyName, ImmutableArray<TypeRef> typeRefs)
