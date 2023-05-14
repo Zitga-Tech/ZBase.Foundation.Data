@@ -58,7 +58,7 @@
 //            }
 //        }
 
-//        private static string WriteDataTableAsset(string assemblyName, DataTableRef dataTableRef)
+//        private static string WriteDataTableAsset(string assemblyName, DataTableAssetRef dataTableRef)
 //        {
 //            var dataTableAssetTypeName = $"{dataTableRef.Syntax.Identifier.Text}Asset";
 //            var dataTableTypeName = dataTableRef.Symbol.ToFullName();
@@ -86,7 +86,7 @@
 //                    .PrintEndLine();
 //                p.OpenScope();
 //                {
-                    
+
 //                }
 //                p.CloseScope();
 

@@ -58,7 +58,7 @@
 //            }
 //        }
 
-//        private static string WriteSheet(string assemblyName, DataTableRef dataTableRef)
+//        private static string WriteSheet(string assemblyName, DataTableAssetRef dataTableRef)
 //        {
 //            var sheetTypeName = $"{dataTableRef.Syntax.Identifier.Text}Sheet";
 //            var rowTypeName = dataTableRef.DataType.Name;

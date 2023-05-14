@@ -1,93 +1,91 @@
-﻿//using Microsoft.CodeAnalysis;
-//using Microsoft.CodeAnalysis.CSharp;
-//using System.Collections.Generic;
-//using System.Collections.Immutable;
-//using System.Linq;
-//using System.Threading;
-//using ZBase.Foundation.SourceGen;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Threading;
+using ZBase.Foundation.SourceGen;
 
-//namespace ZBase.Foundation.Data.DatabaseSourceGen
-//{
-//    public partial class DatabaseDeclaration
-//    {
-//        public const string GENERATOR_NAME = nameof(DatabaseGenerator);
-//        public const string SERIALIZE_FIELD_ATTRIBUTE = "global::UnityEngine.SerializeField";
-//        public const string VERTICAL_ARRAY_ATTRIBUTE = "global::ZBase.Foundation.Data.VerticalArrayAttribute";
-//        public const string LIST_TYPE = "global::System.Collections.Generic.List";
-//        public const string VERTICAL_LIST_TYPE = "global::Cathei.BakingSheet.VerticalList";
-//        public const string IDATA = "global::ZBase.Foundation.Data.IData";
+namespace ZBase.Foundation.Data.DatabaseSourceGen
+{
+    public partial class DatabaseDeclaration
+    {
+        public const string GENERATOR_NAME = nameof(DatabaseGenerator);
+        public const string SERIALIZE_FIELD_ATTRIBUTE = "global::UnityEngine.SerializeField";
+        public const string VERTICAL_ARRAY_ATTRIBUTE = "global::ZBase.Foundation.Data.VerticalArrayAttribute";
+        public const string LIST_TYPE = "global::System.Collections.Generic.List";
+        public const string VERTICAL_LIST_TYPE = "global::Cathei.BakingSheet.VerticalList";
+        public const string IDATA = "global::ZBase.Foundation.Data.IData";
 
-//        private const string AGGRESSIVE_INLINING = "[global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]";
-//        private const string GENERATED_CODE = "[global::System.CodeDom.Compiler.GeneratedCode(\"ZBase.Foundation.Data.DatabaseGenerator\", \"1.0.0\")]";
-//        private const string EXCLUDE_COVERAGE = "[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]";
+        private const string AGGRESSIVE_INLINING = "[global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]";
+        private const string GENERATED_CODE = "[global::System.CodeDom.Compiler.GeneratedCode(\"ZBase.Foundation.Data.DatabaseGenerator\", \"1.0.0\")]";
+        private const string EXCLUDE_COVERAGE = "[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]";
 
-//        public ImmutableArray<DataTableRef> DataTableRefs { get; }
+        public ImmutableArray<DataTableAssetRef> DataTableRefs { get; }
 
-//        public ImmutableArray<DataRef> DataRefs { get; }
+        public ImmutableArray<DataRef> DataRefs { get; }
 
-//        public DatabaseDeclaration(
-//              ImmutableArray<DataTableRef> dataTableRefs
-//            , ImmutableArray<DataRef> dataRefs
-//            , Compilation compilation
-//            , CancellationToken token
-//        )
-//        {
+        public DatabaseDeclaration(
+              ImmutableArray<DataTableAssetRef> dataTableAssetRefs
+            , ImmutableArray<DataRef> dataRefs
+            , Compilation compilation
+            , CancellationToken token
+        )
+        {
+            //var typeList = new List<DataTableRef>();
 
+            //foreach (var candidate in dataTableRefs)
+            //{
+            //    var syntaxTree = candidate.Syntax.SyntaxTree;
+            //    var semanticModel = compilation.GetSemanticModel(syntaxTree);
 
-//            //var typeList = new List<DataTableRef>();
+            //    candidate.Symbol = semanticModel.GetDeclaredSymbol(candidate.Syntax, token);
+            //    candidate.Fields = new List<IFieldSymbol>();
+            //    candidate.ElementTypes = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
-//            //foreach (var candidate in dataTableRefs)
-//            //{
-//            //    var syntaxTree = candidate.Syntax.SyntaxTree;
-//            //    var semanticModel = compilation.GetSemanticModel(syntaxTree);
+            //    var members = candidate.DataType.GetMembers();
 
-//            //    candidate.Symbol = semanticModel.GetDeclaredSymbol(candidate.Syntax, token);
-//            //    candidate.Fields = new List<IFieldSymbol>();
-//            //    candidate.ElementTypes = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
+            //    foreach (var member in members)
+            //    {
+            //        if (member is IFieldSymbol field)
+            //        {
+            //            if (field.HasAttribute(SERIALIZE_FIELD_ATTRIBUTE) == false)
+            //            {
+            //                continue;
+            //            }
 
-//            //    var members = candidate.DataType.GetMembers();
+            //            if (field.ToPropertyName() == "Id"
+            //                && SymbolEqualityComparer.Default.Equals(field.Type, candidate.IdType)
+            //            )
+            //            {
+            //                continue;
+            //            }
 
-//            //    foreach (var member in members)
-//            //    {
-//            //        if (member is IFieldSymbol field)
-//            //        {
-//            //            if (field.HasAttribute(SERIALIZE_FIELD_ATTRIBUTE) == false)
-//            //            {
-//            //                continue;
-//            //            }
+            //            candidate.Fields.Add(field);
 
-//            //            if (field.ToPropertyName() == "Id"
-//            //                && SymbolEqualityComparer.Default.Equals(field.Type, candidate.IdType)
-//            //            )
-//            //            {
-//            //                continue;
-//            //            }
+            //            if (field.Type is IArrayTypeSymbol arrayType)
+            //            {
+            //                var isIData = arrayType.ElementType
+            //                    .GetAllFullyQualifiedInterfaceAndBaseTypeNames()
+            //                    .Any(x => x == IDATA);
 
-//            //            candidate.Fields.Add(field);
+            //                if (isIData)
+            //                {
+            //                    candidate.ElementTypes.Add(arrayType.ElementType);
+            //                }
+            //            }
+            //        }
+            //    }
 
-//            //            if (field.Type is IArrayTypeSymbol arrayType)
-//            //            {
-//            //                var isIData = arrayType.ElementType
-//            //                    .GetAllFullyQualifiedInterfaceAndBaseTypeNames()
-//            //                    .Any(x => x == IDATA);
+            //    if (candidate.Fields.Count > 0)
+            //    {
+            //        typeList.Add(candidate);
+            //    }
+            //}
 
-//            //                if (isIData)
-//            //                {
-//            //                    candidate.ElementTypes.Add(arrayType.ElementType);
-//            //                }
-//            //            }
-//            //        }
-//            //    }
-
-//            //    if (candidate.Fields.Count > 0)
-//            //    {
-//            //        typeList.Add(candidate);
-//            //    }
-//            //}
-
-//            //using var typeRefArrayBuilder = ImmutableArrayBuilder<DataTableRef>.Rent();
-//            //typeRefArrayBuilder.AddRange(typeList);
-//            //DataTableRefs = typeRefArrayBuilder.ToImmutable();
-//        }
-//    }
-//}
+            //using var typeRefArrayBuilder = ImmutableArrayBuilder<DataTableRef>.Rent();
+            //typeRefArrayBuilder.AddRange(typeList);
+            //DataTableRefs = typeRefArrayBuilder.ToImmutable();
+        }
+    }
+}

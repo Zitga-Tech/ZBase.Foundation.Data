@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -6,32 +7,69 @@ namespace ZBase.Foundation.Data
 {
     public abstract class DataTableAsset : ScriptableObject
     {
-        internal abstract void SetDataTable(object obj);
+        internal abstract void SetRows(object obj);
     }
 
-    public abstract class DataTableAsset<TDataTable, TId, TData> : DataTableAsset
-        where TDataTable : IDataTable<TId, TData>
+    public abstract class DataTableAsset<TId, TData> : DataTableAsset, ISerializationCallbackReceiver
         where TData : IData
     {
         [SerializeField, SerializeReference]
-        private TDataTable _table;
+        private TData[] _rows;
 
-        public TDataTable Ref
+        private readonly Dictionary<TId, int> _rowMap = new();
+
+        public ReadOnlyMemory<TData> Rows
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => _table;
+            get => _rows;
         }
 
-        internal sealed override void SetDataTable(object obj)
+        public bool TryGetRow(TId id, out TData row)
         {
-            if (obj is TDataTable dataTable)
+            if (_rowMap.TryGetValue(id, out var index))
             {
-                _table = dataTable;
+                row = _rows[index];
+                return true;
+            }
+
+            row = default;
+            return false;
+        }
+
+        internal sealed override void SetRows(object obj)
+        {
+            if (obj is TData[] rows)
+            {
+                _rows = rows;
             }
             else
             {
-                throw new InvalidCastException($"Cannot cast {obj.GetType()} into {typeof(TDataTable)}");
+                _rows = Array.Empty<TData>();
+                Debug.LogError($"Cannot cast {obj.GetType()} into {typeof(TData[])}");
             }
+        }
+
+        protected abstract TId GetId(TData row);
+
+        void ISerializationCallbackReceiver.OnAfterDeserialize()
+        {
+            var rowMap = _rowMap;
+            rowMap.Clear();
+
+            var rows = _rows;
+            var length = rows.Length;
+            rowMap.EnsureCapacity(length);
+
+            for (var i = 0; i < length; i++)
+            {
+                var row = rows[i];
+                var id = GetId(row);
+                rowMap[id] = i;
+            }
+        }
+
+        void ISerializationCallbackReceiver.OnBeforeSerialize()
+        {
         }
     }
 }

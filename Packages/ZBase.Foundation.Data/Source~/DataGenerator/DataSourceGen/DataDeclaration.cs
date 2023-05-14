@@ -1,9 +1,8 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Threading;
 using ZBase.Foundation.SourceGen;
 
 namespace ZBase.Foundation.Data.DataSourceGen
@@ -18,7 +17,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
         public const string VERTICAL_LIST_TYPE = "global::Cathei.BakingSheet.VerticalList";
 
         private const string AGGRESSIVE_INLINING = "[global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]";
-        private const string GENERATED_CODE = "[global::System.CodeDom.Compiler.GeneratedCode(\"ZBase.Foundation.Data.DatabaseGenerator\", \"1.0.0\")]";
+        private const string GENERATED_CODE = "[global::System.CodeDom.Compiler.GeneratedCode(\"ZBase.Foundation.Data.DataGenerator\", \"1.0.0\")]";
         private const string EXCLUDE_COVERAGE = "[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]";
 
         public TypeDeclarationSyntax Syntax { get; }
@@ -38,19 +37,29 @@ namespace ZBase.Foundation.Data.DataSourceGen
             Symbol = semanticModel.GetDeclaredSymbol(candidate);
             IsRuntimeImmutable = Symbol.HasAttribute(RUNTIME_IMMUTABLE_ATTRIBUTE);
 
+            var existingProperties = new HashSet<string>();
+
             using var memberArrayBuilder = ImmutableArrayBuilder<IFieldSymbol>.Rent();
             var members = Symbol.GetMembers();
+
+            foreach (var member in members)
+            {
+                if (member is IPropertySymbol property)
+                {
+                    existingProperties.Add(property.Name);
+                }
+            }    
             
             foreach (var member in members)
             {
-                if (member is IFieldSymbol field)
+                if (member is IFieldSymbol field && field.HasAttribute(SERIALIZE_FIELD_ATTRIBUTE))
                 {
-                    if (field.HasAttribute(SERIALIZE_FIELD_ATTRIBUTE))
+                    var propertyName = field.ToPropertyName();
+
+                    if (existingProperties.Contains(propertyName) == false)
                     {
                         memberArrayBuilder.Add(field);
                     }
-
-                    continue;
                 }
             }
 

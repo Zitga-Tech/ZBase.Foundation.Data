@@ -1,8 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Collections.Generic;
 
-namespace ZBase.Foundation.Data.DatabaseSourceGen
+namespace ZBase.Foundation.Data.DataTableAssetSourceGen
 {
     public class DataTableAssetRef
     {
@@ -13,14 +12,5 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public ITypeSymbol IdType { get; set; }
 
         public ITypeSymbol DataType { get; set; }
-    }
-
-    public class DataRef
-    {
-        public TypeDeclarationSyntax Syntax { get; set; }
-
-        public ITypeSymbol Symbol { get; set; }
-
-        public List<IFieldSymbol> Fields { get; set; }
     }
 }

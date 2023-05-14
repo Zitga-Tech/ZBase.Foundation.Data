@@ -15,10 +15,9 @@ using ZBase.Foundation.Data.Authoring.SourceGen;
 
 namespace ZBase.Foundation.Data.Authoring
 {
-    public class DatabaseAssetExporter<TDataAsset, TDataTable, TId, TData>
+    public class DatabaseAssetExporter<TDataAsset, TId, TData>
         : ISheetExporter, ISheetFormatter
-        where TDataAsset : DataTableAsset<TDataTable, TId, TData>
-        where TDataTable : IDataTable<TId, TData>
+        where TDataAsset : DataTableAsset<TId, TData>
         where TData : IData
     {
         private readonly string _savePath;
@@ -43,18 +42,11 @@ namespace ZBase.Foundation.Data.Authoring
             var bakingContainerAsset = GenerateBakingContainerAsset(context, sheetProperties, this, bakingRowToAssetMap);
             MapBakingReferences(context, sheetProperties, bakingRowToAssetMap);
 
-            var databaseAsset = GenerateDatabaseAsset(context, _savePath, _databaseName, bakingContainerAsset, sheetProperties);
+            var databaseAsset = GenerateDatabaseAsset(context, _savePath, _databaseName, bakingContainerAsset);
             SaveAsset(databaseAsset);
 
             Result = databaseAsset;
             return Task.FromResult(true);
-        }
-
-        private static bool TryGetAttribute<T>(PropertyInfo property, out T attribute)
-            where T : Attribute
-        {
-            attribute = property.GetCustomAttribute<T>();
-            return attribute != null;
         }
 
         private static SheetContainerScriptableObject GenerateBakingContainerAsset(
@@ -200,47 +192,14 @@ namespace ZBase.Foundation.Data.Authoring
             return savePath;
         }
 
-        private static void GetMeta(
-              IReadOnlyDictionary<string, PropertyInfo> sheetProperties
-            , out IReadOnlyDictionary<string, Type> dataTableTypes
-            , out IReadOnlyDictionary<string, Type> dataTableAssetTypes
-        )
-        {
-            var dataTableTypesBuilder = new Dictionary<string, Type>();
-            var dataTableAssetTypesBuilder = new Dictionary<string, Type>();
-
-            foreach (var (name, property) in sheetProperties)
-            {
-                if (TryGetAttribute<DataTableInfoAttribute>(property, out var dtInfoAttrib))
-                {
-                    dataTableTypesBuilder[name] = dtInfoAttrib.DataTableType;
-                }
-
-                if (TryGetAttribute<DataTableAssetInfoAttribute>(property, out var dtaInfoAttrib))
-                {
-                    dataTableAssetTypesBuilder[name] = dtaInfoAttrib.DataTableAssetType;
-                }
-            }
-
-            dataTableTypes = dataTableTypesBuilder;
-            dataTableAssetTypes = dataTableAssetTypesBuilder;
-        }
-
         private static DatabaseAsset GenerateDatabaseAsset(
               SheetConvertingContext context
             , string savePath
             , string databaseName
             , SheetContainerScriptableObject bakingContainerAsset
-            , IReadOnlyDictionary<string, PropertyInfo> sheetProperties
         )
         {
             savePath = MakeFolderPath(savePath);
-
-            GetMeta(
-                  sheetProperties
-                , out var dataTableTypes
-                , out var dataTableAssetTypes
-            );
 
             var databaseAssetPath = Path.Combine(savePath, $"{databaseName}.asset");
             var databaseAsset = AssetDatabase.LoadAssetAtPath<DatabaseAsset>(databaseAssetPath);
@@ -259,14 +218,14 @@ namespace ZBase.Foundation.Data.Authoring
             {
                 using (context.Logger.BeginScope(sheet.name))
                 {
-                    if (TryGetDataTableAssetType(context, sheet.name, dataTableAssetTypes, out var dataTableAssetType) == false
-                        || TryGetDataTableType(context, sheet.name, dataTableTypes, out var dataTableType) == false
-                        || TryGetToDataTableMethod(context, sheet, dataTableType, out var toDataTableMethod) == false
+                    if (TryGetGeneratedSheetAttribute(context, sheet, out var sheetAttrib) == false
+                        || TryGetToDataRowsMethod(context, sheet, sheetAttrib.DataType, out var toDataRowsMethod) == false
                     )
                     {
                         continue;
                     }
 
+                    var dataTableAssetType = sheetAttrib.DataTableAssetType;
                     var dataTableAssetPath = Path.Combine(savePath, $"{dataTableAssetType.Name}.asset");
                     var dataTableAsset = AssetDatabase.LoadAssetAtPath<DataTableAsset>(dataTableAssetPath);
 
@@ -278,9 +237,8 @@ namespace ZBase.Foundation.Data.Authoring
 
                     dataTableAsset.name = dataTableAssetType.Name;
 
-                    var dataTable = toDataTableMethod.Invoke(sheet, null);
-                    dataTableAsset.SetDataTable(dataTable);
-
+                    var dataRows = toDataRowsMethod.Invoke(sheet, null);
+                    dataTableAsset.SetRows(dataRows);
                     dataTableAssetList.Add(dataTableAsset);
                 }
             }
@@ -289,74 +247,36 @@ namespace ZBase.Foundation.Data.Authoring
             return databaseAsset;
         }
 
-        private static bool TryGetDataTableAssetType(
-              SheetConvertingContext context
-            , string sheetName
-            , IReadOnlyDictionary<string, Type> dataTableAssetTypes
-            , out Type dataTableAssetType
-        )
-        {
-            if (dataTableAssetTypes.TryGetValue(sheetName, out dataTableAssetType) == false)
-            {
-                context.Logger.LogError("Cannot find corresponding DataTableAsset type for {SheetName}", sheetName);
-                return false;
-            }
-
-            if (typeof(DataTableAsset).IsAssignableFrom(dataTableAssetType) == false)
-            {
-                context.Logger.LogError("Cannot create an asset from {Type} because it is not derived from {DataTableAssetType}", dataTableAssetType, typeof(DataTableAsset));
-                return false;
-            }
-
-            if (dataTableAssetType.IsGenericType || dataTableAssetType.IsAbstract)
-            {
-                context.Logger.LogError("Cannot create an asset from {DataTableAssetType} because it is either open generic or abstract", dataTableAssetType.FullName);
-                return false;
-            }
-
-            return true;
-        }
-
-        private static bool TryGetDataTableType(
-              SheetConvertingContext context
-            , string sheetName
-            , IReadOnlyDictionary<string, Type> dataTableTypes
-            , out Type dataTableType
-        )
-        {
-            if (dataTableTypes.TryGetValue(sheetName, out dataTableType) == false)
-            {
-                context.Logger.LogError("Cannot find corresponding DataTable type for {SheetName}", sheetName);
-                return false;
-            }
-
-            if (dataTableType.IsGenericType || dataTableType.IsAbstract)
-            {
-                context.Logger.LogError("Cannot create an instance of {DataTableType} because it is either open generic or abstract", dataTableType.FullName);
-                return false;
-            }
-
-            if (dataTableType.GetConstructor(Type.EmptyTypes) == null)
-            {
-                context.Logger.LogError("Cannot create an instance of {DataTableType} because it does not have a parameterless constructor", dataTableType.FullName);
-                return false;
-            }
-
-            return true;
-        }
-
-        private static bool TryGetToDataTableMethod(
+        private static bool TryGetGeneratedSheetAttribute(
               SheetConvertingContext context
             , SheetScriptableObject sheet
-            , Type dataTableType
-            , out MethodInfo toDataTableMethod
+            , out GeneratedSheetAttribute attribute
         )
         {
-            var methodName = $"To{dataTableType.Name}";
             var sheetType = sheet.GetType();
-            toDataTableMethod = sheetType.GetMethod(methodName, Type.EmptyTypes);
+            attribute = sheetType.GetCustomAttribute<GeneratedSheetAttribute>();
 
-            if (toDataTableMethod == null)
+            if (attribute == null)
+            {
+                context.Logger.LogError("Cannot find {Attribute} on {Sheet}", typeof(GeneratedSheetAttribute), sheet.name);
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryGetToDataRowsMethod(
+              SheetConvertingContext context
+            , SheetScriptableObject sheet
+            , Type dataType
+            , out MethodInfo toDataRowsMethod
+        )
+        {
+            var methodName = $"To{dataType.Name}Rows";
+            var sheetType = sheet.GetType();
+            toDataRowsMethod = sheetType.GetMethod(methodName, Type.EmptyTypes);
+
+            if (toDataRowsMethod == null)
             {
                 context.Logger.LogError("Cannot find {MethodName} method in {SheetType}", methodName, sheetType.Name);
                 return false;

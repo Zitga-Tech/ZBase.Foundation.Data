@@ -69,6 +69,31 @@ namespace ZBase.Foundation.Data.DataSourceGen
                         p.PrintEndLine();
                     }
                 }
+
+                p.PrintEndLine().Print("#if UNITY_EDITOR").PrintEndLine();
+                p.PrintLine("[global::System.Obsolete(\"This method is not intended to be used directly by user code.\")]");
+                p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
+                p.PrintLine("internal void SetValues(");
+                p = p.IncreasedIndent();
+                {
+                    for (var i = 0; i < Fields.Length; i++)
+                    {
+                        var field = Fields[i];
+                        var comma = i == 0 ? " " : ",";
+                        p.PrintLine($"{comma} {field.Type.ToFullName()} {field.Name}");
+                    }
+                }
+                p = p.DecreasedIndent();
+                p.PrintLine(")");
+                p.OpenScope();
+                {
+                    foreach (var field in Fields)
+                    {
+                        p.PrintLine($"this.{field.Name} = {field.Name};");
+                    }
+                }
+                p.CloseScope();
+                p.PrintEndLine().Print("#endif").PrintEndLine();
             }
             p.CloseScope();
 

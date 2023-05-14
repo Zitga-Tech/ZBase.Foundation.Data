@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
@@ -7,20 +6,20 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ZBase.Foundation.SourceGen;
 
-namespace ZBase.Foundation.Data.DataSourceGen
+namespace ZBase.Foundation.Data.DataTableAssetSourceGen
 {
     [Generator]
-    public class DataGenerator : IIncrementalGenerator
+    public class DataTableAssetGenerator : IIncrementalGenerator
     {
-        public const string GENERATOR_NAME = nameof(DataGenerator);
-        public const string IDATA = "global::ZBase.Foundation.Data.IData";
+        public const string GENERATOR_NAME = nameof(DataTableAssetGenerator);
+        public const string DATA_TABLE_ASSET_T = "global::ZBase.Foundation.Data.DataTableAsset<";
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
             var projectPathProvider = SourceGenHelpers.GetSourceGenConfigProvider(context);
 
             var dataRefProvider = context.SyntaxProvider.CreateSyntaxProvider(
-                predicate: static (node, token) => GeneratorHelper.IsStructOrClassSyntaxMatch(node, token),
+                predicate: static (node, token) => GeneratorHelper.IsClassSyntaxMatch(node, token),
                 transform: static (syntaxContext, token) => GetSemanticMatch(syntaxContext, token)
             ).Where(static t => t is { });
 
@@ -39,15 +38,14 @@ namespace ZBase.Foundation.Data.DataSourceGen
             });
         }
 
-        public static TypeDeclarationSyntax GetSemanticMatch(
-             GeneratorSyntaxContext context
-           , CancellationToken token
-       )
+        public static DataTableAssetRef GetSemanticMatch(
+              GeneratorSyntaxContext context
+            , CancellationToken token
+        )
         {
             if (context.SemanticModel.Compilation.IsValidCompilation() == false
-                || context.Node is not TypeDeclarationSyntax typeSyntax
-                || typeSyntax.Kind() is not (SyntaxKind.ClassDeclaration or SyntaxKind.StructDeclaration)
-                || typeSyntax.BaseList == null
+                || context.Node is not ClassDeclarationSyntax classSyntax
+                || classSyntax.BaseList == null
             )
             {
                 return null;
@@ -55,45 +53,32 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
             var semanticModel = context.SemanticModel;
 
-            foreach (var baseType in typeSyntax.BaseList.Types)
+            foreach (var baseType in classSyntax.BaseList.Types)
             {
                 var typeInfo = semanticModel.GetTypeInfo(baseType.Type, token);
-
-                if (typeInfo.Type is INamedTypeSymbol typeSymbol
-                    && typeSymbol.ToFullName() == IDATA
-                )
+                
+                if (typeInfo.Type is INamedTypeSymbol typeSymbol)
                 {
-                    return typeSyntax;
-                }
-
-                if (DoesMatchInterface(typeInfo.Type.Interfaces)
-                    || DoesMatchInterface(typeInfo.Type.AllInterfaces)
-                )
-                {
-                    return typeSyntax;
+                    if (typeSymbol.IsGenericType
+                        && typeSymbol.TypeArguments.Length == 2
+                        && typeSymbol.ToFullName().StartsWith(DATA_TABLE_ASSET_T))
+                    {
+                        return new DataTableAssetRef {
+                            Syntax = classSyntax,
+                            IdType = typeSymbol.TypeArguments[0],
+                            DataType = typeSymbol.TypeArguments[1],
+                        };
+                    }
                 }
             }
 
             return null;
-
-            static bool DoesMatchInterface(ImmutableArray<INamedTypeSymbol> interfaces)
-            {
-                foreach (var interfaceSymbol in interfaces)
-                {
-                    if (interfaceSymbol.ToFullName() == IDATA)
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
         }
 
         private static void GenerateOutput(
               SourceProductionContext context
             , Compilation compilation
-            , TypeDeclarationSyntax candidate
+            , DataTableAssetRef candidate
             , string projectPath
             , bool outputSourceGenFiles
         )
@@ -105,30 +90,27 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
             context.CancellationToken.ThrowIfCancellationRequested();
 
+            var syntax = candidate.Syntax;
+
             try
             {
                 SourceGenHelpers.ProjectPath = projectPath;
 
-                var syntaxTree = candidate.SyntaxTree;
+                var syntaxTree = syntax.SyntaxTree;
                 var semanticModel = compilation.GetSemanticModel(syntaxTree);
-                var declaration = new DataDeclaration(candidate, semanticModel);
-
-                if (declaration.Fields.Length < 1)
-                {
-                    return;
-                }
+                var declaration = new DataTableAssetDeclaration(candidate, semanticModel);
 
                 var source = declaration.WriteCode();
                 var sourceFilePath = syntaxTree.GetGeneratedSourceFilePath(compilation.Assembly.Name, GENERATOR_NAME);
                 var outputSource = TypeCreationHelpers.GenerateSourceTextForRootNodes(
                       sourceFilePath
-                    , candidate
+                    , syntax
                     , source
                     , context.CancellationToken
                 );
 
                 context.AddSource(
-                      syntaxTree.GetGeneratedSourceFileName(GENERATOR_NAME, candidate, declaration.Symbol.ToValidIdentifier())
+                      syntaxTree.GetGeneratedSourceFileName(GENERATOR_NAME, syntax, declaration.Symbol.ToValidIdentifier())
                     , outputSource
                 );
 
@@ -136,7 +118,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 {
                     SourceGenHelpers.OutputSourceToFile(
                           context
-                        , candidate.GetLocation()
+                        , syntax.GetLocation()
                         , sourceFilePath
                         , outputSource
                     );
@@ -146,17 +128,17 @@ namespace ZBase.Foundation.Data.DataSourceGen
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                       s_errorDescriptor
-                    , candidate.GetLocation()
+                    , syntax.GetLocation()
                     , e.ToUnityPrintableString()
                 ));
             }
         }
 
         private static readonly DiagnosticDescriptor s_errorDescriptor
-            = new("SG_DATA_01"
-                , "Data Generator Error"
-                , "This error indicates a bug in the Data source generators. Error message: '{0}'."
-                , "ZBase.Foundation.Data.IData"
+            = new("SG_DATA_TABLE_ASSET_01"
+                , "Data Table Asset Generator Error"
+                , "This error indicates a bug in the Data Table Asset source generators. Error message: '{0}'."
+                , "ZBase.Foundation.Data.DataTableAsset<TId, TData>"
                 , DiagnosticSeverity.Error
                 , isEnabledByDefault: true
                 , description: ""

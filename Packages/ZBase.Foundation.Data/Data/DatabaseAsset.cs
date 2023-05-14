@@ -47,13 +47,16 @@ namespace ZBase.Foundation.Data
             _tableAssets = assets.Where(x => x == true).ToArray();
         }
 
-        public void OnBeforeSerialize() { }
+        void ISerializationCallbackReceiver.OnBeforeSerialize()
+        {
+        }
 
-        public void OnAfterDeserialize()
+        void ISerializationCallbackReceiver.OnAfterDeserialize()
         {
             var assets = _tableAssets;
             var assetMap = _tableAssetMap;
             assetMap.Clear();
+            assetMap.EnsureCapacity(assets.Length);
 
             foreach (var asset in assets)
             {

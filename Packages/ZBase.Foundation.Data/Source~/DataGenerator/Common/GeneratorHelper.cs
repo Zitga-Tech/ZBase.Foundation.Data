@@ -17,6 +17,15 @@ namespace ZBase.Foundation.Data
         public static bool IsValidCompilation(this Compilation compilation)
             => compilation.Assembly.HasAttribute(DISABLE_ATTRIBUTE) == false;
 
+        public static bool IsClassSyntaxMatch(SyntaxNode syntaxNode, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+
+            return syntaxNode is ClassDeclarationSyntax classSyntax
+                && classSyntax.BaseList != null
+                && classSyntax.BaseList.Types.Count > 0;
+        }
+
         public static bool IsStructOrClassSyntaxMatch(SyntaxNode syntaxNode, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();

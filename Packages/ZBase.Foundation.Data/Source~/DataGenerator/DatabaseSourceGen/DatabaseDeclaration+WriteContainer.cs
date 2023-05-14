@@ -59,7 +59,7 @@
 
 //        }
 
-//        private static string WriteCodeContainer(string assemblyName, ImmutableArray<DataTableRef> dataTableRefs)
+//        private static string WriteCodeContainer(string assemblyName, ImmutableArray<DataTableAssetRef> dataTableRefs)
 //        {
 //            var p = Printer.DefaultLarge;
 
