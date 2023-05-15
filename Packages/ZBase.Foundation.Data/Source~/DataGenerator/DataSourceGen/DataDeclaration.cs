@@ -11,7 +11,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
     {
         public const string GENERATOR_NAME = nameof(DataGenerator);
         public const string SERIALIZE_FIELD_ATTRIBUTE = "global::UnityEngine.SerializeField";
-        public const string RUNTIME_IMMUTABLE_ATTRIBUTE = "global::ZBase.Foundation.Data.RuntimeImmutableAttribute";
+        public const string DATA_MUTABLE_ATTRIBUTE = "global::ZBase.Foundation.Data.DataMutableAttribute";
         public const string VERTICAL_ARRAY_ATTRIBUTE = "global::ZBase.Foundation.Data.VerticalArrayAttribute";
         public const string LIST_TYPE = "global::System.Collections.Generic.List";
         public const string VERTICAL_LIST_TYPE = "global::Cathei.BakingSheet.VerticalList";
@@ -24,9 +24,9 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
         public INamedTypeSymbol Symbol { get; }
 
-        public bool IsRuntimeImmutable { get; }
+        public bool IsMutable { get; }
 
-        public ImmutableArray<IFieldSymbol> Fields { get; }
+        public ImmutableArray<FieldRef> Fields { get; }
 
         public DataDeclaration(
               TypeDeclarationSyntax candidate
@@ -35,11 +35,11 @@ namespace ZBase.Foundation.Data.DataSourceGen
         {
             Syntax = candidate;
             Symbol = semanticModel.GetDeclaredSymbol(candidate);
-            IsRuntimeImmutable = Symbol.HasAttribute(RUNTIME_IMMUTABLE_ATTRIBUTE);
+            IsMutable = Symbol.HasAttribute(DATA_MUTABLE_ATTRIBUTE);
 
             var existingProperties = new HashSet<string>();
 
-            using var memberArrayBuilder = ImmutableArrayBuilder<IFieldSymbol>.Rent();
+            using var memberArrayBuilder = ImmutableArrayBuilder<FieldRef>.Rent();
             var members = Symbol.GetMembers();
 
             foreach (var member in members)
@@ -55,15 +55,42 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 if (member is IFieldSymbol field && field.HasAttribute(SERIALIZE_FIELD_ATTRIBUTE))
                 {
                     var propertyName = field.ToPropertyName();
+                    var fieldRef = new FieldRef {
+                        Field = field,
+                        Type = field.Type,
+                        PropertyName = propertyName,
+                        PropertyIsImplemented = existingProperties.Contains(propertyName),
+                    };
 
-                    if (existingProperties.Contains(propertyName) == false)
+                    if (field.Type is IArrayTypeSymbol arrayType)
                     {
-                        memberArrayBuilder.Add(field);
+                        fieldRef.IsArray = true;
+                        fieldRef.ArrayElementType = arrayType.ElementType;
+                        fieldRef.IsVerticalArray = field.HasAttribute(VERTICAL_ARRAY_ATTRIBUTE);
                     }
+
+                    memberArrayBuilder.Add(fieldRef);
                 }
             }
 
             Fields = memberArrayBuilder.ToImmutable();
+        }
+
+        public class FieldRef
+        {
+            public IFieldSymbol Field { get; set; }
+
+            public ITypeSymbol Type { get; set; }
+
+            public string PropertyName { get; set; }
+
+            public bool PropertyIsImplemented { get; set; }
+
+            public bool IsArray { get; set; }
+
+            public ITypeSymbol ArrayElementType { get; set; }
+
+            public bool IsVerticalArray { get; set; }
         }
     }
 }

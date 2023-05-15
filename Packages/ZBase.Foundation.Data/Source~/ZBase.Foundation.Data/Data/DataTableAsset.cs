@@ -13,7 +13,7 @@ namespace ZBase.Foundation.Data
     public abstract class DataTableAsset<TId, TData> : DataTableAsset, ISerializationCallbackReceiver
         where TData : IData
     {
-        [SerializeField, SerializeReference]
+        [SerializeField]
         private TData[] _rows;
 
         private readonly Dictionary<TId, int> _rowMap = new();
@@ -49,7 +49,7 @@ namespace ZBase.Foundation.Data
             }
         }
 
-        protected abstract TId GetId(TData row);
+        protected abstract TId GetId(in TData row);
 
         void ISerializationCallbackReceiver.OnAfterDeserialize()
         {

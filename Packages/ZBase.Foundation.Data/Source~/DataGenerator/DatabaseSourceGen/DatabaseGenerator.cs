@@ -60,6 +60,12 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
 
             var semanticModel = context.SemanticModel;
+            var symbol = semanticModel.GetDeclaredSymbol(classSyntax);
+
+            if (symbol.IsAbstract)
+            {
+                return null;
+            }
 
             foreach (var baseType in classSyntax.BaseList.Types)
             {
@@ -73,6 +79,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     {
                         return new DataTableAssetRef {
                             Syntax = classSyntax,
+                            Symbol = symbol,
                             IdType = typeSymbol.TypeArguments[0],
                             DataType = typeSymbol.TypeArguments[1],
                         };
@@ -83,7 +90,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             return null;
         }
 
-        public static DataRef GetDataRefSemanticMatch(
+        public static TypeDeclarationSyntax GetDataRefSemanticMatch(
               GeneratorSyntaxContext context
             , CancellationToken token
         )
@@ -93,24 +100,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 || typeSyntax.Kind() is not (SyntaxKind.ClassDeclaration or SyntaxKind.StructDeclaration)
                 || typeSyntax.BaseList == null
             )
-            {
-                return null;
-            }
-
-            var isValid = false;
-
-            foreach (var member in typeSyntax.Members)
-            {
-                if (member is FieldDeclarationSyntax fieldSyntax
-                    && fieldSyntax.HasAttributeCandidate("UnityEngine", "SerializeField")
-                )
-                {
-                    isValid = true;
-                    break;
-                }
-            }
-
-            if (isValid == false)
             {
                 return null;
             }
@@ -125,18 +114,14 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     && typeSymbol.ToFullName() == IDATA
                 )
                 {
-                    return new DataRef {
-                        Syntax = typeSyntax,
-                    };
+                    return typeSyntax;
                 }
 
                 if (DoesMatchInterface(typeInfo.Type.Interfaces)
                     || DoesMatchInterface(typeInfo.Type.AllInterfaces)
                 )
                 {
-                    return new DataRef {
-                        Syntax = typeSyntax,
-                    };
+                    return typeSyntax;
                 }
             }
 
@@ -160,7 +145,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
               SourceProductionContext context
             , Compilation compilation
             , ImmutableArray<DataTableAssetRef> dataTableRefs
-            , ImmutableArray<DataRef> dataRefs
+            , ImmutableArray<TypeDeclarationSyntax> dataRefs
             , string projectPath
             , bool outputSourceGenFiles
         )
@@ -206,7 +191,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             = new("SG_DATABASE_01"
                 , "Database Generator Error"
                 , "This error indicates a bug in the Database source generators. Error message: '{0}'."
-                , "ZBase.Foundation.Data.IDataTable<TId, TData>"
+                , "ZBase.Foundation.Data.DatabaseAsset"
                 , DiagnosticSeverity.Error
                 , isEnabledByDefault: true
                 , description: ""

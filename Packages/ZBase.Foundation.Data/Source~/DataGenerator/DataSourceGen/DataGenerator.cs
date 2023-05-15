@@ -7,6 +7,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ZBase.Foundation.SourceGen;
 
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+
 namespace ZBase.Foundation.Data.DataSourceGen
 {
     [Generator]
@@ -40,9 +42,9 @@ namespace ZBase.Foundation.Data.DataSourceGen
         }
 
         public static TypeDeclarationSyntax GetSemanticMatch(
-             GeneratorSyntaxContext context
-           , CancellationToken token
-       )
+              GeneratorSyntaxContext context
+            , CancellationToken token
+        )
         {
             if (context.SemanticModel.Compilation.IsValidCompilation() == false
                 || context.Node is not TypeDeclarationSyntax typeSyntax
@@ -118,29 +120,29 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     return;
                 }
 
-                var source = declaration.WriteCode();
-                var sourceFilePath = syntaxTree.GetGeneratedSourceFilePath(compilation.Assembly.Name, GENERATOR_NAME);
-                var outputSource = TypeCreationHelpers.GenerateSourceTextForRootNodes(
-                      sourceFilePath
-                    , candidate
-                    , source
-                    , context.CancellationToken
+                var assemblyName = compilation.Assembly.Name;
+
+                OutputSource(
+                      context
+                    , outputSourceGenFiles
+                    , declaration.Syntax
+                    , declaration.WritePartialData()
+                    , syntaxTree.GetGeneratedSourceFileName(GENERATOR_NAME, declaration.Syntax, declaration.Symbol.ToValidIdentifier())
+                    , syntaxTree.GetGeneratedSourceFilePath(assemblyName, GENERATOR_NAME)
                 );
 
-                context.AddSource(
-                      syntaxTree.GetGeneratedSourceFileName(GENERATOR_NAME, candidate, declaration.Symbol.ToValidIdentifier())
-                    , outputSource
-                );
+                var newCompilation = CompilationUnit().NormalizeWhitespace(eol: "\n");
+                var namespaceFileName = declaration.Symbol.ContainingNamespace.ToDisplayString().ToValidIdentifier();
+                var fileName = $"BakingSheets_{namespaceFileName}_{declaration.Symbol.Name}Sheet";
 
-                if (outputSourceGenFiles)
-                {
-                    SourceGenHelpers.OutputSourceToFile(
-                          context
-                        , candidate.GetLocation()
-                        , sourceFilePath
-                        , outputSource
-                    );
-                }
+                OutputSource(
+                      context
+                    , outputSourceGenFiles
+                    , newCompilation
+                    , declaration.WriteSheet()
+                    , newCompilation.SyntaxTree.GetGeneratedSourceFileName(GENERATOR_NAME, fileName, newCompilation)
+                    , newCompilation.SyntaxTree.GetGeneratedSourceFilePath(assemblyName, GENERATOR_NAME)
+                );
             }
             catch (Exception e)
             {
@@ -149,6 +151,30 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     , candidate.GetLocation()
                     , e.ToUnityPrintableString()
                 ));
+            }
+        }
+
+        private static void OutputSource(
+              SourceProductionContext context
+            , bool outputSourceGenFiles
+            , SyntaxNode syntax
+            , string source
+            , string hintName
+            , string sourceFilePath
+        )
+        {
+            var outputSource = TypeCreationHelpers.GenerateSourceTextForRootNodes(
+                  sourceFilePath
+                , syntax
+                , source
+                , context.CancellationToken
+            );
+
+            context.AddSource(hintName, outputSource);
+
+            if (outputSourceGenFiles)
+            {
+                SourceGenHelpers.OutputSourceToFile(context, syntax.GetLocation(), sourceFilePath, outputSource);
             }
         }
 

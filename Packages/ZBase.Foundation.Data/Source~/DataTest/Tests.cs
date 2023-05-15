@@ -25,7 +25,6 @@ namespace RumbleDefense
         ID0005,
     }
 
-    [RuntimeImmutable]
     public partial struct HeroData : IData
     {
         [SerializeField]
@@ -50,7 +49,6 @@ namespace RumbleDefense
         private string[] _descriptions;
     }
 
-    [RuntimeImmutable]
     public partial struct HeroStatMultiplier : IData
     {
         [SerializeField]
@@ -63,16 +61,13 @@ namespace RumbleDefense
         private string _requiredItem;
     }
 
-    [RuntimeImmutable]
+    [NamingStrategy(NamingStrategy.SnakeCase)]
     public partial class HeraDataTableAsset : DataTableAsset<HeroId, HeroData>
     {
-        [global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        protected override HeroId GetId(HeroData row)
-            => row.Id;
     }
 }
 
-namespace DataSourceGenCodeDesign
+namespace RumbleDefense.Authoring
 {
 #pragma warning disable
 
@@ -100,7 +95,7 @@ namespace DataSourceGenCodeDesign
             public List<string> Descriptions { get; set; }
         }
 
-        [GeneratedListElement(typeof(HeroStatMultiplier))]
+        [GeneratedDataRow(typeof(HeroStatMultiplier))]
         public partial class HeroStatMultiplierListElement
         {
             public float StatMultiplier { get; set; }

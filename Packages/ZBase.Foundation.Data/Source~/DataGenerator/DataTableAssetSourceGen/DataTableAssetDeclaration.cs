@@ -1,9 +1,4 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using ZBase.Foundation.SourceGen;
 
 namespace ZBase.Foundation.Data.DataTableAssetSourceGen
 {
@@ -14,17 +9,33 @@ namespace ZBase.Foundation.Data.DataTableAssetSourceGen
         private const string GENERATED_CODE = "[global::System.CodeDom.Compiler.GeneratedCode(\"ZBase.Foundation.Data.DataTableAssetGenerator\", \"1.0.0\")]";
         private const string EXCLUDE_COVERAGE = "[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]";
 
-        public TypeDeclarationSyntax Syntax { get; }
+        public DataTableAssetRef TypeRef { get; }
 
-        public INamedTypeSymbol Symbol { get; }
+        public bool GetIdMethodIsImplemented { get; }
 
-        public DataTableAssetDeclaration(
-              DataTableAssetRef candidate
-            , SemanticModel semanticModel
-        )
+        public DataTableAssetDeclaration(DataTableAssetRef candidate)
         {
-            Syntax = candidate.Syntax;
-            Symbol = semanticModel.GetDeclaredSymbol(candidate.Syntax);
+            TypeRef = candidate;
+
+            var members = candidate.Symbol.GetMembers();
+
+            foreach (var member in members)
+            {
+                if (member is not IMethodSymbol method)
+                {
+                    continue;
+                }
+
+                if (method.Name == "GetId"
+                    && method.Parameters.Length == 1
+                    && method.Parameters[0].RefKind == RefKind.In
+                    && SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, TypeRef.DataType)
+                )
+                {
+                    GetIdMethodIsImplemented = true;
+                    break;
+                }
+            }
         }
     }
 }

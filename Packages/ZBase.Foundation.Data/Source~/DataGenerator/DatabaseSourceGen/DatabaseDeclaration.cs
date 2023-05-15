@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -15,7 +16,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public const string VERTICAL_ARRAY_ATTRIBUTE = "global::ZBase.Foundation.Data.VerticalArrayAttribute";
         public const string LIST_TYPE = "global::System.Collections.Generic.List";
         public const string VERTICAL_LIST_TYPE = "global::Cathei.BakingSheet.VerticalList";
-        public const string IDATA = "global::ZBase.Foundation.Data.IData";
 
         private const string AGGRESSIVE_INLINING = "[global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]";
         private const string GENERATED_CODE = "[global::System.CodeDom.Compiler.GeneratedCode(\"ZBase.Foundation.Data.DatabaseGenerator\", \"1.0.0\")]";
@@ -27,7 +27,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
         public DatabaseDeclaration(
               ImmutableArray<DataTableAssetRef> dataTableAssetRefs
-            , ImmutableArray<DataRef> dataRefs
+            , ImmutableArray<TypeDeclarationSyntax> dataRefs
             , Compilation compilation
             , CancellationToken token
         )

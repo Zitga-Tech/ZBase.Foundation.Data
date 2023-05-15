@@ -37,11 +37,11 @@ namespace ZBase.Foundation.Data.Authoring.SourceGen
     }
 
     [AttributeUsage(AttributeTargets.Class)]
-    public sealed class GeneratedListElementAttribute : Attribute
+    public sealed class GeneratedDataRowAttribute : Attribute
     {
         public Type DataType { get; }
 
-        public GeneratedListElementAttribute(Type dataType)
+        public GeneratedDataRowAttribute(Type dataType)
         {
             this.DataType = dataType;
         }

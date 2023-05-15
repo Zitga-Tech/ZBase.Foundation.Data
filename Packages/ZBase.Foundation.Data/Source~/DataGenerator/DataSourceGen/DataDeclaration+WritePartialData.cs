@@ -1,11 +1,10 @@
-﻿using Microsoft.CodeAnalysis;
-using ZBase.Foundation.SourceGen;
+﻿using ZBase.Foundation.SourceGen;
 
 namespace ZBase.Foundation.Data.DataSourceGen
 {
     partial class DataDeclaration
     {
-        public string WriteCode()
+        public string WritePartialData()
         {
             var keyword = Symbol.IsValueType ? "struct" : "class";
 
@@ -25,14 +24,19 @@ namespace ZBase.Foundation.Data.DataSourceGen
             {
                 foreach (var field in Fields)
                 {
+                    if (field.PropertyIsImplemented)
+                    {
+                        continue;
+                    }
+
+                    var fieldName = field.Field.Name;
                     bool isArray;
                     string typeName;
-                    var propertyName = field.ToPropertyName();
 
-                    if (field.Type is IArrayTypeSymbol arrayType)
+                    if (field.IsArray)
                     {
                         isArray = true;
-                        typeName = $"global::System.ReadOnlyMemory<{arrayType.ElementType.ToFullName()}>";
+                        typeName = $"global::System.ReadOnlyMemory<{field.ArrayElementType.ToFullName()}>";
                     }
                     else
                     {
@@ -41,29 +45,29 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     }
 
                     p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-                    p.PrintLine($"public {typeName} {propertyName}");
+                    p.PrintLine($"public {typeName} {field.PropertyName}");
                     p.OpenScope();
                     {
                         p.PrintLine(AGGRESSIVE_INLINING);
-                        p.PrintLine($"get => this.{field.Name};");
+                        p.PrintLine($"get => this.{fieldName};");
 
-                        if (!IsRuntimeImmutable && !isArray)
+                        if (IsMutable && !isArray)
                         {
                             p.PrintEndLine();
                             p.PrintLine(AGGRESSIVE_INLINING);
-                            p.PrintLine($"set => this.{field.Name} = value;");
+                            p.PrintLine($"set => this.{fieldName} = value;");
                         }
                     }
                     p.CloseScope();
                     p.PrintEndLine();
 
-                    if (IsRuntimeImmutable == false && isArray)
+                    if (IsMutable && isArray)
                     {
                         p.PrintLine(AGGRESSIVE_INLINING).PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-                        p.PrintLine($"public void Set{propertyName}({field.Type.ToFullName()} value)");
+                        p.PrintLine($"public void Set{field.PropertyName}({field.Type.ToFullName()} value)");
                         p.OpenScope();
                         {
-                            p.PrintLine($"this.{field.Name} = value;");
+                            p.PrintLine($"this.{fieldName} = value;");
                         }
                         p.CloseScope();
                         p.PrintEndLine();
@@ -80,7 +84,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     {
                         var field = Fields[i];
                         var comma = i == 0 ? " " : ",";
-                        p.PrintLine($"{comma} {field.Type.ToFullName()} {field.Name}");
+                        p.PrintLine($"{comma} {field.Type.ToFullName()} {field.Field.Name}");
                     }
                 }
                 p = p.DecreasedIndent();
@@ -89,7 +93,8 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 {
                     foreach (var field in Fields)
                     {
-                        p.PrintLine($"this.{field.Name} = {field.Name};");
+                        var fieldName = field.Field.Name;
+                        p.PrintLine($"this.{fieldName} = {fieldName};");
                     }
                 }
                 p.CloseScope();

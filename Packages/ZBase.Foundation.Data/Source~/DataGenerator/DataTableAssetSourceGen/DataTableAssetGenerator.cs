@@ -52,6 +52,12 @@ namespace ZBase.Foundation.Data.DataTableAssetSourceGen
             }
 
             var semanticModel = context.SemanticModel;
+            var symbol = semanticModel.GetDeclaredSymbol(classSyntax);
+
+            if (symbol.IsAbstract)
+            {
+                return null;
+            }
 
             foreach (var baseType in classSyntax.BaseList.Types)
             {
@@ -65,6 +71,7 @@ namespace ZBase.Foundation.Data.DataTableAssetSourceGen
                     {
                         return new DataTableAssetRef {
                             Syntax = classSyntax,
+                            Symbol = symbol,
                             IdType = typeSymbol.TypeArguments[0],
                             DataType = typeSymbol.TypeArguments[1],
                         };
@@ -97,8 +104,12 @@ namespace ZBase.Foundation.Data.DataTableAssetSourceGen
                 SourceGenHelpers.ProjectPath = projectPath;
 
                 var syntaxTree = syntax.SyntaxTree;
-                var semanticModel = compilation.GetSemanticModel(syntaxTree);
-                var declaration = new DataTableAssetDeclaration(candidate, semanticModel);
+                var declaration = new DataTableAssetDeclaration(candidate);
+
+                if (declaration.GetIdMethodIsImplemented)
+                {
+                    return;
+                }
 
                 var source = declaration.WriteCode();
                 var sourceFilePath = syntaxTree.GetGeneratedSourceFilePath(compilation.Assembly.Name, GENERATOR_NAME);
@@ -110,7 +121,7 @@ namespace ZBase.Foundation.Data.DataTableAssetSourceGen
                 );
 
                 context.AddSource(
-                      syntaxTree.GetGeneratedSourceFileName(GENERATOR_NAME, syntax, declaration.Symbol.ToValidIdentifier())
+                      syntaxTree.GetGeneratedSourceFileName(GENERATOR_NAME, syntax, declaration.TypeRef.Symbol.ToValidIdentifier())
                     , outputSource
                 );
 
