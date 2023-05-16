@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace ZBase.Foundation.Data.DatabaseSourceGen
@@ -14,5 +15,9 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public ITypeSymbol DataType { get; set; }
 
         public AttributeData NamingAttribute { get; set; }
+
+        public AttributeData DatabaseAttribute { get; set; }
+
+        public ImmutableArray<string> NestedDataTypeFullNames { get; set; }
     }
 }

@@ -16,6 +16,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public const string IDATA = "global::ZBase.Foundation.Data.IData";
         public const string DATA_TABLE_ASSET_T = "global::ZBase.Foundation.Data.DataTableAsset<";
         public const string DATA_SHEET_NAMING_ATTRIBUTE = "global::ZBase.Foundation.Data.DataSheetNamingAttribute";
+        public const string DATABASE_ATTRIBUTE = "global::ZBase.Foundation.Data.DatabaseAttribute";
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
@@ -85,6 +86,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                             IdType = typeSymbol.TypeArguments[0],
                             DataType = typeSymbol.TypeArguments[1],
                             NamingAttribute = symbol.GetAttribute(DATA_SHEET_NAMING_ATTRIBUTE),
+                            DatabaseAttribute = symbol.GetAttribute(DATABASE_ATTRIBUTE),
                         };
                     }
                 }
@@ -100,6 +102,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         {
             if (context.SemanticModel.Compilation.IsValidCompilation() == false
                 || context.Node is not TypeDeclarationSyntax typeSyntax
+                || typeSyntax.Modifiers.Any(SyntaxKind.ReadOnlyKeyword)
                 || typeSyntax.Kind() is not (SyntaxKind.ClassDeclaration or SyntaxKind.StructDeclaration)
                 || typeSyntax.BaseList == null
             )
@@ -166,7 +169,22 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                 var token = context.CancellationToken;
                 var dataMap = BuildDataMap(compilation, dataDeclarations, token);
-                var databaseDeclaration = new DatabaseDeclaration(candidates, dataMap);
+                var databaseMap = BuildDatabaseMap(candidates);
+                var databaseDeclaration = new DatabaseDeclaration(candidates, dataMap, databaseMap);
+
+                databaseDeclaration.GenerateSheets(
+                      context
+                    , compilation
+                    , outputSourceGenFiles
+                    , s_errorDescriptor
+                );
+
+                databaseDeclaration.GenerateContainers(
+                      context
+                    , compilation
+                    , outputSourceGenFiles
+                    , s_errorDescriptor
+                );
             }
             catch (Exception e)
             {
@@ -202,6 +220,48 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             return map;
         }
 
+        private static Dictionary<string, HashSet<DataTableAssetRef>> BuildDatabaseMap(
+            ImmutableArray<DataTableAssetRef> dataTableAssetRefs
+        )
+        {
+            var result = new Dictionary<string, HashSet<DataTableAssetRef>>();
+
+            foreach (var dataTableAssetRef in dataTableAssetRefs)
+            {
+                if (dataTableAssetRef.DatabaseAttribute == null)
+                {
+                    continue;
+                }
+
+                var attribArgs = dataTableAssetRef.DatabaseAttribute.ConstructorArguments;
+
+                if (attribArgs.Length != 2)
+                {
+                    continue;
+                }
+
+                var namespaceName = attribArgs[0].Value.ToString();
+                var typeName = attribArgs[1].Value.ToString();
+
+                if (string.IsNullOrWhiteSpace(namespaceName)
+                    || string.IsNullOrWhiteSpace(typeName))
+                {
+                    continue;
+                }
+
+                var key = $"{namespaceName}:{typeName}";
+
+                if (result.TryGetValue(key, out var types) == false)
+                {
+                    result[key] = types = new HashSet<DataTableAssetRef>(DataTableAssetRefEqualityComparer.Default);
+                }
+
+                types.Add(dataTableAssetRef);
+            }
+
+            return result;
+        }
+
         private static readonly DiagnosticDescriptor s_errorDescriptor
             = new("SG_DATABASE_01"
                 , "Database Generator Error"
@@ -212,5 +272,19 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 , description: ""
             );
 
+        public sealed class DataTableAssetRefEqualityComparer : IEqualityComparer<DataTableAssetRef>
+        {
+            public static readonly DataTableAssetRefEqualityComparer Default = new();
+
+            public bool Equals(DataTableAssetRef x, DataTableAssetRef y)
+            {
+                return SymbolEqualityComparer.Default.Equals(x.Symbol, y.Symbol);
+            }
+
+            public int GetHashCode(DataTableAssetRef obj)
+            {
+                return SymbolEqualityComparer.Default.GetHashCode(obj.Symbol);
+            }
+        }
     }
 }

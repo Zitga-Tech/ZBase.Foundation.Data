@@ -75,6 +75,8 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 }
 
                 p.PrintEndLine().Print("#if UNITY_EDITOR").PrintEndLine();
+                p.PrintEndLine();
+
                 p.PrintLine("[global::System.Obsolete(\"This method is not intended to be used directly by user code.\")]");
                 p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
                 p.PrintLine("internal void SetValues(");

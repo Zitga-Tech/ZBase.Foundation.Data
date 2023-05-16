@@ -1,7 +1,4 @@
-﻿using System;
-using Newtonsoft.Json.Serialization;
-
-namespace DataTest
+﻿namespace DataTest
 {
     public class Program
     {
@@ -67,27 +64,33 @@ namespace RumbleDefense
         private string _requiredItem;
     }
 
+    public static class DatabaseConfig
+    {
+        public const string NAMESPACE = "RumbleDefense";
+        public const string TYPE_NAME = "GameDatabase";
+    }
+
+    [Database(DatabaseConfig.NAMESPACE, DatabaseConfig.TYPE_NAME)]
     [DataSheetNaming("Hero", NamingStrategy.SnakeCase)]
     public partial class HeraDataTableAsset : DataTableAsset<EntityId, HeroData>
     {
     }
 }
 
-namespace RumbleDefense.Authoring
+namespace RumbleDefense.Authoring.XXX
 {
 #pragma warning disable
 
     using System.Collections.Generic;
     using Cathei.BakingSheet;
-    using Microsoft.Extensions.Logging;
     using RumbleDefense;
     using ZBase.Foundation.Data;
     using ZBase.Foundation.Data.Authoring.SourceGen;
 
-    [GeneratedSheetContainer]
-    public partial class DataSheetContainer : SheetContainerBase
+    [global::ZBase.Foundation.Data.Authoring.SourceGen.GeneratedSheetContainer]
+    public partial class DataSheetContainer : global::Cathei.BakingSheet.SheetContainerBase
     {
-        protected DataSheetContainer(ILogger logger) : base(logger) { }
+        protected DataSheetContainer(global::Microsoft.Extensions.Logging.ILogger logger) : base(logger) { }
 
         public HeroDataSheet HeroDataSheet { get; set; }
     }

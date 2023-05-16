@@ -46,6 +46,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
         {
             if (context.SemanticModel.Compilation.IsValidCompilation() == false
                 || context.Node is not TypeDeclarationSyntax typeSyntax
+                || typeSyntax.Modifiers.Any(SyntaxKind.ReadOnlyKeyword)
                 || typeSyntax.Kind() is not (SyntaxKind.ClassDeclaration or SyntaxKind.StructDeclaration)
                 || typeSyntax.BaseList == null
             )
@@ -54,7 +55,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
             }
 
             var semanticModel = context.SemanticModel;
-
+            
             foreach (var baseType in typeSyntax.BaseList.Types)
             {
                 var typeInfo = semanticModel.GetTypeInfo(baseType.Type, token);
