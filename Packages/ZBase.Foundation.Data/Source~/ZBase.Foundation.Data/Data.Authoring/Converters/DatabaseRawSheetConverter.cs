@@ -24,8 +24,9 @@ namespace ZBase.Foundation.Data.Authoring
               TimeZoneInfo timeZoneInfo
             , IFormatProvider formatProvider
             , bool splitHeader = false
+            , int emptyRowStreakThreshold = 5
         )
-            : base(timeZoneInfo, formatProvider)
+            : base(timeZoneInfo, formatProvider, emptyRowStreakThreshold)
         {
             SplitHeader = splitHeader;
         }

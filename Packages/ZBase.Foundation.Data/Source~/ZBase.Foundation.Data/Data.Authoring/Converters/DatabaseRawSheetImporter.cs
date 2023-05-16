@@ -20,10 +20,15 @@ namespace ZBase.Foundation.Data.Authoring
     {
         private bool _isLoaded;
 
-        public DatabaseRawSheetImporter(TimeZoneInfo timeZoneInfo, IFormatProvider formatProvider)
+        public DatabaseRawSheetImporter(
+              TimeZoneInfo timeZoneInfo
+            , IFormatProvider formatProvider
+            , int emptyRowStreakThreshold
+        )
         {
             TimeZoneInfo = timeZoneInfo ?? TimeZoneInfo.Utc;
             FormatProvider = formatProvider ?? CultureInfo.InvariantCulture;
+            EmptyRowStreakThreshold = emptyRowStreakThreshold;
         }
 
         protected abstract Task<bool> LoadData();
@@ -33,6 +38,8 @@ namespace ZBase.Foundation.Data.Authoring
         public TimeZoneInfo TimeZoneInfo { get; }
 
         public IFormatProvider FormatProvider { get; }
+
+        public int EmptyRowStreakThreshold { get; }
 
         public virtual void Reset()
         {
@@ -59,9 +66,7 @@ namespace ZBase.Foundation.Data.Authoring
                 string sheetName;
                 NamingStrategy namingStrategy;
 
-                var attribute = pair.Value.PropertyType
-                    .GetCustomAttribute<DataSheetNamingAttribute>();
-
+                var attribute = pair.Value.PropertyType.GetCustomAttribute<DataSheetNamingAttribute>();
                 if (attribute != null)
                 {
                     sheetName = attribute.SheetName;
@@ -84,10 +89,7 @@ namespace ZBase.Foundation.Data.Authoring
 
                     if (sheet == null)
                     {
-                        context.Logger.LogError(
-                              "Failed to create sheet of type {SheetType}"
-                            , pair.Value.PropertyType
-                        );
+                        context.Logger.LogError("Failed to create sheet of type {SheetType}", pair.Value.PropertyType);
                         continue;
                     }
 
@@ -129,8 +131,19 @@ namespace ZBase.Foundation.Data.Authoring
                 null
             };
 
+            var headerRow = 1;
+
+            // if the column next to the id column is empty,
+            // it means the id column is split
+            // so the next row would be a part of header row too
+            if (page.IsEmptyCell(1, 0))
+            {
+                headerRows.Add(null);
+                headerRow = 2;
+            }
+
             // if id column is empty they are split header row
-            for (int pageRow = 1; page.IsEmptyCell(0, pageRow) && !page.IsEmptyRow(pageRow); ++pageRow)
+            for (; page.IsEmptyCell(0, headerRow) && page.IsEmptyRow(headerRow) == false; headerRow++)
             {
                 headerRows.Add(null);
             }
@@ -161,13 +174,14 @@ namespace ZBase.Foundation.Data.Authoring
 
             ISheetRow sheetRow = null;
             string rowId = null;
-            int vindex = 0;
+            var vindex = 0;
+            var emptyRowStreak = 0;
 
-            for (int pageRow = headerRows.Count; !page.IsEmptyRow(pageRow); ++pageRow)
+            for (int pageRow = headerRows.Count; emptyRowStreak <= EmptyRowStreakThreshold; ++pageRow)
             {
                 string idCellValue = page.GetCell(0, pageRow);
 
-                if (string.IsNullOrEmpty(idCellValue) == false)
+                if (string.IsNullOrWhiteSpace(idCellValue) == false)
                 {
                     if (idCellValue.StartsWith(Config.Comment))
                     {
@@ -177,6 +191,11 @@ namespace ZBase.Foundation.Data.Authoring
                     rowId = idCellValue;
                     sheetRow = Activator.CreateInstance(sheet.RowType) as ISheetRow;
                     vindex = 0;
+                }
+                else if (page.IsEmptyRow(pageRow))
+                {
+                    emptyRowStreak++;
+                    continue;
                 }
 
                 if (sheetRow == null)
@@ -268,16 +287,33 @@ namespace ZBase.Foundation.Data.Authoring
         {
             var map = new NamingMap(namingStrategy);
             var sheetType = sheet.GetType();
-            var types = sheetType.GetNestedTypes();
+            var uniqueTypes = new HashSet<Type>(sheetType.GetNestedTypes());
+            var typeQueue = new Queue<Type>(uniqueTypes);
 
             map.AddProperName(sheetType.Name);
             map.AddProperName(sheetName);
 
-            foreach (var type in types)
+            while (typeQueue.TryDequeue(out var type))
             {
                 foreach (var property in type.GetProperties())
                 {
                     map.AddProperName(property.Name);
+
+                    var propertyType = property.PropertyType;
+
+                    if (uniqueTypes.Contains(propertyType)
+                        || propertyType.IsPrimitive
+                        || propertyType.IsEnum
+                        || propertyType == typeof(decimal)
+                        || propertyType == typeof(string)
+                        || propertyType == typeof(object)
+                    )
+                    {
+                        continue;
+                    }
+
+                    uniqueTypes.Add(propertyType);
+                    typeQueue.Enqueue(propertyType);
                 }
             }
 
