@@ -4,7 +4,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
 {
     partial class DataDeclaration
     {
-        public string WritePartialData()
+        public string WriteCode()
         {
             var keyword = Symbol.IsValueType ? "struct" : "class";
 

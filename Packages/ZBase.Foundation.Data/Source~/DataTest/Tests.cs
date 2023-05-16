@@ -16,19 +16,25 @@ namespace RumbleDefense
     using ZBase.Foundation.Data;
     using UnityEngine;
 
-    public enum HeroId
+    public enum EntityKind
     {
-        ID0001,
-        ID0002,
-        ID0003,
-        ID0004,
-        ID0005,
+        Hero,
+        Enemy,
+    }
+
+    public partial struct EntityId : IData
+    {
+        [SerializeField]
+        private EntityKind _kind;
+
+        [SerializeField]
+        private int _id;
     }
 
     public partial struct HeroData : IData
     {
         [SerializeField]
-        private HeroId _id;
+        private EntityId _id;
 
         [SerializeField]
         private string _name;
@@ -62,7 +68,7 @@ namespace RumbleDefense
     }
 
     [DataSheetNaming("Hero", NamingStrategy.SnakeCase)]
-    public partial class HeraDataTableAsset : DataTableAsset<HeroId, HeroData>
+    public partial class HeraDataTableAsset : DataTableAsset<EntityId, HeroData>
     {
     }
 }
@@ -83,15 +89,15 @@ namespace RumbleDefense.Authoring
     {
         protected DataSheetContainer(ILogger logger) : base(logger) { }
 
-        public HeroDataTableSheet HeroDataTableSheet { get; set; }
+        public HeroDataSheet HeroDataSheet { get; set; }
     }
 
     [DataSheetNaming("Hero", NamingStrategy.SnakeCase)]
-    [GeneratedSheet(typeof(HeroId), typeof(HeroData), typeof(HeraDataTableAsset))]
-    public partial class HeroDataTableSheet : Sheet<HeroId, HeroDataTableSheet.HeroDataSheetRow>
+    [GeneratedSheet(typeof(EntityId), typeof(HeroData), typeof(HeraDataTableAsset))]
+    public partial class HeroDataSheet : Sheet<HeroDataSheet.__EntityId, HeroDataSheet.__HeroData>
     {
-        [GeneratedSheetRow(typeof(HeroId), typeof(HeroData))]
-        public partial class HeroDataSheetRow : SheetRow<HeroId>
+        [GeneratedSheetRow(typeof(EntityId), typeof(HeroData))]
+        public partial class __HeroData : SheetRow<__EntityId>
         {
             public string Name { get; set; }
 
@@ -101,66 +107,97 @@ namespace RumbleDefense.Authoring
 
             public int Vitality { get; set; }
 
-            public VerticalList<HeroStatMultiplierListElement> Multipliers { get; set; }
+            public VerticalList<__HeroStatMultiplier> Multipliers { get; set; }
 
             public List<string> Descriptions { get; set; }
+
+            public HeroData ToHeroData()
+            {
+                var result = new HeroData();
+
+                result.SetValues(
+                      this.Id.ToEntityId()
+                    , this.Name
+                    , this.Strength
+                    , this.Intelligence
+                    , this.Vitality
+                    , ToHeroStatMultiplierArray()
+                    , this.Descriptions.ToArray()
+                );
+
+                return result;
+            }
+
+            private HeroStatMultiplier[] ToHeroStatMultiplierArray()
+            {
+                var rows = this.Multipliers;
+                var count = rows.Count;
+                var result = new HeroStatMultiplier[count];
+
+                for (var i = 0; i < count; i++)
+                {
+                    result[i] = rows[i].ToHeroStatMultiplier();
+                }
+
+                return result;
+            }
+        }
+
+        [GeneratedDataRow(typeof(EntityId))]
+        public partial class __EntityId
+        {
+            private EntityKind Kind { get; set; }
+
+            private int Id { get; set; }
+
+            public EntityId ToEntityId()
+            {
+                var result = new EntityId();
+
+                result.SetValues(
+                      this.Kind
+                    , this.Id
+                );
+
+                return result;
+            }
         }
 
         [GeneratedDataRow(typeof(HeroStatMultiplier))]
-        public partial class HeroStatMultiplierListElement
+        public partial class __HeroStatMultiplier
         {
             public float StatMultiplier { get; set; }
 
             public int RequiredExp { get; set; }
 
             public string RequiredItem { get; set; }
+
+            public HeroStatMultiplier ToHeroStatMultiplier()
+            {
+                var result = new HeroStatMultiplier();
+
+                result.SetValues(
+                      this.StatMultiplier
+                    , this.RequiredExp
+                    , this.RequiredItem
+                );
+
+                return result;
+            }
         }
 
-        private static HeroStatMultiplier[] ToArray(VerticalList<HeroStatMultiplierListElement> list)
+        public HeroData[] ToHeroDataArray()
         {
-            var count = list.Count;
-            var array = new HeroStatMultiplier[count];
+            var rows = this.Items;
+            var count = rows.Count;
+            var array = new HeroData[count];
 
             for (var i = 0; i < count; i++)
             {
-                var element = list[i];
-                ref var item = ref array[i];
-                item = new HeroStatMultiplier();
-
-                item.SetValues(
-                    element.StatMultiplier
-                    , element.RequiredExp
-                    , element.RequiredItem
-                );
+                array[i] = rows[i].ToHeroData();
             }
 
             return array;
-        }
-
-        public HeroData[] ToHeroDataRows()
-        {
-            var sheetRows = this.Items;
-            var count = sheetRows.Count;
-            var rows = new HeroData[count];
-
-            for (var i = 0; i < count; i++)
-            {
-                var sheetRow = sheetRows[i];
-                ref var row = ref rows[i];
-                row = new HeroData();
-
-                row.SetValues(
-                      sheetRow.Id
-                    , sheetRow.Name
-                    , sheetRow.Strength
-                    , sheetRow.Intelligence
-                    , sheetRow.Vitality
-                    , ToArray(sheetRow.Multipliers)
-                    , sheetRow.Descriptions.ToArray()
-                );
-            }
-
-            return rows;
         }
     }
 

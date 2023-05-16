@@ -12,80 +12,67 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
     public partial class DatabaseDeclaration
     {
         public const string GENERATOR_NAME = nameof(DatabaseGenerator);
-        public const string SERIALIZE_FIELD_ATTRIBUTE = "global::UnityEngine.SerializeField";
-        public const string VERTICAL_ARRAY_ATTRIBUTE = "global::ZBase.Foundation.Data.VerticalArrayAttribute";
-        public const string LIST_TYPE = "global::System.Collections.Generic.List";
-        public const string VERTICAL_LIST_TYPE = "global::Cathei.BakingSheet.VerticalList";
 
         private const string AGGRESSIVE_INLINING = "[global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]";
         private const string GENERATED_CODE = "[global::System.CodeDom.Compiler.GeneratedCode(\"ZBase.Foundation.Data.DatabaseGenerator\", \"1.0.0\")]";
         private const string EXCLUDE_COVERAGE = "[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]";
 
-        public ImmutableArray<DataTableAssetRef> DataTableRefs { get; }
+        public ImmutableArray<DataTableAssetRef> DataTableAssetRefs { get; }
 
-        public ImmutableArray<DataRef> DataRefs { get; }
+        public Dictionary<string, DataDeclaration> DataMap { get; }
 
         public DatabaseDeclaration(
-              ImmutableArray<DataTableAssetRef> dataTableAssetRefs
-            , ImmutableArray<TypeDeclarationSyntax> dataRefs
-            , Compilation compilation
-            , CancellationToken token
+              ImmutableArray<DataTableAssetRef> candidates
+            , Dictionary<string, DataDeclaration> dataMap
         )
         {
-            //var typeList = new List<DataTableRef>();
+            this.DataTableAssetRefs = candidates;
+            this.DataMap = dataMap;
+        }
 
-            //foreach (var candidate in dataTableRefs)
-            //{
-            //    var syntaxTree = candidate.Syntax.SyntaxTree;
-            //    var semanticModel = compilation.GetSemanticModel(syntaxTree);
+        private void WriteCodeSample()
+        {
+            //var newCompilation = CompilationUnit().NormalizeWhitespace(eol: "\n");
+            //var namespaceFileName = declaration.Symbol.ContainingNamespace.ToDisplayString().ToValidIdentifier();
+            //var fileName = $"BakingSheets_{namespaceFileName}_{declaration.Symbol.Name}Sheet";
 
-            //    candidate.Symbol = semanticModel.GetDeclaredSymbol(candidate.Syntax, token);
-            //    candidate.Fields = new List<IFieldSymbol>();
-            //    candidate.ElementTypes = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
+            //OutputSource(
+            //      context
+            //    , outputSourceGenFiles
+            //    , newCompilation
+            //    , declaration.WriteSheet()
+            //    , newCompilation.SyntaxTree.GetGeneratedSourceFileName(GENERATOR_NAME, fileName, newCompilation)
+            //    , newCompilation.SyntaxTree.GetGeneratedSourceFilePath(assemblyName, GENERATOR_NAME)
+            //);
+        }
 
-            //    var members = candidate.DataType.GetMembers();
+        private static void OutputSource(
+              SourceProductionContext context
+            , bool outputSourceGenFiles
+            , SyntaxNode syntax
+            , string source
+            , string hintName
+            , string sourceFilePath
+        )
+        {
+            var outputSource = TypeCreationHelpers.GenerateSourceTextForRootNodes(
+                  sourceFilePath
+                , syntax
+                , source
+                , context.CancellationToken
+            );
 
-            //    foreach (var member in members)
-            //    {
-            //        if (member is IFieldSymbol field)
-            //        {
-            //            if (field.HasAttribute(SERIALIZE_FIELD_ATTRIBUTE) == false)
-            //            {
-            //                continue;
-            //            }
+            context.AddSource(hintName, outputSource);
 
-            //            if (field.ToPropertyName() == "Id"
-            //                && SymbolEqualityComparer.Default.Equals(field.Type, candidate.IdType)
-            //            )
-            //            {
-            //                continue;
-            //            }
-
-            //            candidate.Fields.Add(field);
-
-            //            if (field.Type is IArrayTypeSymbol arrayType)
-            //            {
-            //                var isIData = arrayType.ElementType
-            //                    .GetAllFullyQualifiedInterfaceAndBaseTypeNames()
-            //                    .Any(x => x == IDATA);
-
-            //                if (isIData)
-            //                {
-            //                    candidate.ElementTypes.Add(arrayType.ElementType);
-            //                }
-            //            }
-            //        }
-            //    }
-
-            //    if (candidate.Fields.Count > 0)
-            //    {
-            //        typeList.Add(candidate);
-            //    }
-            //}
-
-            //using var typeRefArrayBuilder = ImmutableArrayBuilder<DataTableRef>.Rent();
-            //typeRefArrayBuilder.AddRange(typeList);
-            //DataTableRefs = typeRefArrayBuilder.ToImmutable();
+            if (outputSourceGenFiles)
+            {
+                SourceGenHelpers.OutputSourceToFile(
+                      context
+                    , syntax.GetLocation()
+                    , sourceFilePath
+                    , outputSource
+                );
+            }
         }
     }
 }

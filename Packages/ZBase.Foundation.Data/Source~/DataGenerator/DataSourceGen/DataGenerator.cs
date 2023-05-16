@@ -7,8 +7,6 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ZBase.Foundation.SourceGen;
 
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-
 namespace ZBase.Foundation.Data.DataSourceGen
 {
     [Generator]
@@ -126,22 +124,9 @@ namespace ZBase.Foundation.Data.DataSourceGen
                       context
                     , outputSourceGenFiles
                     , declaration.Syntax
-                    , declaration.WritePartialData()
+                    , declaration.WriteCode()
                     , syntaxTree.GetGeneratedSourceFileName(GENERATOR_NAME, declaration.Syntax, declaration.Symbol.ToValidIdentifier())
                     , syntaxTree.GetGeneratedSourceFilePath(assemblyName, GENERATOR_NAME)
-                );
-
-                var newCompilation = CompilationUnit().NormalizeWhitespace(eol: "\n");
-                var namespaceFileName = declaration.Symbol.ContainingNamespace.ToDisplayString().ToValidIdentifier();
-                var fileName = $"BakingSheets_{namespaceFileName}_{declaration.Symbol.Name}Sheet";
-
-                OutputSource(
-                      context
-                    , outputSourceGenFiles
-                    , newCompilation
-                    , declaration.WriteSheet()
-                    , newCompilation.SyntaxTree.GetGeneratedSourceFileName(GENERATOR_NAME, fileName, newCompilation)
-                    , newCompilation.SyntaxTree.GetGeneratedSourceFilePath(assemblyName, GENERATOR_NAME)
                 );
             }
             catch (Exception e)
@@ -174,7 +159,12 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
             if (outputSourceGenFiles)
             {
-                SourceGenHelpers.OutputSourceToFile(context, syntax.GetLocation(), sourceFilePath, outputSource);
+                SourceGenHelpers.OutputSourceToFile(
+                      context
+                    , syntax.GetLocation()
+                    , sourceFilePath
+                    , outputSource
+                );
             }
         }
 

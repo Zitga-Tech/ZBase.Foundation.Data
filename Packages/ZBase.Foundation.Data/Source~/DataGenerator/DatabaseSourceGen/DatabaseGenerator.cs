@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
@@ -14,6 +15,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
     {
         public const string IDATA = "global::ZBase.Foundation.Data.IData";
         public const string DATA_TABLE_ASSET_T = "global::ZBase.Foundation.Data.DataTableAsset<";
+        public const string DATA_SHEET_NAMING_ATTRIBUTE = "global::ZBase.Foundation.Data.DataSheetNamingAttribute";
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
@@ -82,6 +84,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                             Symbol = symbol,
                             IdType = typeSymbol.TypeArguments[0],
                             DataType = typeSymbol.TypeArguments[1],
+                            NamingAttribute = symbol.GetAttribute(DATA_SHEET_NAMING_ATTRIBUTE),
                         };
                     }
                 }
@@ -144,13 +147,13 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         private static void GenerateOutput(
               SourceProductionContext context
             , Compilation compilation
-            , ImmutableArray<DataTableAssetRef> dataTableRefs
-            , ImmutableArray<TypeDeclarationSyntax> dataRefs
+            , ImmutableArray<DataTableAssetRef> candidates
+            , ImmutableArray<TypeDeclarationSyntax> dataDeclarations
             , string projectPath
             , bool outputSourceGenFiles
         )
         {
-            if (dataTableRefs.Length < 1)
+            if (candidates.Length < 1)
             {
                 return;
             }
@@ -161,21 +164,9 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             {
                 SourceGenHelpers.ProjectPath = projectPath;
 
-                var declaration = new DatabaseDeclaration(dataTableRefs, dataRefs, compilation, context.CancellationToken);
-
-                //declaration.GenerateCodeForSheets(
-                //      context
-                //    , compilation
-                //    , outputSourceGenFiles
-                //    , s_errorDescriptor
-                //);
-
-                //declaration.GenerateCodeForContainer(
-                //      context
-                //    , compilation
-                //    , outputSourceGenFiles
-                //    , s_errorDescriptor
-                //);
+                var token = context.CancellationToken;
+                var dataMap = BuildDataMap(compilation, dataDeclarations, token);
+                var databaseDeclaration = new DatabaseDeclaration(candidates, dataMap);
             }
             catch (Exception e)
             {
@@ -185,6 +176,30 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     , e.ToUnityPrintableString()
                 ));
             }
+        }
+
+        private static Dictionary<string, DataDeclaration> BuildDataMap(
+              Compilation compilation
+            , ImmutableArray<TypeDeclarationSyntax> dataDeclaration
+            , CancellationToken token
+        )
+        {
+            var map = new Dictionary<string, DataDeclaration>();
+
+            foreach (var dataRef in dataDeclaration)
+            {
+                var syntaxTree = dataRef.SyntaxTree;
+                var semanticModel = compilation.GetSemanticModel(syntaxTree);
+                var symbol = semanticModel.GetDeclaredSymbol(dataRef, token);
+                var name = symbol.ToFullName();
+
+                if (map.ContainsKey(name) == false)
+                {
+                    map[name] = new DataDeclaration(dataRef, symbol);
+                }
+            }
+
+            return map;
         }
 
         private static readonly DiagnosticDescriptor s_errorDescriptor
