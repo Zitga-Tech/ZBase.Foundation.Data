@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Cathei.BakingSheet;
 using Cathei.BakingSheet.Internal;
@@ -17,14 +18,6 @@ namespace ZBase.Foundation.Data.Authoring
     /// </summary>
     public abstract class DatabaseRawSheetImporter : ISheetImporter, ISheetFormatter
     {
-        protected abstract Task<bool> LoadData();
-
-        protected abstract IEnumerable<IRawSheetImporterPage> GetPages(string sheetName);
-
-        public TimeZoneInfo TimeZoneInfo { get; }
-
-        public IFormatProvider FormatProvider { get; }
-
         private bool _isLoaded;
 
         public DatabaseRawSheetImporter(TimeZoneInfo timeZoneInfo, IFormatProvider formatProvider)
@@ -33,6 +26,14 @@ namespace ZBase.Foundation.Data.Authoring
             FormatProvider = formatProvider ?? CultureInfo.InvariantCulture;
         }
 
+        protected abstract Task<bool> LoadData();
+
+        protected abstract IEnumerable<IRawSheetImporterPage> GetPages(string sheetName);
+
+        public TimeZoneInfo TimeZoneInfo { get; }
+
+        public IFormatProvider FormatProvider { get; }
+
         public virtual void Reset()
         {
             _isLoaded = false;
@@ -40,11 +41,11 @@ namespace ZBase.Foundation.Data.Authoring
 
         public async Task<bool> Import(SheetConvertingContext context)
         {
-            if (!_isLoaded)
+            if (_isLoaded == false)
             {
                 var success = await LoadData();
 
-                if (!success)
+                if (success == false)
                 {
                     context.Logger.LogError("Failed to load data");
                     return false;
@@ -55,10 +56,25 @@ namespace ZBase.Foundation.Data.Authoring
 
             foreach (var pair in context.Container.GetSheetProperties())
             {
+                string sheetName;
+                NamingStrategy namingStrategy;
+
+                var attribute = pair.Value.PropertyType
+                    .GetCustomAttribute<DataSheetNamingAttribute>();
+
+                if (attribute != null)
+                {
+                    sheetName = attribute.SheetName;
+                    namingStrategy = attribute.NamingStrategy;
+                }
+                else
+                {
+                    sheetName = pair.Key;
+                    namingStrategy = NamingStrategy.PascalCase;
+                }
+
                 using (context.Logger.BeginScope(pair.Key))
                 {
-                    var pages = GetPages(pair.Key);
-
                     if (pair.Value.GetValue(context.Container) is not ISheet sheet)
                     {
                         // create new sheet
@@ -68,13 +84,19 @@ namespace ZBase.Foundation.Data.Authoring
 
                     if (sheet == null)
                     {
-                        context.Logger.LogError("Failed to create sheet of type {SheetType}", pair.Value.PropertyType);
+                        context.Logger.LogError(
+                              "Failed to create sheet of type {SheetType}"
+                            , pair.Value.PropertyType
+                        );
                         continue;
                     }
 
+                    var namingMap = BuildNamingMap(sheet, sheetName, namingStrategy);
+                    var pages = GetPages(namingMap.GetSerializedName(sheetName));
+
                     foreach (var page in pages.OrderBy(x => x.SubName))
                     {
-                        ImportPage(page, context, sheet);
+                        ImportPage(page, context, sheet, namingMap);
                     }
                 }
             }
@@ -82,13 +104,22 @@ namespace ZBase.Foundation.Data.Authoring
             return true;
         }
 
-        private void ImportPage(IRawSheetImporterPage page, SheetConvertingContext context, ISheet sheet)
+        private void ImportPage(
+              IRawSheetImporterPage page
+            , SheetConvertingContext context
+            , ISheet sheet
+            , NamingMap namingMap
+        )
         {
             var idColumnName = page.GetCell(0, 0);
 
-            if (ValidateIdColumnName(idColumnName) == false)
+            if (namingMap.Validate(nameof(ISheetRow.Id), idColumnName) == false)
             {
-                context.Logger.LogError("First column \"{ColumnName}\" must be named either `ID`, `Id`, or `id`.", idColumnName);
+                context.Logger.LogError(
+                      "First column \"{ColumnName}\" must be named \"{CorrectColumnName}\"."
+                    , idColumnName
+                    , namingMap.GetSerializedName(nameof(ISheetRow.Id))
+                );
                 return;
             }
 
@@ -110,10 +141,11 @@ namespace ZBase.Foundation.Data.Authoring
 
                 for (int pageRow = 0; pageRow < headerRows.Count; ++pageRow)
                 {
-                    if (!page.IsEmptyCell(pageColumn, pageRow))
+                    if (page.IsEmptyCell(pageColumn, pageRow) == false)
                     {
                         lastValidRow = pageRow;
-                        headerRows[pageRow] = page.GetCell(pageColumn, pageRow);
+                        var serializedName = page.GetCell(pageColumn, pageRow);
+                        headerRows[pageRow] = namingMap.GetProperName(serializedName);
                     }
                 }
 
@@ -135,7 +167,7 @@ namespace ZBase.Foundation.Data.Authoring
             {
                 string idCellValue = page.GetCell(0, pageRow);
 
-                if (!string.IsNullOrEmpty(idCellValue))
+                if (string.IsNullOrEmpty(idCellValue) == false)
                 {
                     if (idCellValue.StartsWith(Config.Comment))
                     {
@@ -232,14 +264,24 @@ namespace ZBase.Foundation.Data.Authoring
             }
         }
 
-        private static bool ValidateIdColumnName(string name)
+        private static NamingMap BuildNamingMap(ISheet sheet, string sheetName, NamingStrategy namingStrategy)
         {
-            return name switch {
-                "ID" => true,
-                "Id" => true,
-                "id" => true,
-                _ => false
-            };
+            var map = new NamingMap(namingStrategy);
+            var sheetType = sheet.GetType();
+            var types = sheetType.GetNestedTypes();
+
+            map.AddProperName(sheetType.Name);
+            map.AddProperName(sheetName);
+
+            foreach (var type in types)
+            {
+                foreach (var property in type.GetProperties())
+                {
+                    map.AddProperName(property.Name);
+                }
+            }
+
+            return map;
         }
     }
 }

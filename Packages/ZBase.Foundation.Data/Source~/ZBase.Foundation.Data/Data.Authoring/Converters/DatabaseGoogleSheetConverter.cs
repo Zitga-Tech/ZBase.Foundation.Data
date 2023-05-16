@@ -33,9 +33,10 @@ namespace ZBase.Foundation.Data.Authoring
             : base(timeZoneInfo, formatProvider)
         {
             _gsheetAddress = gsheetAddress;
-            _credential = GoogleCredential.
-                FromJson(credential).
-                CreateScoped(new[] { DriveService.Scope.DriveReadonly });
+            _credential = GoogleCredential
+                .FromJson(credential)
+                .CreateScoped(new[] { DriveService.Scope.DriveReadonly });
+
             _pages = new Dictionary<string, List<Page>>();
         }
 
@@ -76,11 +77,13 @@ namespace ZBase.Foundation.Data.Authoring
             foreach (var gSheet in _spreadsheet.Sheets)
             {
                 if (gSheet.Properties.Title.StartsWith(Config.Comment))
+                {
                     continue;
+                }
 
                 var (sheetName, subName) = Config.ParseSheetName(gSheet.Properties.Title);
 
-                if (!_pages.TryGetValue(sheetName, out var sheetList))
+                if (_pages.TryGetValue(sheetName, out var sheetList) == false)
                 {
                     sheetList = new List<Page>();
                     _pages.Add(sheetName, sheetList);
@@ -106,9 +109,10 @@ namespace ZBase.Foundation.Data.Authoring
 
             public string GetCell(int col, int row)
             {
-                if (row >= _grid.RowData.Count ||
-                    col >= _grid.RowData[row].Values?.Count)
+                if (row >= _grid.RowData.Count || col >= _grid.RowData[row].Values?.Count)
+                {
                     return null;
+                }
 
                 var value = _grid.RowData[row].Values?[col];
                 return value?.FormattedValue;
@@ -118,7 +122,10 @@ namespace ZBase.Foundation.Data.Authoring
         protected override IEnumerable<IRawSheetImporterPage> GetPages(string sheetName)
         {
             if (_pages.TryGetValue(sheetName, out var pages))
+            {
                 return pages;
+            }
+
             return Enumerable.Empty<IRawSheetImporterPage>();
         }
     }

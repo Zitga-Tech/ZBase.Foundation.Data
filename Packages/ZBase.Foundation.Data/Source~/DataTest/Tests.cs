@@ -1,4 +1,5 @@
 ﻿using System;
+using Newtonsoft.Json.Serialization;
 
 namespace DataTest
 {
@@ -6,7 +7,6 @@ namespace DataTest
     {
         public static void Main()
         {
-
         }
     }
 }
@@ -61,7 +61,7 @@ namespace RumbleDefense
         private string _requiredItem;
     }
 
-    [NamingStrategy(NamingStrategy.SnakeCase)]
+    [DataSheetNaming("Hero", NamingStrategy.SnakeCase)]
     public partial class HeraDataTableAsset : DataTableAsset<HeroId, HeroData>
     {
     }
@@ -73,9 +73,20 @@ namespace RumbleDefense.Authoring
 
     using System.Collections.Generic;
     using Cathei.BakingSheet;
+    using Microsoft.Extensions.Logging;
     using RumbleDefense;
+    using ZBase.Foundation.Data;
     using ZBase.Foundation.Data.Authoring.SourceGen;
 
+    [GeneratedSheetContainer]
+    public partial class DataSheetContainer : SheetContainerBase
+    {
+        protected DataSheetContainer(ILogger logger) : base(logger) { }
+
+        public HeroDataTableSheet HeroDataTableSheet { get; set; }
+    }
+
+    [DataSheetNaming("Hero", NamingStrategy.SnakeCase)]
     [GeneratedSheet(typeof(HeroId), typeof(HeroData), typeof(HeraDataTableAsset))]
     public partial class HeroDataTableSheet : Sheet<HeroId, HeroDataTableSheet.HeroDataSheetRow>
     {

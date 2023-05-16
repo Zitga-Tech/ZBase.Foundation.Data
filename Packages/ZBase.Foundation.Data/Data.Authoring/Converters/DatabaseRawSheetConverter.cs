@@ -57,7 +57,6 @@ namespace ZBase.Foundation.Data.Authoring
             return true;
         }
 
-
         private void ExportPage(IRawSheetExporterPage page, SheetConvertingContext context, ISheet sheet)
         {
             var propertyMap = sheet.GetPropertyMap(context);
