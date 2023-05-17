@@ -21,6 +21,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             var dataTableAssetTypeName = dataTableAssetType.ToFullName();
             var sheetName = $"{dataType.Name}Sheet";
             var nestedDataTypeFullNames = dataTableAssetRef.NestedDataTypeFullNames;
+            var verticalListMap = DatabaseRef.VerticalListMap;
 
             string sheetIdTypeName;
             string sheetDataTypeName;
@@ -71,14 +72,31 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     .PrintEndLine();
                 p.OpenScope();
                 {
-                    dataTypeDeclaration?.WriteCode(ref p, dataMap, idTypeDeclaration?.Symbol);
-                    idTypeDeclaration?.WriteCode(ref p, dataMap);
+                    dataTypeDeclaration?.WriteCode(
+                          ref p
+                        , dataMap
+                        , verticalListMap
+                        , dataTypeFullName
+                        , idTypeDeclaration?.Symbol
+                    );
+
+                    idTypeDeclaration?.WriteCode(
+                          ref p
+                        , dataMap
+                        , verticalListMap
+                        , dataTypeFullName
+                    );
 
                     foreach (var nestedFullName in nestedDataTypeFullNames)
                     {
                         if (dataMap.TryGetValue(nestedFullName, out var nestedDataDeclaration))
                         {
-                            nestedDataDeclaration?.WriteCode(ref p, dataMap);
+                            nestedDataDeclaration?.WriteCode(
+                                  ref p
+                                , dataMap
+                                , verticalListMap
+                                , dataTypeFullName
+                            );
                         }
                     }
                 }

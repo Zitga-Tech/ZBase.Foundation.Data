@@ -36,7 +36,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                     foreach (var table in tables)
                     {
-                        if (dataTableAssetRefMap.TryGetValue(table.FullTypeName, out var dataTableAssetRef) == false)
+                        if (dataTableAssetRefMap.TryGetValue(table.TypeFullName, out var dataTableAssetRef) == false)
                         {
                             continue;
                         }

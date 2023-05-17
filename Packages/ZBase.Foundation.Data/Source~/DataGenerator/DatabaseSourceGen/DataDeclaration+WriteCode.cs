@@ -6,7 +6,16 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 {
     partial class DataDeclaration
     {
-        public void WriteCode(ref Printer p, Dictionary<string, DataDeclaration> dataMap, ITypeSymbol idType = null)
+        /// <param name="verticalListMap">
+        /// TargetTypeFullName -> ContainingTypeFullName -> PropertyName (s)
+        /// </param>
+        public void WriteCode(
+              ref Printer p
+            , Dictionary<string, DataDeclaration> dataMap
+            , Dictionary<string, Dictionary<string, HashSet<string>>> verticalListMap
+            , string containingTypeFullName
+            , ITypeSymbol idType = null
+        )
         {
             var typeName = Syntax.Identifier.Text;
             var typeFullName = Symbol.ToFullName();
@@ -43,7 +52,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p.PrintEndLine();
             p.OpenScope();
             {
-                WriteProperties(ref p, dataMap, idType);
+                WriteProperties(ref p, dataMap, verticalListMap, typeFullName, containingTypeFullName, idType);
                 WriteConvertMethod(ref p, dataMap);
                 WriteConvertArrayMethod(ref p, dataMap);
             }
@@ -51,7 +60,14 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p.PrintEndLine();
         }
 
-        private void WriteProperties(ref Printer p, Dictionary<string, DataDeclaration> dataMap, ITypeSymbol idType)
+        private void WriteProperties(
+              ref Printer p
+            , Dictionary<string, DataDeclaration> dataMap
+            , Dictionary<string, Dictionary<string, HashSet<string>>> verticalListMap
+            , string targetTypeFullName
+            , string containingTypeFullName
+            , ITypeSymbol idType
+        )
         {
             foreach (var field in Fields)
             {
@@ -70,7 +86,21 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 }
                 else
                 {
-                    var arrayTypeName = field.IsVerticalArray ? VERTICAL_LIST_TYPE : LIST_TYPE;
+                    var arrayTypeName = LIST_TYPE;
+
+                    if (verticalListMap.TryGetValue(targetTypeFullName, out var innerMap))
+                    {
+                        if (innerMap.TryGetValue(containingTypeFullName, out var propertyNames)
+                            || innerMap.TryGetValue(string.Empty, out propertyNames)
+                        )
+                        {
+                            if (propertyNames.Contains(field.PropertyName))
+                            {
+                                arrayTypeName = VERTICAL_LIST_TYPE;
+                            }
+                        }
+                    }
+
                     var elemTypeFullName = field.ArrayElementType.ToFullName();
                     var elemTypeName = dataMap.ContainsKey(elemTypeFullName)
                         ? $"__{field.ArrayElementType.Name}" : elemTypeFullName;
@@ -84,7 +114,10 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
         }
 
-        private void WriteConvertMethod(ref Printer p, Dictionary<string, DataDeclaration> dataMap)
+        private void WriteConvertMethod(
+              ref Printer p
+            , Dictionary<string, DataDeclaration> dataMap
+        )
         {
             var typeName = Syntax.Identifier.Text;
             var typeFullName = Symbol.ToFullName();

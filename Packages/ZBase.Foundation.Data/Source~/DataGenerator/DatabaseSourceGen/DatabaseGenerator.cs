@@ -39,7 +39,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 transform: GetDataRefSemanticMatch
             ).Where(static t => t is { });
 
-            var combined = databaseRefProvider
+            var combined = databaseRefProvider.Collect()
                 .Combine(dataTableAssetRefProvider.Collect())
                 .Combine(dataRefProvider.Collect())
                 .Combine(context.CompilationProvider)
@@ -190,142 +190,165 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         private static void GenerateOutput(
               SourceProductionContext context
             , Compilation compilation
-            , DatabaseRef candidate
+            , ImmutableArray<DatabaseRef> candidates
             , ImmutableArray<DataTableAssetRef> dataTableAssetRefs
             , ImmutableArray<TypeDeclarationSyntax> dataDeclarations
             , string projectPath
             , bool outputSourceGenFiles
         )
         {
-            if (candidate == null)
+            if (candidates.Length < 1)
             {
                 return;
             }
 
             context.CancellationToken.ThrowIfCancellationRequested();
 
-            try
+            foreach (var candidate in SelectUniques(candidates))
             {
-                SourceGenHelpers.ProjectPath = projectPath;
-
-                var declaration = new DatabaseDeclaration(candidate);
-
-                if (declaration.DatabaseRef.Tables.Length < 1)
+                try
                 {
-                    return;
-                }
+                    SourceGenHelpers.ProjectPath = projectPath;
 
-                var token = context.CancellationToken;
-                var dataMap = BuildDataMap(compilation, dataDeclarations, token);
-                var dataTableAssetRefMap = BuildDataTableAssetRefMap(dataTableAssetRefs, dataMap);
+                    var declaration = new DatabaseDeclaration(candidate);
 
-                var syntaxTree = candidate.Syntax.SyntaxTree;
-                var assemblyName = compilation.Assembly.Name;
-                var databaseIdentifier = candidate.Symbol.ToValidIdentifier();
-
-                var databaseHintName = syntaxTree.GetGeneratedSourceFileName(
-                      GENERATOR_NAME
-                    , candidate.Syntax
-                    , databaseIdentifier
-                );
-
-                var databaseSourceFilePath = syntaxTree.GetGeneratedSourceFilePath(
-                      assemblyName
-                    , GENERATOR_NAME
-                );
-
-                OutputSource(
-                      context
-                    , outputSourceGenFiles
-                    , declaration.DatabaseRef.Syntax
-                    , declaration.WriteContainer(dataTableAssetRefMap)
-                    , databaseHintName
-                    , databaseSourceFilePath
-                );
-
-                var tables = declaration.DatabaseRef.Tables;
-
-                foreach (var table in tables)
-                {
-                    if (dataTableAssetRefMap.TryGetValue(table.FullTypeName, out var dataTableAssetRef) == false)
+                    if (declaration.DatabaseRef.Tables.Length < 1)
                     {
-                        continue;
+                        return;
                     }
 
-                    var sheetHintName = GetHintName(
-                          syntaxTree
-                        , GENERATOR_NAME
+                    var token = context.CancellationToken;
+                    var dataMap = BuildDataMap(compilation, dataDeclarations, token);
+                    var dataTableAssetRefMap = BuildDataTableAssetRefMap(dataTableAssetRefs, dataMap);
+
+                    var syntaxTree = candidate.Syntax.SyntaxTree;
+                    var assemblyName = compilation.Assembly.Name;
+                    var databaseIdentifier = candidate.Symbol.ToValidIdentifier();
+
+                    var databaseHintName = syntaxTree.GetGeneratedSourceFileName(
+                          GENERATOR_NAME
                         , candidate.Syntax
-                        , $"{databaseIdentifier}_{dataTableAssetRef.DataType.Name}Sheet"
+                        , databaseIdentifier
                     );
 
-                    var sheetSourceFilePath = GetSourceFilePath(
-                          sheetHintName
-                        , assemblyName
+                    var databaseSourceFilePath = syntaxTree.GetGeneratedSourceFilePath(
+                          assemblyName
+                        , GENERATOR_NAME
                     );
 
                     OutputSource(
                           context
                         , outputSourceGenFiles
                         , declaration.DatabaseRef.Syntax
-                        , declaration.WriteSheet(table, dataTableAssetRef, dataMap)
-                        , sheetHintName
-                        , sheetSourceFilePath
+                        , declaration.WriteContainer(dataTableAssetRefMap)
+                        , databaseHintName
+                        , databaseSourceFilePath
                     );
+
+                    var tables = declaration.DatabaseRef.Tables;
+
+                    foreach (var table in tables)
+                    {
+                        if (dataTableAssetRefMap.TryGetValue(table.TypeFullName, out var dataTableAssetRef) == false)
+                        {
+                            continue;
+                        }
+
+                        var sheetHintName = GetHintName(
+                              syntaxTree
+                            , GENERATOR_NAME
+                            , candidate.Syntax
+                            , $"{databaseIdentifier}_{dataTableAssetRef.DataType.Name}Sheet"
+                        );
+
+                        var sheetSourceFilePath = GetSourceFilePath(
+                              sheetHintName
+                            , assemblyName
+                        );
+
+                        OutputSource(
+                              context
+                            , outputSourceGenFiles
+                            , declaration.DatabaseRef.Syntax
+                            , declaration.WriteSheet(table, dataTableAssetRef, dataMap)
+                            , sheetHintName
+                            , sheetSourceFilePath
+                        );
+                    }
+                }
+                catch (Exception e)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                          s_errorDescriptor
+                        , candidate.Syntax.GetLocation()
+                        , e.ToUnityPrintableString()
+                    ));
                 }
             }
-            catch (Exception e)
+        }
+
+        private static IEnumerable<DatabaseRef> SelectUniques(ImmutableArray<DatabaseRef> candidates)
+        {
+            var map = new Dictionary<string, DatabaseRef>();
+
+            foreach (var candidate in candidates)
             {
-                context.ReportDiagnostic(Diagnostic.Create(
-                      s_errorDescriptor
-                    , candidate.Syntax.GetLocation()
-                    , e.ToUnityPrintableString()
-                ));
+                var fullName = candidate.Symbol.ToFullName();
+
+                if (map.ContainsKey(fullName) == false)
+                {
+                    map[fullName] = new DatabaseRef {
+                        Syntax = candidate.Syntax,
+                        Symbol = candidate.Symbol,
+                    };
+                }
             }
 
-            static string GetHintName(
-                  SyntaxTree syntaxTree
-                , string generatorName
-                , SyntaxNode node
-                , string typeName
-            )
+            return map.Values;
+        }
+
+        private static string GetHintName(
+              SyntaxTree syntaxTree
+            , string generatorName
+            , SyntaxNode node
+            , string typeName
+        )
+        {
+            var (isSuccess, fileName) = syntaxTree.TryGetFileNameWithoutExtension();
+            var stableHashCode = SourceGenHelpers.GetStableHashCode(syntaxTree.FilePath) & 0x7fffffff;
+
+            var postfix = generatorName.Length > 0 ? $"__{generatorName}" : string.Empty;
+
+            if (string.IsNullOrWhiteSpace(typeName) == false)
             {
-                var (isSuccess, fileName) = syntaxTree.TryGetFileNameWithoutExtension();
-                var stableHashCode = SourceGenHelpers.GetStableHashCode(syntaxTree.FilePath) & 0x7fffffff;
-
-                var postfix = generatorName.Length > 0 ? $"__{generatorName}" : string.Empty;
-
-                if (string.IsNullOrWhiteSpace(typeName) == false)
-                {
-                    postfix = $"__{typeName}{postfix}";
-                }
-
-                fileName = $"{fileName}_";
-
-                if (isSuccess)
-                {
-                    var salting = node.GetLocation().GetLineSpan().StartLinePosition.Line;
-                    fileName = $"{fileName}{postfix}_{stableHashCode}{salting}.g.cs";
-                }
-                else
-                {
-                    fileName = Path.Combine($"{Path.GetRandomFileName()}{postfix}", ".g.cs");
-                }
-
-                return fileName;
+                postfix = $"__{typeName}{postfix}";
             }
 
-            static string GetSourceFilePath(string fileName, string assemblyName)
+            fileName = $"{fileName}_";
+
+            if (isSuccess)
             {
-                if (SourceGenHelpers.CanWriteToProjectPath)
-                {
-                    var saveToDirectory = $"{SourceGenHelpers.ProjectPath}/Temp/GeneratedCode/{assemblyName}/";
-                    Directory.CreateDirectory(saveToDirectory);
-                    return saveToDirectory + fileName;
-                }
-
-                return $"Temp/GeneratedCode/{assemblyName}";
+                var salting = node.GetLocation().GetLineSpan().StartLinePosition.Line;
+                fileName = $"{fileName}{postfix}_{stableHashCode}{salting}.g.cs";
             }
+            else
+            {
+                fileName = Path.Combine($"{Path.GetRandomFileName()}{postfix}", ".g.cs");
+            }
+
+            return fileName;
+        }
+
+        private static string GetSourceFilePath(string fileName, string assemblyName)
+        {
+            if (SourceGenHelpers.CanWriteToProjectPath)
+            {
+                var saveToDirectory = $"{SourceGenHelpers.ProjectPath}/Temp/GeneratedCode/{assemblyName}/";
+                Directory.CreateDirectory(saveToDirectory);
+                return saveToDirectory + fileName;
+            }
+
+            return $"Temp/GeneratedCode/{assemblyName}";
         }
 
         private static void OutputSource(

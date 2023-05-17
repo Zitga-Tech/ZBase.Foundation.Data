@@ -10,7 +10,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
     {
         public const string GENERATOR_NAME = nameof(DatabaseGenerator);
         public const string SERIALIZE_FIELD_ATTRIBUTE = "global::UnityEngine.SerializeField";
-        public const string VERTICAL_ARRAY_ATTRIBUTE = "global::ZBase.Foundation.Data.VerticalArrayAttribute";
         public const string LIST_TYPE = "global::System.Collections.Generic.List";
         public const string VERTICAL_LIST_TYPE = "global::Cathei.BakingSheet.VerticalList";
 
@@ -60,7 +59,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     {
                         fieldRef.IsArray = true;
                         fieldRef.ArrayElementType = arrayType.ElementType;
-                        fieldRef.IsVerticalArray = field.HasAttribute(VERTICAL_ARRAY_ATTRIBUTE);
                     }
 
                     memberArrayBuilder.Add(fieldRef);
@@ -81,8 +79,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             public bool IsArray { get; set; }
 
             public ITypeSymbol ArrayElementType { get; set; }
-
-            public bool IsVerticalArray { get; set; }
         }
     }
 }

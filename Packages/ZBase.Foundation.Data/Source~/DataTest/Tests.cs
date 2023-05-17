@@ -1,6 +1,4 @@
-﻿using ZBase.Foundation.Data.Authoring;
-
-namespace DataTest
+﻿namespace DataTest
 {
     public class Program
     {
@@ -68,7 +66,7 @@ namespace MyGame.Heroes
         [SerializeField]
         private StatData _stat;
 
-        [SerializeField, VerticalArray]
+        [SerializeField]
         private StatMultiplierData[] _multipliers;
     }
 
@@ -99,13 +97,25 @@ namespace MyGame.Enemies
     }
 }
 
+#if UNITY_EDITOR
 namespace MyGame.Authoring
 {
+    using ZBase.Foundation.Data.Authoring;
+
     [Database]
-    [Table(typeof(Heroes.HeroDataTableAsset), "Hero", NamingStrategy.SnakeCase)]
-    [Table(typeof(Enemies.EnemyDataTableAsset), "Enemy", NamingStrategy.SnakeCase)]
     public partial class Database
     {
 
     }
+
+
+    [Table(typeof(Heroes.HeroDataTableAsset), "Hero", NamingStrategy.SnakeCase)]
+    [VerticalList(typeof(Heroes.HeroData), nameof(Heroes.HeroData.Multipliers))]
+    partial class Database { }
+
+
+    [Table(typeof(Enemies.EnemyDataTableAsset), "Enemy", NamingStrategy.SnakeCase)]
+    partial class Database { }
+
 }
+#endif
