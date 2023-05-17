@@ -22,7 +22,9 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
         public class Table
         {
-            public string TypeFullName { get; set; }
+            public ITypeSymbol Type { get; set; }
+
+            public INamedTypeSymbol BaseType { get; set; }
 
             public string SheetName { get; set; }
 

@@ -7,6 +7,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
     public partial class DatabaseDeclaration
     {
         public const string GENERATOR_NAME = nameof(DatabaseGenerator);
+        public const string IDATA = "global::ZBase.Foundation.Data.IData";
+        public const string DATA_TABLE_ASSET_T = "global::ZBase.Foundation.Data.DataTableAsset<";
         public const string TABLE_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.TableAttribute";
         public const string VERTICAL_LIST_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.VerticalListAttribute";
 
@@ -20,7 +22,30 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         {
             this.DatabaseRef = databaseRef;
             InitializeTables();
-            InitializeVerticalLists();
+
+            if (DatabaseRef.Tables.Length > 0)
+            {
+                InitializeVerticalLists();
+            }
+        }
+
+        public static bool TryGetDataTableAssetT(ITypeSymbol symbol, out INamedTypeSymbol result)
+        {
+            var baseType = symbol.BaseType;
+
+            while (baseType != null)
+            {
+                if (baseType.ToFullName().StartsWith(DATA_TABLE_ASSET_T) && baseType.TypeArguments.Length == 2)
+                {
+                    result = baseType;
+                    return true;
+                }
+
+                baseType = baseType.BaseType;
+            }
+
+            result = null;
+            return false;
         }
 
         private void InitializeTables()
@@ -33,7 +58,17 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             {
                 var args = attrib.ConstructorArguments;
 
-                if (args.Length < 1 || args[0].Value is not INamedTypeSymbol type)
+                if (args.Length < 1
+                    || args[0].Value is not INamedTypeSymbol type
+                    || type.IsAbstract
+                    || type.IsGenericType
+                    || type.BaseType == null
+                )
+                {
+                    continue;
+                }
+
+                if (TryGetDataTableAssetT(type, out var baseType) == false)
                 {
                     continue;
                 }
@@ -48,7 +83,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 uniqueTypeNames.Add(fullTypeName);
 
                 var table = new DatabaseRef.Table {
-                    TypeFullName = fullTypeName
+                    Type = type,
+                    BaseType = baseType,
                 };
 
                 if (args.Length > 1)
@@ -84,6 +120,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                 if (args.Length < 2
                     || args[0].Value is not INamedTypeSymbol targetType
+                    || targetType.IsAbstract
+                    || targetType.InheritsFromInterface(IDATA, true)
                     || args[1].Value is not string propertyName
                     || string.IsNullOrWhiteSpace(propertyName)
                 )

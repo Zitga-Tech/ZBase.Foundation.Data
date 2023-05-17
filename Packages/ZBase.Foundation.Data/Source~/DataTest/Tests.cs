@@ -92,7 +92,11 @@ namespace MyGame.Enemies
         private StatData _stat;
     }
 
-    public partial class EnemyDataTableAsset : DataTableAsset<IdData, EnemyData>
+    public abstract class EnemyDataTableAsset<T> : DataTableAsset<IdData, T> where T : IData
+    {
+    }
+
+    public partial class EnemyDataTableAsset : EnemyDataTableAsset<EnemyData>
     {
     }
 }

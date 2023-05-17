@@ -59,25 +59,42 @@ namespace ZBase.Foundation.Data.DataTableAssetSourceGen
                 return null;
             }
 
-            foreach (var baseType in classSyntax.BaseList.Types)
+            var baseType = symbol.BaseType;
+
+            while (baseType != null)
             {
-                var typeInfo = semanticModel.GetTypeInfo(baseType.Type, token);
-                
-                if (typeInfo.Type is INamedTypeSymbol typeSymbol)
+                if (baseType.ToFullName().StartsWith(DATA_TABLE_ASSET_T) && baseType.TypeArguments.Length == 2)
                 {
-                    if (typeSymbol.IsGenericType
-                        && typeSymbol.TypeArguments.Length == 2
-                        && typeSymbol.ToFullName().StartsWith(DATA_TABLE_ASSET_T))
-                    {
-                        return new DataTableAssetRef {
-                            Syntax = classSyntax,
-                            Symbol = symbol,
-                            IdType = typeSymbol.TypeArguments[0],
-                            DataType = typeSymbol.TypeArguments[1],
-                        };
-                    }
+                    return new DataTableAssetRef {
+                        Syntax = classSyntax,
+                        Symbol = symbol,
+                        IdType = baseType.TypeArguments[0],
+                        DataType = baseType.TypeArguments[1],
+                    };
                 }
+
+                baseType = baseType.BaseType;
             }
+
+            //foreach (var baseType in classSyntax.BaseList.Types)
+            //{
+            //    var typeInfo = semanticModel.GetTypeInfo(baseType.Type, token);
+                
+            //    if (typeInfo.Type is INamedTypeSymbol typeSymbol)
+            //    {
+            //        if (typeSymbol.IsGenericType
+            //            && typeSymbol.TypeArguments.Length == 2
+            //            && typeSymbol.ToFullName().StartsWith(DATA_TABLE_ASSET_T))
+            //        {
+            //            return new DataTableAssetRef {
+            //                Syntax = classSyntax,
+            //                Symbol = symbol,
+            //                IdType = typeSymbol.TypeArguments[0],
+            //                DataType = typeSymbol.TypeArguments[1],
+            //            };
+            //        }
+            //    }
+            //}
 
             return null;
         }

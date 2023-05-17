@@ -1,5 +1,4 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using ZBase.Foundation.SourceGen;
@@ -17,17 +16,14 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         private const string GENERATED_CODE = "[global::System.CodeDom.Compiler.GeneratedCode(\"ZBase.Foundation.Data.DatabaseGenerator\", \"1.0.0\")]";
         private const string EXCLUDE_COVERAGE = "[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]";
 
-        public TypeDeclarationSyntax Syntax { get; }
-
-        public INamedTypeSymbol Symbol { get; }
+        public ITypeSymbol Symbol { get; }
 
         public string FullName { get; }
 
         public ImmutableArray<FieldRef> Fields { get; }
 
-        public DataDeclaration(TypeDeclarationSyntax candidate, INamedTypeSymbol symbol)
+        public DataDeclaration(ITypeSymbol symbol)
         {
-            Syntax = candidate;
             Symbol = symbol;
             FullName = Symbol.ToFullName();
 

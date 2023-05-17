@@ -16,7 +16,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
     {
         public const string GENERATOR_NAME = nameof(DatabaseGenerator);
         public const string IDATA = "global::ZBase.Foundation.Data.IData";
-        public const string DATA_TABLE_ASSET_T = "global::ZBase.Foundation.Data.DataTableAsset<";
+        public const string SERIALIZE_FIELD_ATTRIBUTE = "global::UnityEngine.SerializeField";
         public const string DATABASE_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.DatabaseAttribute";
         public const string TABLE_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.TableAttribute";
 
@@ -29,19 +29,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 transform: GetDatabaseRefSemanticMatch
             ).Where(static t => t is { });
 
-            var dataTableAssetRefProvider = context.SyntaxProvider.CreateSyntaxProvider(
-                predicate: GeneratorHelper.IsClassSyntaxMatch,
-                transform: GetDataTableAssetRefSemanticMatch
-            ).Where(static t => t is { });
-
-            var dataRefProvider = context.SyntaxProvider.CreateSyntaxProvider(
-                predicate: GeneratorHelper.IsStructOrClassSyntaxMatch,
-                transform: GetDataRefSemanticMatch
-            ).Where(static t => t is { });
-
             var combined = databaseRefProvider.Collect()
-                .Combine(dataTableAssetRefProvider.Collect())
-                .Combine(dataRefProvider.Collect())
                 .Combine(context.CompilationProvider)
                 .Combine(projectPathProvider);
 
@@ -49,9 +37,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 GenerateOutput(
                     sourceProductionContext
                     , source.Left.Right
-                    , source.Left.Left.Left.Left
-                    , source.Left.Left.Left.Right
-                    , source.Left.Left.Right
+                    , source.Left.Left
                     , source.Right.projectPath
                     , source.Right.outputSourceGenFiles
                 );
@@ -61,7 +47,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         private static bool IsValidDatabaseSyntax(SyntaxNode node, CancellationToken token)
         {
             return node is ClassDeclarationSyntax classSyntax
-                && classSyntax.AttributeLists.Count > 0;
+                && classSyntax.AttributeLists.Count > 0
+                && classSyntax.HasAttributeCandidate("ZBase.Foundation.Data.Authoring", "Database");
         }
 
         public static DatabaseRef GetDatabaseRefSemanticMatch(
@@ -71,7 +58,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         {
             if (context.SemanticModel.Compilation.IsValidCompilation() == false
                 || context.Node is not ClassDeclarationSyntax classSyntax
-                || classSyntax.AttributeLists.Count < 1
             )
             {
                 return null;
@@ -80,7 +66,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             var semanticModel = context.SemanticModel;
             var symbol = semanticModel.GetDeclaredSymbol(classSyntax);
             
-            if (symbol.HasAttribute(DATABASE_ATTRIBUTE) && symbol.HasAttribute(TABLE_ATTRIBUTE))
+            if (symbol.HasAttribute(DATABASE_ATTRIBUTE))
             {
                 return new DatabaseRef {
                     Syntax = classSyntax,
@@ -91,108 +77,10 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             return null;
         }
 
-        public static DataTableAssetRef GetDataTableAssetRefSemanticMatch(
-              GeneratorSyntaxContext context
-            , CancellationToken token
-        )
-        {
-            if (context.SemanticModel.Compilation.IsValidCompilation() == false
-                || context.Node is not ClassDeclarationSyntax classSyntax
-                || classSyntax.BaseList == null
-            )
-            {
-                return null;
-            }
-
-            var semanticModel = context.SemanticModel;
-            var symbol = semanticModel.GetDeclaredSymbol(classSyntax);
-
-            if (symbol.IsAbstract)
-            {
-                return null;
-            }
-
-            foreach (var baseType in classSyntax.BaseList.Types)
-            {
-                var typeInfo = semanticModel.GetTypeInfo(baseType.Type, token);
-
-                if (typeInfo.Type is INamedTypeSymbol typeSymbol)
-                {
-                    if (typeSymbol.IsGenericType
-                        && typeSymbol.TypeArguments.Length == 2
-                        && typeSymbol.ToFullName().StartsWith(DATA_TABLE_ASSET_T))
-                    {
-                        return new DataTableAssetRef {
-                            Syntax = classSyntax,
-                            Symbol = symbol,
-                            IdType = typeSymbol.TypeArguments[0],
-                            DataType = typeSymbol.TypeArguments[1],
-                        };
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        public static TypeDeclarationSyntax GetDataRefSemanticMatch(
-              GeneratorSyntaxContext context
-            , CancellationToken token
-        )
-        {
-            if (context.SemanticModel.Compilation.IsValidCompilation() == false
-                || context.Node is not TypeDeclarationSyntax typeSyntax
-                || typeSyntax.Modifiers.Any(SyntaxKind.ReadOnlyKeyword)
-                || typeSyntax.Kind() is not (SyntaxKind.ClassDeclaration or SyntaxKind.StructDeclaration)
-                || typeSyntax.BaseList == null
-            )
-            {
-                return null;
-            }
-
-            var semanticModel = context.SemanticModel;
-
-            foreach (var baseType in typeSyntax.BaseList.Types)
-            {
-                var typeInfo = semanticModel.GetTypeInfo(baseType.Type, token);
-
-                if (typeInfo.Type is INamedTypeSymbol typeSymbol
-                    && typeSymbol.ToFullName() == IDATA
-                )
-                {
-                    return typeSyntax;
-                }
-
-                if (DoesMatchInterface(typeInfo.Type.Interfaces)
-                    || DoesMatchInterface(typeInfo.Type.AllInterfaces)
-                )
-                {
-                    return typeSyntax;
-                }
-            }
-
-            return null;
-
-            static bool DoesMatchInterface(ImmutableArray<INamedTypeSymbol> interfaces)
-            {
-                foreach (var interfaceSymbol in interfaces)
-                {
-                    if (interfaceSymbol.ToFullName() == IDATA)
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-        }
-
         private static void GenerateOutput(
               SourceProductionContext context
             , Compilation compilation
             , ImmutableArray<DatabaseRef> candidates
-            , ImmutableArray<DataTableAssetRef> dataTableAssetRefs
-            , ImmutableArray<TypeDeclarationSyntax> dataDeclarations
             , string projectPath
             , bool outputSourceGenFiles
         )
@@ -204,7 +92,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
             context.CancellationToken.ThrowIfCancellationRequested();
 
-            foreach (var candidate in SelectUniques(candidates))
+            foreach (var candidate in candidates)
             {
                 try
                 {
@@ -217,12 +105,10 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         return;
                     }
 
-                    var token = context.CancellationToken;
-                    var dataMap = BuildDataMap(compilation, dataDeclarations, token);
-                    var dataTableAssetRefMap = BuildDataTableAssetRefMap(dataTableAssetRefs, dataMap);
-
-                    var syntaxTree = candidate.Syntax.SyntaxTree;
                     var assemblyName = compilation.Assembly.Name;
+                    var dataMap = BuildDataMap(declaration);
+                    var dataTableAssetRefMap = BuildDataTableAssetRefMap(declaration, dataMap);
+                    var syntaxTree = candidate.Syntax.SyntaxTree;
                     var databaseIdentifier = candidate.Symbol.ToValidIdentifier();
 
                     var databaseHintName = syntaxTree.GetGeneratedSourceFileName(
@@ -249,7 +135,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                     foreach (var table in tables)
                     {
-                        if (dataTableAssetRefMap.TryGetValue(table.TypeFullName, out var dataTableAssetRef) == false)
+                        if (dataTableAssetRefMap.TryGetValue(table.Type.ToFullName(), out var dataTableAssetRef) == false)
                         {
                             continue;
                         }
@@ -285,26 +171,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     ));
                 }
             }
-        }
-
-        private static IEnumerable<DatabaseRef> SelectUniques(ImmutableArray<DatabaseRef> candidates)
-        {
-            var map = new Dictionary<string, DatabaseRef>();
-
-            foreach (var candidate in candidates)
-            {
-                var fullName = candidate.Symbol.ToFullName();
-
-                if (map.ContainsKey(fullName) == false)
-                {
-                    map[fullName] = new DatabaseRef {
-                        Syntax = candidate.Syntax,
-                        Symbol = candidate.Symbol,
-                    };
-                }
-            }
-
-            return map.Values;
         }
 
         private static string GetHintName(
@@ -380,24 +246,46 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
         }
 
-        private static Dictionary<string, DataDeclaration> BuildDataMap(
-              Compilation compilation
-            , ImmutableArray<TypeDeclarationSyntax> dataDeclarations
-            , CancellationToken token
-        )
+        private static Dictionary<string, DataDeclaration> BuildDataMap(DatabaseDeclaration declaration)
         {
+            var tables = declaration.DatabaseRef.Tables;
             var map = new Dictionary<string, DataDeclaration>();
+            var queue = new Queue<ITypeSymbol>();
 
-            foreach (var declaration in dataDeclarations)
+            foreach (var table in tables)
             {
-                var syntaxTree = declaration.SyntaxTree;
-                var semanticModel = compilation.GetSemanticModel(syntaxTree);
-                var symbol = semanticModel.GetDeclaredSymbol(declaration, token);
-                var name = symbol.ToFullName();
+                var args = table.BaseType.TypeArguments;
+                queue.Enqueue(args[0]);
+                queue.Enqueue(args[1]);
 
-                if (map.ContainsKey(name) == false)
+                while (queue.Count > 0)
                 {
-                    map[name] = new DataDeclaration(declaration, symbol);
+                    var type = queue.Dequeue();
+                    
+                    if (type.ImplementsInterface(IDATA) == false)
+                    {
+                        continue;
+                    }
+
+                    var typeName = type.ToFullName();
+                    
+                    if (map.ContainsKey(typeName))
+                    {
+                        continue;
+                    }
+
+                    map[typeName] = new DataDeclaration(type);
+                    var members = type.GetMembers();
+
+                    foreach (var member in members)
+                    {
+                        if (member is IFieldSymbol field
+                            && field.HasAttribute(SERIALIZE_FIELD_ATTRIBUTE)
+                        )
+                        {
+                            queue.Enqueue(field.Type);
+                        }
+                    }
                 }
             }
 
@@ -405,20 +293,27 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         }
 
         private static Dictionary<string, DataTableAssetRef> BuildDataTableAssetRefMap(
-              ImmutableArray<DataTableAssetRef> dataTableAssetRefs
+              DatabaseDeclaration declaration
             , Dictionary<string, DataDeclaration> dataMap
         )
         {
+            var tables = declaration.DatabaseRef.Tables;
             var map = new Dictionary<string, DataTableAssetRef>();
             var uniqueTypeNames = new HashSet<string>();
             var typeQueue = new Queue<DataDeclaration>();
 
-            foreach (var dataTableAssetRef in dataTableAssetRefs)
+            foreach (var table in tables)
             {
-                var typeName = dataTableAssetRef.Symbol.ToFullName();
+                var typeName = table.Type.ToFullName();
 
                 if (map.ContainsKey(typeName) == false)
                 {
+                    var dataTableAssetRef = new DataTableAssetRef {
+                        Symbol = table.Type,
+                        IdType = table.BaseType.TypeArguments[0],
+                        DataType = table.BaseType.TypeArguments[1],
+                    };
+
                     InitializeDataTableAssetRef(dataTableAssetRef, dataMap, uniqueTypeNames, typeQueue);
                     map[typeName] = dataTableAssetRef;
                 }

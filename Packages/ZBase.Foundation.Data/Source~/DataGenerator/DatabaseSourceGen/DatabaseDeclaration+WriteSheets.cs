@@ -76,7 +76,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                           ref p
                         , dataMap
                         , verticalListMap
-                        , dataTypeFullName
+                        , dataTableAssetTypeName
                         , idTypeDeclaration?.Symbol
                     );
 
@@ -84,7 +84,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                           ref p
                         , dataMap
                         , verticalListMap
-                        , dataTypeFullName
+                        , dataTableAssetTypeName
                     );
 
                     foreach (var nestedFullName in nestedDataTypeFullNames)
@@ -95,7 +95,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                                   ref p
                                 , dataMap
                                 , verticalListMap
-                                , dataTypeFullName
+                                , dataTableAssetTypeName
                             );
                         }
                     }

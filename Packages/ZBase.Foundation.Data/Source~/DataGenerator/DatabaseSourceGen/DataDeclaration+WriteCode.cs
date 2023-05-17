@@ -17,7 +17,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             , ITypeSymbol idType = null
         )
         {
-            var typeName = Syntax.Identifier.Text;
+            var typeName = Symbol.Name;
             var typeFullName = Symbol.ToFullName();
 
             if (idType != null)
@@ -119,7 +119,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             , Dictionary<string, DataDeclaration> dataMap
         )
         {
-            var typeName = Syntax.Identifier.Text;
+            var typeName = Symbol.Name;
             var typeFullName = Symbol.ToFullName();
 
             p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
