@@ -16,8 +16,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
         public AttributeData NamingAttribute { get; set; }
 
-        public AttributeData DatabaseAttribute { get; set; }
-
         public ImmutableArray<string> NestedDataTypeFullNames { get; set; }
     }
 }

@@ -232,6 +232,14 @@ namespace ZBase.Foundation.SourceGen
                 .FirstOrDefault();
         }
 
+        public static IEnumerable<AttributeData> GetAttributes(this ISymbol typeSymbol, string fullyQualifiedAttributeName)
+        {
+            fullyQualifiedAttributeName = PrependGlobalIfMissing(fullyQualifiedAttributeName);
+
+            return typeSymbol.GetAttributes()
+                .Where(attribute => attribute.AttributeClass.ToFullName() == fullyQualifiedAttributeName);
+        }
+
         public static bool HasAttributeOrFieldWithAttribute(this ITypeSymbol typeSymbol, string fullyQualifiedAttributeName)
         {
             fullyQualifiedAttributeName = PrependGlobalIfMissing(fullyQualifiedAttributeName);

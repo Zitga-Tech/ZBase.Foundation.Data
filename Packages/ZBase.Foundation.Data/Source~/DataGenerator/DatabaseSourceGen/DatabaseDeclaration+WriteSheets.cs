@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.CodeAnalysis;
+﻿using System.Collections.Generic;
 using ZBase.Foundation.SourceGen;
-
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace ZBase.Foundation.Data.DatabaseSourceGen
 {
@@ -11,58 +7,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
     {
         public const string GENERATED_SHEET_ATTRIBUTE = "[global::ZBase.Foundation.Data.Authoring.SourceGen.GeneratedSheet(typeof({0}), typeof({1}), typeof({2}))]";
 
-        public void GenerateSheets(
-              SourceProductionContext context
-            , Compilation compilation
-            , bool outputSourceGenFiles
-            , DiagnosticDescriptor errorDescriptor
-        )
-        {
-            var compilationUnitSyntax = CompilationUnit().NormalizeWhitespace(eol: "\n");
-
-            foreach (var dataTableAssetRef in DataTableAssetRefs)
-            {
-                try
-                {
-                    var syntax = dataTableAssetRef.Syntax;
-                    var syntaxTree = syntax.SyntaxTree;
-                    var source = GetSourceForSheet(dataTableAssetRef, DataMap);
-                    var sourceFilePath = syntaxTree.GetGeneratedSourceFilePath(compilation.Assembly.Name, GENERATOR_NAME);
-
-                    var outputSource = TypeCreationHelpers.GenerateSourceTextForRootNodes(
-                          sourceFilePath
-                        , compilationUnitSyntax
-                        , source
-                        , context.CancellationToken
-                    );
-
-                    context.AddSource(
-                          syntaxTree.GetGeneratedSourceFileName(GENERATOR_NAME, syntax, $"{dataTableAssetRef.DataType.Name}Sheet")
-                        , outputSource
-                    );
-
-                    if (outputSourceGenFiles)
-                    {
-                        SourceGenHelpers.OutputSourceToFile(
-                              context
-                            , syntax.GetLocation()
-                            , sourceFilePath
-                            , outputSource
-                        );
-                    }
-                }
-                catch (Exception e)
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(
-                          errorDescriptor
-                        , dataTableAssetRef.Syntax.GetLocation()
-                        , e.ToUnityPrintableString()
-                    ));
-                }
-            }
-        }
-
-        private static string GetSourceForSheet(
+        public string WriteSheet(
               DataTableAssetRef dataTableAssetRef
             , Dictionary<string, DataDeclaration> dataMap
         )
@@ -74,7 +19,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             var dataTypeFullName = dataType.ToFullName();
             var dataTableAssetTypeName = dataTableAssetType.ToFullName();
             var sheetName = $"{dataType.Name}Sheet";
-            var containingNamespace = dataTableAssetType.ContainingNamespace.ToDisplayString();
             var nestedDataTypeFullNames = dataTableAssetRef.NestedDataTypeFullNames;
 
             string sheetIdTypeName;
@@ -98,16 +42,17 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 sheetDataTypeName = dataTypeFullName;
             }
 
-            var p = Printer.DefaultLarge;
+            var scopePrinter = new SyntaxNodeScopePrinter(Printer.DefaultLarge, DatabaseRef.Syntax.Parent);
+            var p = scopePrinter.printer;
+            p = p.IncreasedIndent();
 
             p.PrintEndLine();
             p.PrintLine("#pragma warning disable");
             p.PrintEndLine();
 
-            p.PrintEndLine().Print("#if UNITY_EDITOR").PrintEndLine();
-            p.PrintEndLine();
-
-            p.PrintLine($"namespace {containingNamespace}.Authoring");
+            p.PrintBeginLine()
+                .Print($"partial class ").Print(DatabaseRef.Syntax.Identifier.Text)
+                .PrintEndLine();
             p.OpenScope();
             {
                 if (dataTableAssetRef.NamingAttribute != null)
@@ -154,8 +99,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
             p.CloseScope();
 
-            p.PrintEndLine().Print("#endif").PrintEndLine();
-
+            p = p.DecreasedIndent();
             return p.Result;
         }
     }

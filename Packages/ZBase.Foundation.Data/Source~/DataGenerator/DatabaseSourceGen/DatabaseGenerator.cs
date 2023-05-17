@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
@@ -13,26 +14,34 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
     [Generator]
     public class DatabaseGenerator : IIncrementalGenerator
     {
+        public const string GENERATOR_NAME = nameof(DatabaseGenerator);
         public const string IDATA = "global::ZBase.Foundation.Data.IData";
         public const string DATA_TABLE_ASSET_T = "global::ZBase.Foundation.Data.DataTableAsset<";
         public const string DATA_SHEET_NAMING_ATTRIBUTE = "global::ZBase.Foundation.Data.DataSheetNamingAttribute";
-        public const string DATABASE_ATTRIBUTE = "global::ZBase.Foundation.Data.DatabaseAttribute";
+        public const string DATABASE_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.DatabaseAttribute";
+        public const string TABLE_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.TableAttribute";
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
             var projectPathProvider = SourceGenHelpers.GetSourceGenConfigProvider(context);
 
+            var databaseRefProvider = context.SyntaxProvider.CreateSyntaxProvider(
+                predicate: IsValidDatabaseSyntax,
+                transform: GetDatabaseRefSemanticMatch
+            ).Where(static t => t is { });
+
             var dataTableAssetRefProvider = context.SyntaxProvider.CreateSyntaxProvider(
-                predicate: static (node, token) => GeneratorHelper.IsClassSyntaxMatch(node, token),
-                transform: static (syntaxContext, token) => GetDataTableAssetRefSemanticMatch(syntaxContext, token)
-            ).Where(static t => t != null);
+                predicate: GeneratorHelper.IsClassSyntaxMatch,
+                transform: GetDataTableAssetRefSemanticMatch
+            ).Where(static t => t is { });
 
             var dataRefProvider = context.SyntaxProvider.CreateSyntaxProvider(
-                predicate: static (node, token) => GeneratorHelper.IsStructOrClassSyntaxMatch(node, token),
-                transform: static (syntaxContext, token) => GetDataRefSemanticMatch(syntaxContext, token)
-            ).Where(static t => t != null);
+                predicate: GeneratorHelper.IsStructOrClassSyntaxMatch,
+                transform: GetDataRefSemanticMatch
+            ).Where(static t => t is { });
 
-            var combined = dataTableAssetRefProvider.Collect()
+            var combined = databaseRefProvider
+                .Combine(dataTableAssetRefProvider.Collect())
                 .Combine(dataRefProvider.Collect())
                 .Combine(context.CompilationProvider)
                 .Combine(projectPathProvider);
@@ -41,12 +50,46 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 GenerateOutput(
                     sourceProductionContext
                     , source.Left.Right
-                    , source.Left.Left.Left
+                    , source.Left.Left.Left.Left
+                    , source.Left.Left.Left.Right
                     , source.Left.Left.Right
                     , source.Right.projectPath
                     , source.Right.outputSourceGenFiles
                 );
             });
+        }
+
+        private static bool IsValidDatabaseSyntax(SyntaxNode node, CancellationToken token)
+        {
+            return node is ClassDeclarationSyntax classSyntax
+                && classSyntax.AttributeLists.Count > 0;
+        }
+
+        public static DatabaseRef GetDatabaseRefSemanticMatch(
+              GeneratorSyntaxContext context
+            , CancellationToken token
+        )
+        {
+            if (context.SemanticModel.Compilation.IsValidCompilation() == false
+                || context.Node is not ClassDeclarationSyntax classSyntax
+                || classSyntax.AttributeLists.Count < 1
+            )
+            {
+                return null;
+            }
+
+            var semanticModel = context.SemanticModel;
+            var symbol = semanticModel.GetDeclaredSymbol(classSyntax);
+            
+            if (symbol.HasAttribute(DATABASE_ATTRIBUTE) && symbol.HasAttribute(TABLE_ATTRIBUTE))
+            {
+                return new DatabaseRef {
+                    Syntax = classSyntax,
+                    Symbol = symbol,
+                };
+            }
+
+            return null;
         }
 
         public static DataTableAssetRef GetDataTableAssetRefSemanticMatch(
@@ -86,7 +129,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                             IdType = typeSymbol.TypeArguments[0],
                             DataType = typeSymbol.TypeArguments[1],
                             NamingAttribute = symbol.GetAttribute(DATA_SHEET_NAMING_ATTRIBUTE),
-                            DatabaseAttribute = symbol.GetAttribute(DATABASE_ATTRIBUTE),
                         };
                     }
                 }
@@ -150,13 +192,14 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         private static void GenerateOutput(
               SourceProductionContext context
             , Compilation compilation
-            , ImmutableArray<DataTableAssetRef> candidates
+            , DatabaseRef candidate
+            , ImmutableArray<DataTableAssetRef> dataTableAssetRefs
             , ImmutableArray<TypeDeclarationSyntax> dataDeclarations
             , string projectPath
             , bool outputSourceGenFiles
         )
         {
-            if (candidates.Length < 1)
+            if (candidate == null)
             {
                 return;
             }
@@ -167,124 +210,267 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             {
                 SourceGenHelpers.ProjectPath = projectPath;
 
+                var declaration = new DatabaseDeclaration(candidate);
+
+                if (declaration.DatabaseRef.DataTableAssetTypeNames.Length < 1)
+                {
+                    return;
+                }
+
                 var token = context.CancellationToken;
                 var dataMap = BuildDataMap(compilation, dataDeclarations, token);
-                var databaseMap = BuildDatabaseMap(candidates);
-                var databaseDeclaration = new DatabaseDeclaration(candidates, dataMap, databaseMap);
+                var dataTableAssetRefMap = BuildDataTableAssetRefMap(dataTableAssetRefs, dataMap);
 
-                databaseDeclaration.GenerateSheets(
-                      context
-                    , compilation
-                    , outputSourceGenFiles
-                    , s_errorDescriptor
+                var syntaxTree = candidate.Syntax.SyntaxTree;
+                var assemblyName = compilation.Assembly.Name;
+                var databaseIdentifier = candidate.Symbol.ToValidIdentifier();
+
+                var databaseHintName = syntaxTree.GetGeneratedSourceFileName(
+                      GENERATOR_NAME
+                    , candidate.Syntax
+                    , databaseIdentifier
                 );
 
-                databaseDeclaration.GenerateContainers(
-                      context
-                    , compilation
-                    , outputSourceGenFiles
-                    , s_errorDescriptor
+                var databaseSourceFilePath = syntaxTree.GetGeneratedSourceFilePath(
+                      assemblyName
+                    , GENERATOR_NAME
                 );
+
+                OutputSource(
+                      context
+                    , outputSourceGenFiles
+                    , declaration.DatabaseRef.Syntax
+                    , declaration.WriteContainer(dataTableAssetRefMap)
+                    , databaseHintName
+                    , databaseSourceFilePath
+                );
+
+                var dataTableAssetTypeNames = declaration.DatabaseRef.DataTableAssetTypeNames;
+
+                foreach (var dataTableAssetTypeName in dataTableAssetTypeNames)
+                {
+                    if (dataTableAssetRefMap.TryGetValue(dataTableAssetTypeName, out var dataTableAssetRef) == false)
+                    {
+                        continue;
+                    }
+
+                    var sheetHintName = GetHintName(
+                          syntaxTree
+                        , GENERATOR_NAME
+                        , candidate.Syntax
+                        , $"{databaseIdentifier}_{dataTableAssetRef.DataType.Name}Sheet"
+                    );
+
+                    var sheetSourceFilePath = GetSourceFilePath(
+                          sheetHintName
+                        , assemblyName
+                        , GENERATOR_NAME
+                    );
+
+                    OutputSource(
+                          context
+                        , outputSourceGenFiles
+                        , declaration.DatabaseRef.Syntax
+                        , declaration.WriteSheet(dataTableAssetRef, dataMap)
+                        , sheetHintName
+                        , sheetSourceFilePath
+                    );
+                }
             }
             catch (Exception e)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                       s_errorDescriptor
-                    , null
+                    , candidate.Syntax.GetLocation()
                     , e.ToUnityPrintableString()
                 ));
+            }
+
+            static string GetHintName(
+                  SyntaxTree syntaxTree
+                , string generatorName
+                , SyntaxNode node
+                , string typeName
+            )
+            {
+                var (isSuccess, fileName) = syntaxTree.TryGetFileNameWithoutExtension();
+                var stableHashCode = SourceGenHelpers.GetStableHashCode(syntaxTree.FilePath) & 0x7fffffff;
+
+                var postfix = generatorName.Length > 0 ? $"__{generatorName}" : string.Empty;
+
+                if (string.IsNullOrWhiteSpace(typeName) == false)
+                {
+                    postfix = $"__{typeName}{postfix}";
+                }
+
+                fileName = $"{fileName}_";
+
+                if (isSuccess)
+                {
+                    var salting = node.GetLocation().GetLineSpan().StartLinePosition.Line;
+                    fileName = $"{fileName}{postfix}_{stableHashCode}{salting}.g.cs";
+                }
+                else
+                {
+                    fileName = Path.Combine($"{Path.GetRandomFileName()}{postfix}", ".g.cs");
+                }
+
+                return fileName;
+            }
+
+            static string GetSourceFilePath(string fileName, string assemblyName, string generatorName)
+            {
+                if (SourceGenHelpers.CanWriteToProjectPath)
+                {
+                    var saveToDirectory = $"{SourceGenHelpers.ProjectPath}/Temp/GeneratedCode/{assemblyName}/";
+                    Directory.CreateDirectory(saveToDirectory);
+                    return saveToDirectory + fileName;
+                }
+
+                return $"Temp/GeneratedCode/{assemblyName}";
+            }
+        }
+
+        private static void OutputSource(
+              SourceProductionContext context
+            , bool outputSourceGenFiles
+            , SyntaxNode syntax
+            , string source
+            , string hintName
+            , string sourceFilePath
+        )
+        {
+            var outputSource = TypeCreationHelpers.GenerateSourceTextForRootNodes(
+                  sourceFilePath
+                , syntax
+                , source
+                , context.CancellationToken
+            );
+
+            context.AddSource(hintName, outputSource);
+
+            if (outputSourceGenFiles)
+            {
+                SourceGenHelpers.OutputSourceToFile(
+                      context
+                    , syntax.GetLocation()
+                    , sourceFilePath
+                    , outputSource
+                );
             }
         }
 
         private static Dictionary<string, DataDeclaration> BuildDataMap(
               Compilation compilation
-            , ImmutableArray<TypeDeclarationSyntax> dataDeclaration
+            , ImmutableArray<TypeDeclarationSyntax> dataDeclarations
             , CancellationToken token
         )
         {
             var map = new Dictionary<string, DataDeclaration>();
 
-            foreach (var dataRef in dataDeclaration)
+            foreach (var declaration in dataDeclarations)
             {
-                var syntaxTree = dataRef.SyntaxTree;
+                var syntaxTree = declaration.SyntaxTree;
                 var semanticModel = compilation.GetSemanticModel(syntaxTree);
-                var symbol = semanticModel.GetDeclaredSymbol(dataRef, token);
+                var symbol = semanticModel.GetDeclaredSymbol(declaration, token);
                 var name = symbol.ToFullName();
 
                 if (map.ContainsKey(name) == false)
                 {
-                    map[name] = new DataDeclaration(dataRef, symbol);
+                    map[name] = new DataDeclaration(declaration, symbol);
                 }
             }
 
             return map;
         }
 
-        private static Dictionary<string, HashSet<DataTableAssetRef>> BuildDatabaseMap(
-            ImmutableArray<DataTableAssetRef> dataTableAssetRefs
+        private static Dictionary<string, DataTableAssetRef> BuildDataTableAssetRefMap(
+              ImmutableArray<DataTableAssetRef> dataTableAssetRefs
+            , Dictionary<string, DataDeclaration> dataMap
         )
         {
-            var result = new Dictionary<string, HashSet<DataTableAssetRef>>();
+            var map = new Dictionary<string, DataTableAssetRef>();
+            var uniqueTypeNames = new HashSet<string>();
+            var typeQueue = new Queue<DataDeclaration>();
 
             foreach (var dataTableAssetRef in dataTableAssetRefs)
             {
-                if (dataTableAssetRef.DatabaseAttribute == null)
+                var typeName = dataTableAssetRef.Symbol.ToFullName();
+
+                if (map.ContainsKey(typeName) == false)
                 {
-                    continue;
+                    InitializeDataTableAssetRef(dataTableAssetRef, dataMap, uniqueTypeNames, typeQueue);
+                    map[typeName] = dataTableAssetRef;
                 }
 
-                var attribArgs = dataTableAssetRef.DatabaseAttribute.ConstructorArguments;
-
-                if (attribArgs.Length != 2)
-                {
-                    continue;
-                }
-
-                var namespaceName = attribArgs[0].Value.ToString();
-                var typeName = attribArgs[1].Value.ToString();
-
-                if (string.IsNullOrWhiteSpace(namespaceName)
-                    || string.IsNullOrWhiteSpace(typeName))
-                {
-                    continue;
-                }
-
-                var key = $"{namespaceName}:{typeName}";
-
-                if (result.TryGetValue(key, out var types) == false)
-                {
-                    result[key] = types = new HashSet<DataTableAssetRef>(DataTableAssetRefEqualityComparer.Default);
-                }
-
-                types.Add(dataTableAssetRef);
+                uniqueTypeNames.Clear();
+                typeQueue.Clear();
             }
 
-            return result;
+            return map;
+        }
+
+        private static void InitializeDataTableAssetRef(
+              DataTableAssetRef dataTableAssetRef
+            , Dictionary<string, DataDeclaration> dataMap
+            , HashSet<string> uniqueTypeNames
+            , Queue<DataDeclaration> typeQueue
+        )
+        {
+            var idTypeFullName = dataTableAssetRef.IdType.ToFullName();
+            var dataTypeFullName = dataTableAssetRef.DataType.ToFullName();
+
+            if (dataMap.TryGetValue(idTypeFullName, out var idDeclaration))
+            {
+                typeQueue.Enqueue(idDeclaration);
+                uniqueTypeNames.Add(idTypeFullName);
+            }
+
+            if (dataMap.TryGetValue(dataTypeFullName, out var dataDeclaration))
+            {
+                typeQueue.Enqueue(dataDeclaration);
+                uniqueTypeNames.Add(dataTypeFullName);
+            }
+
+            while (typeQueue.Count > 0)
+            {
+                var declaration = typeQueue.Dequeue();
+
+                foreach (var field in declaration.Fields)
+                {
+                    var fieldTypeFullName = field.IsArray
+                            ? field.ArrayElementType.ToFullName()
+                            : field.Type.ToFullName();
+
+                    if (uniqueTypeNames.Contains(fieldTypeFullName))
+                    {
+                        continue;
+                    }
+
+                    if (dataMap.TryGetValue(fieldTypeFullName, out var fieldTypeDeclaration))
+                    {
+                        typeQueue.Enqueue(fieldTypeDeclaration);
+                        uniqueTypeNames.Add(fieldTypeFullName);
+                    }
+                }
+            }
+
+            uniqueTypeNames.Remove(idTypeFullName);
+            uniqueTypeNames.Remove(dataTypeFullName);
+
+            using var arrayBuilder = ImmutableArrayBuilder<string>.Rent();
+            arrayBuilder.AddRange(uniqueTypeNames);
+            dataTableAssetRef.NestedDataTypeFullNames = arrayBuilder.ToImmutable();
         }
 
         private static readonly DiagnosticDescriptor s_errorDescriptor
             = new("SG_DATABASE_01"
                 , "Database Generator Error"
                 , "This error indicates a bug in the Database source generators. Error message: '{0}'."
-                , "ZBase.Foundation.Data.DatabaseAsset"
+                , "ZBase.Foundation.Data.Authoring.DatabaseAttribute"
                 , DiagnosticSeverity.Error
                 , isEnabledByDefault: true
                 , description: ""
             );
-
-        public sealed class DataTableAssetRefEqualityComparer : IEqualityComparer<DataTableAssetRef>
-        {
-            public static readonly DataTableAssetRefEqualityComparer Default = new();
-
-            public bool Equals(DataTableAssetRef x, DataTableAssetRef y)
-            {
-                return SymbolEqualityComparer.Default.Equals(x.Symbol, y.Symbol);
-            }
-
-            public int GetHashCode(DataTableAssetRef obj)
-            {
-                return SymbolEqualityComparer.Default.GetHashCode(obj.Symbol);
-            }
-        }
     }
 }
