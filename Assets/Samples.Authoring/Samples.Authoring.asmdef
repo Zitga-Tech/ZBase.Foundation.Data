@@ -1,0 +1,21 @@
+{
+    "name": "Samples.Authoring",
+    "rootNamespace": "Samples.Authoring",
+    "references": [
+        "Samples",
+        "BakingSheet",
+        "ZBase.Foundation.Data",
+        "ZBase.Foundation.Data.Authoring"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
