@@ -1,9 +1,11 @@
+using UnityEngine;
 using ZBase.Foundation.Data.Authoring;
 
 namespace Samples.Authoring
 {
+    [CreateAssetMenu(fileName = "SampleDatabase", menuName = "Sample Database", order = 0)]
     [Database]
-    public partial class SampleDatabase
+    public partial class SampleDatabase : ScriptableObject
     {
 
     }
