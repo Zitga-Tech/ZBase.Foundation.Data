@@ -8,7 +8,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public const string GENERATED_SHEET_ATTRIBUTE = "[global::ZBase.Foundation.Data.Authoring.SourceGen.GeneratedSheet(typeof({0}), typeof({1}), typeof({2}))]";
 
         public string WriteSheet(
-              DataTableAssetRef dataTableAssetRef
+              DatabaseRef.Table table
+            , DataTableAssetRef dataTableAssetRef
             , Dictionary<string, DataDeclaration> dataMap
         )
         {
@@ -55,26 +56,12 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 .PrintEndLine();
             p.OpenScope();
             {
-                if (dataTableAssetRef.NamingAttribute != null)
-                {
-                    var attribute = dataTableAssetRef.NamingAttribute;
-                    var attribArgs = attribute.ConstructorArguments;
-
-                    p.PrintBeginLine()
-                        .Print($"[global::ZBase.Foundation.Data.DataSheetNamingAttribute(");
-
-                    if (attribArgs.Length > 0)
-                    {
-                        p.Print($"\"{attribArgs[0].Value}\"");
-                    }
-
-                    if (attribArgs.Length > 1)
-                    {
-                        p.Print($", global::ZBase.Foundation.Data.NamingStrategy.{attribArgs[1].Value.ToNamingStrategy()}");
-                    }
-
-                    p.Print(")]").PrintEndLine();
-                }
+                p.PrintBeginLine()
+                    .Print($"[global::ZBase.Foundation.Data.Authoring.SourceGen.SheetNamingAttribute(")
+                    .Print($"\"{table.SheetName}\"")
+                    .Print($", global::ZBase.Foundation.Data.Authoring.NamingStrategy.{table.NamingStrategy}")
+                    .Print(")]")
+                    .PrintEndLine();
 
                 p.PrintLine(string.Format(GENERATED_SHEET_ATTRIBUTE, idTypeFullName, dataTypeFullName, dataTableAssetTypeName));
                 p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);

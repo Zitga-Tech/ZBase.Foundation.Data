@@ -1,26 +1,5 @@
-﻿using System;
-
-namespace ZBase.Foundation.Data
+﻿namespace ZBase.Foundation.Data.Authoring
 {
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-    public sealed class DataSheetNamingAttribute : Attribute
-    {
-        public string SheetName { get; }
-
-        public NamingStrategy NamingStrategy { get; }
-
-        public DataSheetNamingAttribute(string sheetName)
-        {
-            this.SheetName = sheetName;
-        }
-
-        public DataSheetNamingAttribute(string sheetName, NamingStrategy namingStrategy)
-        {
-            this.SheetName = sheetName;
-            this.NamingStrategy = namingStrategy;
-        }
-    }
-
     /// <summary>
     /// The supported formats of sheet and column names.
     /// </summary>

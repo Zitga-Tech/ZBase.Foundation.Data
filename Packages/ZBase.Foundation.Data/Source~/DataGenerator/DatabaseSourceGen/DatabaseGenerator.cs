@@ -17,7 +17,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public const string GENERATOR_NAME = nameof(DatabaseGenerator);
         public const string IDATA = "global::ZBase.Foundation.Data.IData";
         public const string DATA_TABLE_ASSET_T = "global::ZBase.Foundation.Data.DataTableAsset<";
-        public const string DATA_SHEET_NAMING_ATTRIBUTE = "global::ZBase.Foundation.Data.DataSheetNamingAttribute";
         public const string DATABASE_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.DatabaseAttribute";
         public const string TABLE_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.TableAttribute";
 
@@ -128,7 +127,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                             Symbol = symbol,
                             IdType = typeSymbol.TypeArguments[0],
                             DataType = typeSymbol.TypeArguments[1],
-                            NamingAttribute = symbol.GetAttribute(DATA_SHEET_NAMING_ATTRIBUTE),
                         };
                     }
                 }
@@ -212,7 +210,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                 var declaration = new DatabaseDeclaration(candidate);
 
-                if (declaration.DatabaseRef.DataTableAssetTypeNames.Length < 1)
+                if (declaration.DatabaseRef.Tables.Length < 1)
                 {
                     return;
                 }
@@ -245,11 +243,11 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     , databaseSourceFilePath
                 );
 
-                var dataTableAssetTypeNames = declaration.DatabaseRef.DataTableAssetTypeNames;
+                var tables = declaration.DatabaseRef.Tables;
 
-                foreach (var dataTableAssetTypeName in dataTableAssetTypeNames)
+                foreach (var table in tables)
                 {
-                    if (dataTableAssetRefMap.TryGetValue(dataTableAssetTypeName, out var dataTableAssetRef) == false)
+                    if (dataTableAssetRefMap.TryGetValue(table.FullTypeName, out var dataTableAssetRef) == false)
                     {
                         continue;
                     }
@@ -264,14 +262,13 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     var sheetSourceFilePath = GetSourceFilePath(
                           sheetHintName
                         , assemblyName
-                        , GENERATOR_NAME
                     );
 
                     OutputSource(
                           context
                         , outputSourceGenFiles
                         , declaration.DatabaseRef.Syntax
-                        , declaration.WriteSheet(dataTableAssetRef, dataMap)
+                        , declaration.WriteSheet(table, dataTableAssetRef, dataMap)
                         , sheetHintName
                         , sheetSourceFilePath
                     );
@@ -318,7 +315,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 return fileName;
             }
 
-            static string GetSourceFilePath(string fileName, string assemblyName, string generatorName)
+            static string GetSourceFilePath(string fileName, string assemblyName)
             {
                 if (SourceGenHelpers.CanWriteToProjectPath)
                 {

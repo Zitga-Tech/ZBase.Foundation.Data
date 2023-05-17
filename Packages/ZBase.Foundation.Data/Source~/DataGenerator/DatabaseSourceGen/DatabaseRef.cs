@@ -10,6 +10,15 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
         public ITypeSymbol Symbol { get; set; }
 
-        public ImmutableArray<string> DataTableAssetTypeNames { get; set; }
+        public ImmutableArray<Table> Tables { get; set; }
+
+        public class Table
+        {
+            public string FullTypeName { get; set; }
+
+            public string SheetName { get; set; }
+
+            public NamingStrategy NamingStrategy { get; set; }
+        }
     }
 }

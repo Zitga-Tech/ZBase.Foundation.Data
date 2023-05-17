@@ -10,6 +10,7 @@ using Cathei.BakingSheet;
 using Cathei.BakingSheet.Internal;
 using Cathei.BakingSheet.Raw;
 using Microsoft.Extensions.Logging;
+using ZBase.Foundation.Data.Authoring.SourceGen;
 
 namespace ZBase.Foundation.Data.Authoring
 {
@@ -66,7 +67,8 @@ namespace ZBase.Foundation.Data.Authoring
                 string sheetName;
                 NamingStrategy namingStrategy;
 
-                var attribute = pair.Value.PropertyType.GetCustomAttribute<DataSheetNamingAttribute>();
+                var attribute = pair.Value.PropertyType.GetCustomAttribute<SheetNamingAttribute>();
+
                 if (attribute != null)
                 {
                     sheetName = attribute.SheetName;

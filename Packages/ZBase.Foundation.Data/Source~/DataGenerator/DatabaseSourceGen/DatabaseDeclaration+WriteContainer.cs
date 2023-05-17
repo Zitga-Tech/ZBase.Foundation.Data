@@ -10,7 +10,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         )
         {
             var syntax = DatabaseRef.Syntax;
-            var dataTableAssetTypes = DatabaseRef.DataTableAssetTypeNames;
+            var tables = DatabaseRef.Tables;
 
             var scopePrinter = new SyntaxNodeScopePrinter(Printer.DefaultLarge, DatabaseRef.Syntax.Parent);
             var p = scopePrinter.printer;
@@ -34,9 +34,9 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     p.PrintLine($"protected SheetContainer(global::Microsoft.Extensions.Logging.ILogger logger) : base(logger) {{ }}");
                     p.PrintEndLine();
 
-                    foreach (var dataTableAssetTypeName in dataTableAssetTypes)
+                    foreach (var table in tables)
                     {
-                        if (dataTableAssetRefMap.TryGetValue(dataTableAssetTypeName, out var dataTableAssetRef) == false)
+                        if (dataTableAssetRefMap.TryGetValue(table.FullTypeName, out var dataTableAssetRef) == false)
                         {
                             continue;
                         }

@@ -20,23 +20,51 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             this.DatabaseRef = databaseRef;
 
             var uniqueTypeNames = new HashSet<string>();
+            var tables = new List<DatabaseRef.Table>();
             var attributes = DatabaseRef.Symbol.GetAttributes(TABLE_ATTRIBUTE);
 
             foreach (var attrib in attributes)
             {
-                if (attrib.ConstructorArguments.Length != 1
-                    || attrib.ConstructorArguments[0].Value is not INamedTypeSymbol arg
-                )
+                var args = attrib.ConstructorArguments;
+
+                if (args.Length < 1 || args[0].Value is not INamedTypeSymbol type)
                 {
                     continue;
                 }
 
-                uniqueTypeNames.Add(arg.ToFullName());
+                var fullTypeName = type.ToFullName();
+
+                if (uniqueTypeNames.Contains(fullTypeName))
+                {
+                    continue;
+                }
+
+                uniqueTypeNames.Add(fullTypeName);
+
+                var table = new DatabaseRef.Table {
+                    FullTypeName = fullTypeName
+                };
+
+                if (args.Length > 1)
+                {
+                    table.SheetName = args[1].Value.ToString();
+                }
+                else
+                {
+                    table.SheetName = type.Name;
+                }
+
+                if (args.Length > 2)
+                {
+                    table.NamingStrategy = args[2].Value.ToNamingStrategy();
+                }
+
+                tables.Add(table);
             }
 
-            using var arrayBuilder = ImmutableArrayBuilder<string>.Rent();
-            arrayBuilder.AddRange(uniqueTypeNames);
-            DatabaseRef.DataTableAssetTypeNames = arrayBuilder.ToImmutable();
+            using var arrayBuilder = ImmutableArrayBuilder<DatabaseRef.Table>.Rent();
+            arrayBuilder.AddRange(tables);
+            DatabaseRef.Tables = arrayBuilder.ToImmutable();
         }
     }
 }

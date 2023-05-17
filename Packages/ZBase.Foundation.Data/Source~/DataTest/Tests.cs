@@ -10,7 +10,7 @@ namespace DataTest
     }
 }
 
-namespace RumbleDefense
+namespace MyGame
 {
     using ZBase.Foundation.Data;
     using UnityEngine;
@@ -21,7 +21,7 @@ namespace RumbleDefense
         Enemy,
     }
 
-    public partial struct EntityId : IData
+    public partial struct IdData : IData
     {
         [SerializeField]
         private EntityKind _kind;
@@ -30,52 +30,80 @@ namespace RumbleDefense
         private int _id;
     }
 
+    public partial struct StatData : IData
+    {
+        [SerializeField]
+        private int _hp;
+
+        [SerializeField]
+        private int _atk;
+    }
+
+    public partial struct StatMultiplierData : IData
+    {
+        [SerializeField]
+        private int _level;
+
+        [SerializeField]
+        private float _hp;
+
+        [SerializeField]
+        private float _atk;
+    }
+}
+
+namespace MyGame.Heroes
+{
+    using ZBase.Foundation.Data;
+    using UnityEngine;
+
     public partial struct HeroData : IData
     {
         [SerializeField]
-        private EntityId _id;
+        private IdData _id;
 
         [SerializeField]
         private string _name;
 
         [SerializeField]
-        private int _strength;
-
-        [SerializeField]
-        private int _intelligence;
-
-        [SerializeField]
-        private int _vitality;
+        private StatData _stat;
 
         [SerializeField, VerticalArray]
-        private HeroStatMultiplier[] _multipliers;
-
-        [SerializeField]
-        private string[] _descriptions;
+        private StatMultiplierData[] _multipliers;
     }
 
-    public partial struct HeroStatMultiplier : IData
-    {
-        [SerializeField]
-        private float _statMultiplier;
-
-        [SerializeField]
-        private int _requiredExp;
-
-        [SerializeField]
-        private string _requiredItem;
-    }
-
-    [DataSheetNaming("Hero", NamingStrategy.SnakeCase)]
-    public partial class HeroDataTableAsset : DataTableAsset<EntityId, HeroData>
+    public partial class HeroDataTableAsset : DataTableAsset<IdData, HeroData>
     {
     }
 }
 
-namespace RumbleDefense.Authoring
+namespace MyGame.Enemies
+{
+    using ZBase.Foundation.Data;
+    using UnityEngine;
+
+    public partial struct EnemyData : IData
+    {
+        [SerializeField]
+        private IdData _id;
+
+        [SerializeField]
+        private string _name;
+
+        [SerializeField]
+        private StatData _stat;
+    }
+
+    public partial class EnemyDataTableAsset : DataTableAsset<IdData, EnemyData>
+    {
+    }
+}
+
+namespace MyGame.Authoring
 {
     [Database]
-    [Table(typeof(HeroDataTableAsset))]
+    [Table(typeof(Heroes.HeroDataTableAsset), "Hero", NamingStrategy.SnakeCase)]
+    [Table(typeof(Enemies.EnemyDataTableAsset), "Enemy", NamingStrategy.SnakeCase)]
     public partial class Database
     {
 
