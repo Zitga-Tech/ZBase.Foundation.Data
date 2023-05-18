@@ -120,7 +120,10 @@ namespace Samples.Authoring
     }
 
     [Table(typeof(HeroDataTableAsset), "Hero", NamingStrategy.SnakeCase)]
-    partial class SampleDatabase { }
+    partial class SampleDatabase
+    {
+        partial class HeroDataSheet { }
+    }
 
     [Table(typeof(EnemyDataTableAsset), "Enemy", NamingStrategy.SnakeCase)]
     partial class SampleDatabase { }

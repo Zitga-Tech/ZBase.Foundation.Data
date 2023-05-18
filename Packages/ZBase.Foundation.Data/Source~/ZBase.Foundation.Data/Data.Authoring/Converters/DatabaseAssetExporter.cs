@@ -12,6 +12,7 @@ using UnityEditor;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 using ZBase.Foundation.Data.Authoring.SourceGen;
+using Newtonsoft.Json;
 
 namespace ZBase.Foundation.Data.Authoring
 {
@@ -36,7 +37,7 @@ namespace ZBase.Foundation.Data.Authoring
         {
             var sheetProperties = context.Container.GetSheetProperties();
             var bakingRowToAssetMap = new Dictionary<ISheetRow, SheetRowScriptableObject>();
-            var bakingContainerAsset = GenerateBakingContainerAsset(context, sheetProperties, this, bakingRowToAssetMap);
+            var bakingContainerAsset = GenerateBakingContainerAsset(context, sheetProperties, bakingRowToAssetMap);
             MapBakingReferences(context, sheetProperties, bakingRowToAssetMap);
 
             var databaseAsset = GenerateDatabaseAsset(context, _savePath, _databaseName, bakingContainerAsset);
@@ -49,11 +50,9 @@ namespace ZBase.Foundation.Data.Authoring
         private static SheetContainerScriptableObject GenerateBakingContainerAsset(
               SheetConvertingContext context
             , IReadOnlyDictionary<string, PropertyInfo> sheetProperties
-            , ISheetFormatter formatter
             , Dictionary<ISheetRow, SheetRowScriptableObject> assetMap
         )
         {
-            var valueContext = new SheetValueConvertingContext(formatter, new SheetContractResolver());
             var containerSO = ScriptableObject.CreateInstance<SheetContainerScriptableObject>();
 
             foreach (var pair in sheetProperties)
@@ -67,16 +66,21 @@ namespace ZBase.Foundation.Data.Authoring
 
                     var sheetSO = ScriptableObject.CreateInstance<SheetScriptableObject>();
                     sheetSO.name = sheet.Name;
-                    sheetSO.SetTypeInfoEx(sheet.RowType.FullName);
+                    sheetSO.SetTypeInfoEx(sheet.GetType().AssemblyQualifiedName);
 
                     foreach (var row in sheet)
                     {
-                        var rowIdStr = valueContext.ValueToString(row.Id.GetType(), row.Id);
-                        var rowSO = ScriptableObject.CreateInstance<JsonSheetRowScriptableObject>();
-                        rowSO.name = rowIdStr;
-                        rowSO.SetRowEx(row);
-                        sheetSO.AddEx(rowSO);
-                        assetMap.Add(row, rowSO);
+                        try
+                        {
+                            var rowSO = ScriptableObject.CreateInstance<JsonSheetRowScriptableObject>();
+                            rowSO.SetRowEx(row);
+                            sheetSO.AddEx(rowSO);
+                            assetMap.Add(row, rowSO);
+                        }
+                        catch (Exception ex)
+                        {
+                            context.Logger.LogError(ex, JsonConvert.SerializeObject(row.Id));
+                        }
                     }
 
                     containerSO.AddEx(sheetSO);
@@ -216,7 +220,7 @@ namespace ZBase.Foundation.Data.Authoring
                 using (context.Logger.BeginScope(sheet.name))
                 {
                     if (TryGetGeneratedSheetAttribute(context, sheet, out var sheetAttrib) == false
-                        || TryGetToDataRowsMethod(context, sheet, sheetAttrib.DataType, out var toDataRowsMethod) == false
+                        || TryGetToDataArrayMethod(context, sheet, sheetAttrib.DataType, out var toDataArrayMethod) == false
                     )
                     {
                         continue;
@@ -234,8 +238,8 @@ namespace ZBase.Foundation.Data.Authoring
 
                     dataTableAsset.name = dataTableAssetType.Name;
 
-                    var dataRows = toDataRowsMethod.Invoke(sheet, null);
-                    dataTableAsset.SetRows(dataRows);
+                    var dataArray = toDataArrayMethod.Invoke(null, new [] { sheet });
+                    dataTableAsset.SetRows(dataArray);
                     dataTableAssetList.Add(dataTableAsset);
                 }
             }
@@ -250,32 +254,35 @@ namespace ZBase.Foundation.Data.Authoring
             , out GeneratedSheetAttribute attribute
         )
         {
-            var sheetType = sheet.GetType();
+            var sheetTypeName = sheet.GetTypeInfoEx();
+            var sheetType = Type.GetType(sheetTypeName, true);
             attribute = sheetType.GetCustomAttribute<GeneratedSheetAttribute>();
 
             if (attribute == null)
             {
-                context.Logger.LogError("Cannot find {Attribute} on {Sheet}", typeof(GeneratedSheetAttribute), sheet.name);
+                context.Logger.LogError("Cannot find {Attribute} on {Sheet}", typeof(GeneratedSheetAttribute), sheetType);
                 return false;
             }
 
             return true;
         }
 
-        private static bool TryGetToDataRowsMethod(
+        private static bool TryGetToDataArrayMethod(
               SheetConvertingContext context
             , SheetScriptableObject sheet
             , Type dataType
-            , out MethodInfo toDataRowsMethod
+            , out MethodInfo toDataArrayMethod
         )
         {
-            var methodName = $"To{dataType.Name}Rows";
-            var sheetType = sheet.GetType();
-            toDataRowsMethod = sheetType.GetMethod(methodName, Type.EmptyTypes);
+            var methodName = $"To{dataType.Name}Array";
+            var sheetTypeName = sheet.GetTypeInfoEx();
+            var sheetType = Type.GetType(sheetTypeName, true);
 
-            if (toDataRowsMethod == null)
+            toDataArrayMethod = sheetType.GetMethod(methodName, BindingFlags.Static | BindingFlags.Public);
+
+            if (toDataArrayMethod == null)
             {
-                context.Logger.LogError("Cannot find {MethodName} method in {SheetType}", methodName, sheetType.Name);
+                context.Logger.LogError("Cannot find the static {MethodName} method in {SheetType}", methodName, sheetType);
                 return false;
             }
 

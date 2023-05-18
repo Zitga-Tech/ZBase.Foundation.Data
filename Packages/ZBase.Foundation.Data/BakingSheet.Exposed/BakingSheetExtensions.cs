@@ -46,5 +46,12 @@ namespace Cathei.BakingSheet.Unity.Exposed
         {
             obj.Add(sheet);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T GetRowEx<T>(this SheetRowScriptableObject obj)
+            where T : class, ISheetRow
+        {
+            return obj.GetRow<T>();
+        }
     }
 }

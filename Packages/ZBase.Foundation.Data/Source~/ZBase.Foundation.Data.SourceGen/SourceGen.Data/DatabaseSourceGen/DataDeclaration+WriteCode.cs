@@ -18,7 +18,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         )
         {
             var typeName = Symbol.Name;
-            var typeFullName = Symbol.ToFullName();
+            var typeFullName = FullName;
 
             if (idType != null)
             {

@@ -220,7 +220,7 @@ namespace ZBase.Foundation.Data.Authoring
                 using (context.Logger.BeginScope(sheet.name))
                 {
                     if (TryGetGeneratedSheetAttribute(context, sheet, out var sheetAttrib) == false
-                        || TryGetToDataRowsMethod(context, sheet, sheetAttrib.DataType, out var toDataRowsMethod) == false
+                        || TryGetToDataArrayMethod(context, sheet, sheetAttrib.DataType, out var toDataArrayMethod) == false
                     )
                     {
                         continue;
@@ -238,8 +238,8 @@ namespace ZBase.Foundation.Data.Authoring
 
                     dataTableAsset.name = dataTableAssetType.Name;
 
-                    var dataRows = toDataRowsMethod.Invoke(sheet, null);
-                    dataTableAsset.SetRows(dataRows);
+                    var dataArray = toDataArrayMethod.Invoke(null, new [] { sheet });
+                    dataTableAsset.SetRows(dataArray);
                     dataTableAssetList.Add(dataTableAsset);
                 }
             }
@@ -267,21 +267,22 @@ namespace ZBase.Foundation.Data.Authoring
             return true;
         }
 
-        private static bool TryGetToDataRowsMethod(
+        private static bool TryGetToDataArrayMethod(
               SheetConvertingContext context
             , SheetScriptableObject sheet
             , Type dataType
-            , out MethodInfo toDataRowsMethod
+            , out MethodInfo toDataArrayMethod
         )
         {
-            var methodName = $"To{dataType.Name}Rows";
+            var methodName = $"To{dataType.Name}Array";
             var sheetTypeName = sheet.GetTypeInfoEx();
             var sheetType = Type.GetType(sheetTypeName, true);
-            toDataRowsMethod = sheetType.GetMethod(methodName, Type.EmptyTypes);
 
-            if (toDataRowsMethod == null)
+            toDataArrayMethod = sheetType.GetMethod(methodName, BindingFlags.Static | BindingFlags.Public);
+
+            if (toDataArrayMethod == null)
             {
-                context.Logger.LogError("Cannot find {MethodName} method in {SheetType}", methodName, sheetType);
+                context.Logger.LogError("Cannot find the static {MethodName} method in {SheetType}", methodName, sheetType);
                 return false;
             }
 
