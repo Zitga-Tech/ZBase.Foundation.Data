@@ -13,7 +13,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace ZBase.Foundation.SourceGen
 {
     /// <inheritdoc/>
-    partial record TypedConstantInfo
+    partial class TypedConstantInfo
     {
         /// <summary>
         /// Creates a new <see cref="TypedConstantInfo"/> instance from a given <see cref="TypedConstant"/> value.

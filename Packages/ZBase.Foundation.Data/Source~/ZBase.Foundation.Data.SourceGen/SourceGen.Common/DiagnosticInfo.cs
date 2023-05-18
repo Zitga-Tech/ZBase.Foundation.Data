@@ -5,6 +5,8 @@
 // This file is ported and adapted from ComputeSharp (Sergio0694/ComputeSharp),
 // more info in ThirdPartyNotices.txt in the root of the project.
 
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -19,12 +21,24 @@ namespace ZBase.Foundation.SourceGen
     /// <param name="SyntaxTree">The tree to use as location for the diagnostic, if available.</param>
     /// <param name="TextSpan">The span to use as location for the diagnostic.</param>
     /// <param name="Arguments">The diagnostic arguments.</param>
-    public sealed record DiagnosticInfo(
-        DiagnosticDescriptor Descriptor,
-        SyntaxTree SyntaxTree,
-        TextSpan TextSpan,
-        EquatableArray<string> Arguments)
+    public sealed class DiagnosticInfo : IEquatable<DiagnosticInfo>
     {
+        public DiagnosticDescriptor Descriptor { get; }
+
+        public SyntaxTree SyntaxTree { get; }
+
+        public TextSpan TextSpan { get; }
+
+        public EquatableArray<string> Arguments { get; }
+
+        public DiagnosticInfo(DiagnosticDescriptor descriptor, SyntaxTree syntaxTree, TextSpan textSpan, EquatableArray<string> arguments)
+        {
+            this.Descriptor = descriptor;
+            this.SyntaxTree = syntaxTree;
+            this.TextSpan = textSpan;
+            this.Arguments = arguments;
+        }
+
         /// <summary>
         /// Creates a new <see cref="Diagnostic"/> instance with the state from this model.
         /// </summary>
@@ -65,6 +79,24 @@ namespace ZBase.Foundation.SourceGen
             Location location = node.GetLocation();
 
             return new(descriptor, location.SourceTree, location.SourceSpan, args.Select(static arg => arg.ToString()).ToImmutableArray());
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is DiagnosticInfo other)
+                return EqualityComparer<DiagnosticInfo>.Default.Equals(this, other);
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return EqualityComparer<DiagnosticInfo>.Default.GetHashCode(this);
+        }
+
+        public bool Equals(DiagnosticInfo other)
+        {
+            return EqualityComparer<DiagnosticInfo>.Default.Equals(this, other);
         }
     }
 }

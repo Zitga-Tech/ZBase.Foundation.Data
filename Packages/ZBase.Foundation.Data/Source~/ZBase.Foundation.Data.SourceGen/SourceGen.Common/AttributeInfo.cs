@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -16,11 +17,21 @@ namespace ZBase.Foundation.SourceGen
     /// <summary>
     /// A model representing an attribute declaration.
     /// </summary>
-    public sealed record AttributeInfo(
-        string TypeName,
-        EquatableArray<TypedConstantInfo> ConstructorArgumentInfo,
-        EquatableArray<(string Name, TypedConstantInfo Value)> NamedArgumentInfo)
+    public sealed class AttributeInfo : IEquatable<AttributeInfo>
     {
+        public string TypeName { get; }
+
+        public EquatableArray<TypedConstantInfo> ConstructorArgumentInfo { get; }
+
+        public EquatableArray<(string Name, TypedConstantInfo Value)> NamedArgumentInfo { get; }
+
+        public AttributeInfo(string typeName, EquatableArray<TypedConstantInfo> constructorArgumentInfo, EquatableArray<(string Name, TypedConstantInfo Value)> namedArgumentInfo)
+        {
+            this.TypeName = typeName;
+            this.ConstructorArgumentInfo = constructorArgumentInfo;
+            this.NamedArgumentInfo = namedArgumentInfo;
+        }
+
         /// <summary>
         /// Creates a new <see cref="AttributeInfo"/> instance from a given <see cref="AttributeData"/> value.
         /// </summary>
@@ -92,6 +103,24 @@ namespace ZBase.Foundation.SourceGen
                 typeName,
                 constructorArguments.ToImmutable(),
                 namedArguments.ToImmutable());
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is AttributeInfo other)
+                return EqualityComparer<AttributeInfo>.Default.Equals(this, other);
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return EqualityComparer<AttributeInfo>.Default.GetHashCode(this);
+        }
+
+        public bool Equals(AttributeInfo other)
+        {
+            return EqualityComparer<AttributeInfo>.Default.Equals(this, other);
         }
 
         /// <summary>

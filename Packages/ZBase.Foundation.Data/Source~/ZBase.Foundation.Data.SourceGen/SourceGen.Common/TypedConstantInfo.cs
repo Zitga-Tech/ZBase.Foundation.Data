@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -17,8 +18,26 @@ namespace ZBase.Foundation.SourceGen
     /// A model representing a typed constant item.
     /// </summary>
     /// <remarks>This model is fully serializable and comparable.</remarks>
-    public abstract partial record TypedConstantInfo
+    public abstract partial class TypedConstantInfo : IEquatable<TypedConstantInfo>
     {
+        public override bool Equals(object obj)
+        {
+            if (obj is TypedConstantInfo other)
+                return EqualityComparer<TypedConstantInfo>.Default.Equals(this, other);
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return EqualityComparer<TypedConstantInfo>.Default.GetHashCode(this);
+        }
+
+        public bool Equals(TypedConstantInfo other)
+        {
+            return EqualityComparer<TypedConstantInfo>.Default.Equals(this, other);
+        }
+
         /// <summary>
         /// Gets an <see cref="ExpressionSyntax"/> instance representing the current constant.
         /// </summary>
@@ -30,8 +49,18 @@ namespace ZBase.Foundation.SourceGen
         /// </summary>
         /// <param name="ElementTypeName">The type name for array elements.</param>
         /// <param name="Items">The sequence of contained elements.</param>
-        public sealed record Array(string ElementTypeName, EquatableArray<TypedConstantInfo> Items) : TypedConstantInfo
+        public sealed class Array : TypedConstantInfo
         {
+            public string ElementTypeName { get; }
+
+            public EquatableArray<TypedConstantInfo> Items { get; }
+
+            public Array(string elementTypeName, EquatableArray<TypedConstantInfo> items)
+            {
+                this.ElementTypeName = elementTypeName;
+                this.Items = items;
+            }
+
             /// <inheritdoc/>
             public override ExpressionSyntax GetSyntax()
             {
@@ -47,14 +76,21 @@ namespace ZBase.Foundation.SourceGen
         /// <summary>
         /// A <see cref="TypedConstantInfo"/> type representing a primitive value.
         /// </summary>
-        public abstract record Primitive : TypedConstantInfo
+        public abstract class Primitive : TypedConstantInfo
         {
             /// <summary>
             /// A <see cref="TypedConstantInfo"/> type representing a <see cref="string"/> value.
             /// </summary>
             /// <param name="Value">The input <see cref="string"/> value.</param>
-            public sealed record String(string Value) : TypedConstantInfo
+            public sealed class String : TypedConstantInfo
             {
+                public string Value { get; }
+
+                public String(string value)
+                {
+                    this.Value = value;
+                }
+
                 /// <inheritdoc/>
                 public override ExpressionSyntax GetSyntax()
                 {
@@ -66,8 +102,15 @@ namespace ZBase.Foundation.SourceGen
             /// A <see cref="TypedConstantInfo"/> type representing a <see cref="bool"/> value.
             /// </summary>
             /// <param name="Value">The input <see cref="bool"/> value.</param>
-            public sealed record Boolean(bool Value) : TypedConstantInfo
+            public sealed class Boolean : TypedConstantInfo
             {
+                public bool Value { get; }
+
+                public Boolean(bool value)
+                {
+                    this.Value = value;
+                }
+
                 /// <inheritdoc/>
                 public override ExpressionSyntax GetSyntax()
                 {
@@ -80,9 +123,16 @@ namespace ZBase.Foundation.SourceGen
             /// </summary>
             /// <typeparam name="T">The primitive type.</typeparam>
             /// <param name="Value">The input primitive value.</param>
-            public sealed record Of<T>(T Value) : TypedConstantInfo
+            public sealed class Of<T> : TypedConstantInfo
                 where T : unmanaged, IEquatable<T>
             {
+                public T Value { get; }
+
+                public Of(T value)
+                {
+                    this.Value = value;
+                }
+
                 /// <inheritdoc/>
                 public override ExpressionSyntax GetSyntax()
                 {
@@ -114,8 +164,15 @@ namespace ZBase.Foundation.SourceGen
         /// A <see cref="TypedConstantInfo"/> type representing a type.
         /// </summary>
         /// <param name="TypeName">The input type name.</param>
-        public sealed record Type(string TypeName) : TypedConstantInfo
+        public sealed class Type : TypedConstantInfo
         {
+            public string TypeName { get; }
+
+            public Type(string typeName)
+            {
+                this.TypeName = typeName;
+            }
+
             /// <inheritdoc/>
             public override ExpressionSyntax GetSyntax()
             {
@@ -128,8 +185,18 @@ namespace ZBase.Foundation.SourceGen
         /// </summary>
         /// <param name="TypeName">The enum type name.</param>
         /// <param name="Value">The boxed enum value.</param>
-        public sealed record Enum(string TypeName, object Value) : TypedConstantInfo
+        public sealed class Enum : TypedConstantInfo
         {
+            public string TypeName { get; }
+
+            public object Value { get; }
+
+            public Enum(string typeName, object value)
+            {
+                this.TypeName = typeName;
+                this.Value = value;
+            }
+
             /// <inheritdoc/>
             public override ExpressionSyntax GetSyntax()
             {
@@ -143,7 +210,7 @@ namespace ZBase.Foundation.SourceGen
         /// <summary>
         /// A <see cref="TypedConstantInfo"/> type representing a <see langword="null"/> value.
         /// </summary>
-        public sealed record Null : TypedConstantInfo
+        public sealed class Null : TypedConstantInfo
         {
             /// <inheritdoc/>
             public override ExpressionSyntax GetSyntax()
