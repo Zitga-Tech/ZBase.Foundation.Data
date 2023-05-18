@@ -31,7 +31,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 p.OpenScope();
                 {
                     p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-                    p.PrintLine($"protected SheetContainer(global::Microsoft.Extensions.Logging.ILogger logger) : base(logger) {{ }}");
+                    p.PrintLine($"public SheetContainer(global::Microsoft.Extensions.Logging.ILogger logger) : base(logger) {{ }}");
                     p.PrintEndLine();
 
                     foreach (var table in tables)
@@ -46,7 +46,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         var name = $"{dataType.Name}Sheet";
 
                         p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-                        p.PrintLine($" public {typeName} {name} {{ get; set; }}");
+                        p.PrintLine($"public {typeName} {name} {{ get; set; }}");
                         p.PrintEndLine();
                     }
                 }

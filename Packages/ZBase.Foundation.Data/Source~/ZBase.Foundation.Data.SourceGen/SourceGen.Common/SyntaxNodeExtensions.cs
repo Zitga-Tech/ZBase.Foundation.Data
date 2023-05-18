@@ -471,16 +471,24 @@ namespace ZBase.Foundation.SourceGen
         /// <returns></returns>
         public static bool HasAttributeCandidate(this SyntaxNode syntaxNode, string attributeNameSpace, string attributeName)
         {
-            if (syntaxNode.TryGetFirstChildByKind(SyntaxKind.AttributeList, out var attributeList)
-                && attributeList.TryGetFirstChildByKind(SyntaxKind.Attribute, out var attribute))
-            {
-                var attributeSyntax = attribute as AttributeSyntax;
+            var attributeLists = syntaxNode.ChildNodes()
+                .OfKind(SyntaxKind.AttributeList)
+                .Where(static x => x is { })
+                .Select(static x => x.ChildNodes().OfKind(SyntaxKind.Attribute).Where(static x => x is { }));
 
-                if (attributeSyntax.Name.IsTypeNameCandidate(attributeNameSpace, attributeName))
+            foreach (var list in attributeLists)
+            {
+                foreach (var attrib in list)
                 {
-                    return true;
+                    if (attrib is AttributeSyntax attributeSyntax
+                        && attributeSyntax.Name.IsTypeNameCandidate(attributeNameSpace, attributeName)
+                    )
+                    {
+                        return true;
+                    }
                 }
             }
+
             return false;
         }
 

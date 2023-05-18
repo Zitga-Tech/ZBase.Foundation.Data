@@ -45,7 +45,7 @@ namespace ZBase.Foundation.Data.Authoring
         /// <param name="namingStrategy">How the names of the sheet and its properties are serialized.</param>
         public TableAttribute(Type dataTableAssetType, string sheetName, NamingStrategy namingStrategy)
         {
-            if (typeof(DataTableAsset<,>).IsAssignableFrom(dataTableAssetType) == false)
+            if (typeof(DataTableAsset).IsAssignableFrom(dataTableAssetType) == false)
             {
                 throw new InvalidCastException($"{dataTableAssetType} is not derived from {typeof(DataTableAsset)}<TId, TData>");
             }

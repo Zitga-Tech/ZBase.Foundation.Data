@@ -104,10 +104,12 @@ namespace MyGame.Enemies
 #if UNITY_EDITOR
 namespace MyGame.Authoring
 {
+    using UnityEngine;
     using ZBase.Foundation.Data.Authoring;
 
     [Database]
-    public partial class Database
+    [CreateAssetMenu(fileName = "SampleDatabase", menuName = "Sample Database", order = 0)]
+    public partial class Database : ScriptableObject
     {
 
     }

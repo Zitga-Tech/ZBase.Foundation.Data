@@ -47,7 +47,7 @@ namespace ZBase.Foundation.Data.Authoring
                 throw new InvalidOperationException($"{targetType} cannot be abstract");
             }
 
-            if (dataTableAssetType != null && typeof(DataTableAsset<,>).IsAssignableFrom(dataTableAssetType) == false)
+            if (dataTableAssetType != null && typeof(DataTableAsset).IsAssignableFrom(dataTableAssetType) == false)
             {
                 throw new InvalidCastException($"{dataTableAssetType} does not implement {typeof(DataTableAsset)}<TId, TData>");
             }
