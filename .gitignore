@@ -5,6 +5,8 @@
 [Bb]uilds/
 [Ll]ogs/
 [Uu]ser[Ss]ettings/
+[Cc]redentials/**/*.*
+![Cc]redentials/**/*.keep
 
 # Never ignore folders inside Assets
 ![Aa]ssets/**/Library/

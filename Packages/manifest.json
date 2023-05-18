@@ -38,7 +38,9 @@
     "com.unity.modules.wind": "1.0.0",
     "com.unity.modules.xr": "1.0.0",
     "org.nuget.system.runtime.compilerservices.unsafe": "6.0.0",
-    "com.cathei.bakingsheet": "4.1.1"
+    "com.cathei.bakingsheet": "4.1.1",
+    "com.codewriter.triinspector": "1.10.1",
+    "com.cysharp.unitask": "2.3.3"
   },
   "scopedRegistries": [
     {
@@ -46,6 +48,8 @@
       "url": "https://package.openupm.com",
       "scopes": [
         "com.cathei.bakingsheet",
+        "com.codewriter.triinspector",
+        "com.cysharp.unitask",
         "com.openupm",
         "org.nuget.system.runtime.compilerservices.unsafe"
       ]

@@ -244,6 +244,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c86ff8eb3a9dae4c9c9e936a59f1e0b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _googleServiceAccountCredentialFilePath: Assets/../Credentials/google-service-account.json
 --- !u!4 &669357741
 Transform:
   m_ObjectHideFlags: 0

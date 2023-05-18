@@ -5,7 +5,9 @@
         "Samples",
         "BakingSheet",
         "ZBase.Foundation.Data",
-        "ZBase.Foundation.Data.Authoring"
+        "ZBase.Foundation.Data.Authoring",
+        "TriInspector",
+        "UniTask"
     ],
     "includePlatforms": [
         "Editor"

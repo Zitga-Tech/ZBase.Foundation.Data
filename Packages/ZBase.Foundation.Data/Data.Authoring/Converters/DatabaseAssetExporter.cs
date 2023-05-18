@@ -12,6 +12,7 @@ using UnityEditor;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 using ZBase.Foundation.Data.Authoring.SourceGen;
+using Newtonsoft.Json;
 
 namespace ZBase.Foundation.Data.Authoring
 {
@@ -36,7 +37,7 @@ namespace ZBase.Foundation.Data.Authoring
         {
             var sheetProperties = context.Container.GetSheetProperties();
             var bakingRowToAssetMap = new Dictionary<ISheetRow, SheetRowScriptableObject>();
-            var bakingContainerAsset = GenerateBakingContainerAsset(context, sheetProperties, this, bakingRowToAssetMap);
+            var bakingContainerAsset = GenerateBakingContainerAsset(context, sheetProperties, bakingRowToAssetMap);
             MapBakingReferences(context, sheetProperties, bakingRowToAssetMap);
 
             var databaseAsset = GenerateDatabaseAsset(context, _savePath, _databaseName, bakingContainerAsset);
@@ -49,11 +50,9 @@ namespace ZBase.Foundation.Data.Authoring
         private static SheetContainerScriptableObject GenerateBakingContainerAsset(
               SheetConvertingContext context
             , IReadOnlyDictionary<string, PropertyInfo> sheetProperties
-            , ISheetFormatter formatter
             , Dictionary<ISheetRow, SheetRowScriptableObject> assetMap
         )
         {
-            var valueContext = new SheetValueConvertingContext(formatter, new SheetContractResolver());
             var containerSO = ScriptableObject.CreateInstance<SheetContainerScriptableObject>();
 
             foreach (var pair in sheetProperties)
@@ -67,16 +66,21 @@ namespace ZBase.Foundation.Data.Authoring
 
                     var sheetSO = ScriptableObject.CreateInstance<SheetScriptableObject>();
                     sheetSO.name = sheet.Name;
-                    sheetSO.SetTypeInfoEx(sheet.RowType.FullName);
+                    sheetSO.SetTypeInfoEx(sheet.GetType().AssemblyQualifiedName);
 
                     foreach (var row in sheet)
                     {
-                        var rowIdStr = valueContext.ValueToString(row.Id.GetType(), row.Id);
-                        var rowSO = ScriptableObject.CreateInstance<JsonSheetRowScriptableObject>();
-                        rowSO.name = rowIdStr;
-                        rowSO.SetRowEx(row);
-                        sheetSO.AddEx(rowSO);
-                        assetMap.Add(row, rowSO);
+                        try
+                        {
+                            var rowSO = ScriptableObject.CreateInstance<JsonSheetRowScriptableObject>();
+                            rowSO.SetRowEx(row);
+                            sheetSO.AddEx(rowSO);
+                            assetMap.Add(row, rowSO);
+                        }
+                        catch (Exception ex)
+                        {
+                            context.Logger.LogError(ex, JsonConvert.SerializeObject(row.Id));
+                        }
                     }
 
                     containerSO.AddEx(sheetSO);
@@ -250,12 +254,13 @@ namespace ZBase.Foundation.Data.Authoring
             , out GeneratedSheetAttribute attribute
         )
         {
-            var sheetType = sheet.GetType();
+            var sheetTypeName = sheet.GetTypeInfoEx();
+            var sheetType = Type.GetType(sheetTypeName, true);
             attribute = sheetType.GetCustomAttribute<GeneratedSheetAttribute>();
 
             if (attribute == null)
             {
-                context.Logger.LogError("Cannot find {Attribute} on {Sheet}", typeof(GeneratedSheetAttribute), sheet.name);
+                context.Logger.LogError("Cannot find {Attribute} on {Sheet}", typeof(GeneratedSheetAttribute), sheetType);
                 return false;
             }
 
@@ -270,12 +275,13 @@ namespace ZBase.Foundation.Data.Authoring
         )
         {
             var methodName = $"To{dataType.Name}Rows";
-            var sheetType = sheet.GetType();
+            var sheetTypeName = sheet.GetTypeInfoEx();
+            var sheetType = Type.GetType(sheetTypeName, true);
             toDataRowsMethod = sheetType.GetMethod(methodName, Type.EmptyTypes);
 
             if (toDataRowsMethod == null)
             {
-                context.Logger.LogError("Cannot find {MethodName} method in {SheetType}", methodName, sheetType.Name);
+                context.Logger.LogError("Cannot find {MethodName} method in {SheetType}", methodName, sheetType);
                 return false;
             }
 
