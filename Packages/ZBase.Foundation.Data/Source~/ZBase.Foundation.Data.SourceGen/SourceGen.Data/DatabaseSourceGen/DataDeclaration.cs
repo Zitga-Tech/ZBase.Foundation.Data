@@ -28,6 +28,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             FullName = Symbol.ToFullName();
 
             var existingProperties = new HashSet<string>();
+            var fields = new List<IFieldSymbol>();
 
             using var memberArrayBuilder = ImmutableArrayBuilder<FieldRef>.Rent();
             var members = Symbol.GetMembers();
@@ -38,27 +39,60 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     existingProperties.Add(property.Name);
                 }
+                else if (member is IFieldSymbol field && field.HasAttribute(SERIALIZE_FIELD_ATTRIBUTE))
+                {
+                    fields.Add(field);
+                }
             }
 
-            foreach (var member in members)
+            foreach (var field in fields)
             {
-                if (member is IFieldSymbol field && field.HasAttribute(SERIALIZE_FIELD_ATTRIBUTE))
+                var propertyName = field.ToPropertyName();
+                var fieldRef = new FieldRef {
+                    Field = field,
+                    Type = field.Type,
+                    PropertyName = propertyName,
+                    TypeHasParameterlessConstructor = false,
+                };
+
+                if (field.Type is IArrayTypeSymbol arrayType)
                 {
-                    var propertyName = field.ToPropertyName();
-                    var fieldRef = new FieldRef {
-                        Field = field,
-                        Type = field.Type,
-                        PropertyName = propertyName,
-                    };
-
-                    if (field.Type is IArrayTypeSymbol arrayType)
-                    {
-                        fieldRef.IsArray = true;
-                        fieldRef.ArrayElementType = arrayType.ElementType;
-                    }
-
-                    memberArrayBuilder.Add(fieldRef);
+                    fieldRef.IsArray = true;
+                    fieldRef.ArrayElementType = arrayType.ElementType;
                 }
+
+                var fieldTypeMembers = field.Type.GetMembers();
+                bool? fieldTypeHasParameterlessConstructor = null;
+                var fieldTypeParameterConstructorCount = 0;
+
+                foreach (var member in fieldTypeMembers)
+                {
+                    if (fieldTypeHasParameterlessConstructor.HasValue == false
+                        && member is IMethodSymbol method
+                        && method.MethodKind == MethodKind.Constructor
+                    )
+                    {
+                        if (method.Parameters.Length == 0)
+                        {
+                            fieldTypeHasParameterlessConstructor = true;
+                        }
+                        else
+                        {
+                            fieldTypeParameterConstructorCount += 1;
+                        }
+                    }
+                }
+
+                if (fieldTypeHasParameterlessConstructor.HasValue)
+                {
+                    fieldRef.TypeHasParameterlessConstructor = fieldTypeHasParameterlessConstructor.Value;
+                }
+                else
+                {
+                    fieldRef.TypeHasParameterlessConstructor = fieldTypeParameterConstructorCount == 0;
+                }
+
+                memberArrayBuilder.Add(fieldRef);
             }
 
             Fields = memberArrayBuilder.ToImmutable();
@@ -75,6 +109,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             public bool IsArray { get; set; }
 
             public ITypeSymbol ArrayElementType { get; set; }
+
+            public bool TypeHasParameterlessConstructor { get; set; }
         }
     }
 }

@@ -9,23 +9,21 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4515ad1362f30a944986a2ff8cdfe646, type: 3}
-  m_Name: HeroDataTableAsset
+  m_Script: {fileID: 11500000, guid: b1a568b4a000a064c889a4b2230ba895, type: 3}
+  m_Name: EnemyDataTableAsset
   m_EditorClassIdentifier: 
   _rows:
   - _id:
-      _kind: 0
+      _kind: 1
       _id: 1
-    _name: Richard
+    _name: Wolf
     _stat:
-      _hp: 10
+      _hp: 1
       _atk: 1
-    _multipliers: []
   - _id:
-      _kind: 0
+      _kind: 1
       _id: 2
-    _name: Maverick
+    _name: Goblin
     _stat:
-      _hp: 8
+      _hp: 2
       _atk: 2
-    _multipliers: []

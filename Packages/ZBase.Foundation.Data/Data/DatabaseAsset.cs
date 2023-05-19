@@ -1,28 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace ZBase.Foundation.Data
 {
-    public sealed class DatabaseAsset : ScriptableObject, ISerializationCallbackReceiver
+    public sealed class DatabaseAsset : ScriptableObject
     {
-        [SerializeField]
-        private DataTableAsset[] _tableAssets = new DataTableAsset[0];
+        [SerializeField, HideInInspector]
+        internal Asset[] _assets = new Asset[0];
 
-        private readonly Dictionary<string, DataTableAsset> _tableAssetMap = new();
-
-        public ReadOnlyMemory<DataTableAsset> TableAssets
+        private readonly Dictionary<string, LazyLoadReference<DataTableAsset>> _assetMap = new();
+        
+        public void LazyInitialize()
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => _tableAssets;
+            var assets = _assets;
+            var assetMap = _assetMap;
+
+            assetMap.Clear();
+            assetMap.EnsureCapacity(assets.Length);
+
+            foreach (var asset in assets)
+            {
+                assetMap[asset.name] = asset.reference;
+            }
         }
 
-        public bool TryGetTableAsset<T>(string name, out T tableAsset)
+        public bool TryGetDataTableAsset<T>(out T tableAsset)
+            where T : DataTableAsset
+            => TryGetDataTableAsset<T>(typeof(T).Name, out tableAsset);
+
+        public bool TryGetDataTableAsset<T>(string name, out T tableAsset)
             where T : DataTableAsset
         {
-            if (_tableAssetMap.TryGetValue(name, out var asset) && asset is T assetT)
+            if (_assetMap.TryGetValue(name, out var reference)
+                && reference.asset is T assetT
+            )
             {
                 tableAsset = assetT;
                 return true;
@@ -34,7 +46,7 @@ namespace ZBase.Foundation.Data
 
         internal void Clear()
         {
-            _tableAssets = new DataTableAsset[0];
+            _assets = new Asset[0];
         }
 
         internal void AddRange(IEnumerable<DataTableAsset> assets)
@@ -44,24 +56,27 @@ namespace ZBase.Foundation.Data
                 throw new NullReferenceException(nameof(assets));
             }
 
-            _tableAssets = assets.Where(x => x == true).ToArray();
-        }
-
-        void ISerializationCallbackReceiver.OnBeforeSerialize()
-        {
-        }
-
-        void ISerializationCallbackReceiver.OnAfterDeserialize()
-        {
-            var assets = _tableAssets;
-            var assetMap = _tableAssetMap;
-            assetMap.Clear();
-            assetMap.EnsureCapacity(assets.Length);
+            var list = new List<Asset>();
 
             foreach (var asset in assets)
             {
-                assetMap[asset.name] = asset;
+                list.Add(new Asset {
+                    name = asset.GetType().Name,
+                    reference = asset,
+                });
             }
+
+            _assets = list.ToArray();
+        }
+
+        [Serializable]
+        internal class Asset
+        {
+            [HideInInspector]
+            public string name;
+
+            [HideInInspector]
+            public LazyLoadReference<DataTableAsset> reference;
         }
     }
 }

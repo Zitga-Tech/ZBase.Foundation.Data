@@ -17,5 +17,4 @@ namespace Samples
         [SerializeField]
         private StatMultiplierData[] _multipliers;
     }
-
 }

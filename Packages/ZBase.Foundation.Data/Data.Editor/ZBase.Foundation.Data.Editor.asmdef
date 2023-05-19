@@ -1,0 +1,18 @@
+{
+    "name": "ZBase.Foundation.Data.Editor",
+    "rootNamespace": "ZBase.Foundation.Data.Editor",
+    "references": [
+        "ZBase.Foundation.Data"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -64,6 +64,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     .Print(")]")
                     .PrintEndLine();
 
+                p.PrintLine("[global::System.Serializable]");
                 p.PrintLine(string.Format(GENERATED_SHEET_ATTRIBUTE, idTypeFullName, dataTypeFullName, dataTableAssetTypeName));
                 p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
                 p.PrintBeginLine()
@@ -78,19 +79,24 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         var typeName = dataTypeDeclaration.Symbol.Name;
 
                         p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-                        p.PrintLine($"public static {typeFullName}[] To{typeName}Array(global::Cathei.BakingSheet.Unity.SheetScriptableObject so)");
+                        p.PrintLine($"public {typeFullName}[] To{typeName}Array()");
                         p.OpenScope();
                         {
-                            p.PrintLine("var rows = global::System.Linq.Enumerable.ToArray(so.Rows);");
-                            p.PrintLine("var count = rows.Length;");
+                            p.PrintLine($"if (this.Items == null || this.Count == 0)");
+                            p = p.IncreasedIndent();
+                            p.PrintLine($"return global::System.Array.Empty<{typeFullName}>();");
+                            p = p.DecreasedIndent();
+                            p.PrintEndLine();
+
+                            p.PrintLine("var rows = this.Items;");
+                            p.PrintLine("var count = this.Count;");
                             p.PrintLine($"var result = new {typeFullName}[count];");
                             p.PrintEndLine();
 
                             p.PrintLine("for (var i = 0; i < count; i++)");
                             p.OpenScope();
                             {
-                                p.PrintLine($"var row = global::Cathei.BakingSheet.Unity.Exposed.BakingSheetExtensions.GetRowEx<__{typeName}>(rows[i]);");
-                                p.PrintLine($"result[i] = row.To{typeName}();");
+                                p.PrintLine($"result[i] = (rows[i] ?? __{typeName}.Default).To{typeName}();");
                             }
                             p.CloseScope();
 

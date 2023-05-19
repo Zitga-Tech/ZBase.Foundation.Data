@@ -26,7 +26,7 @@
             <DataFiles Include="$(ProjectDir)/Data/**/*.*" />
             <DataAuthoringFiles Include="$(ProjectDir)/Data.Authoring/**/*.*" />
             <AssemblyInfoSkipGeneratorFile Include="$(ProjectDir)/AssemblyInfo+SkipGeneratorForAssembly.cs" />
-            <AssemblyInfoInternalsVisibleToFile Include="$(ProjectDir)/AssemblyInfo+InternalsVisibleTo+Authoring.cs" />
+            <AssemblyInfoInternalsVisibleToFile Include="$(ProjectDir)/AssemblyInfo+InternalsVisibleTo.cs" />
         </ItemGroup>
         
         <Copy SourceFiles="@(DataFiles)" DestinationFolder="$(ProjectDir)../../Data/%(RecursiveDir)" SkipUnchangedFiles="true" Retries="3" RetryDelayMilliseconds="300" />

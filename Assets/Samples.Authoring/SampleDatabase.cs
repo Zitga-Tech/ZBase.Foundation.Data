@@ -111,7 +111,7 @@ namespace Samples.Authoring
 
             await sheetContainer.Bake(googleSheetConverter);
 
-            var exporter = new DatabaseAssetExporter(AssetOutputFolderPath, nameof(SampleDatabase));
+            var exporter = new DatabaseAssetExporter(AssetOutputFolderPath, $"{nameof(SampleDatabase)}Asset");
 
             await sheetContainer.Store(exporter);
 

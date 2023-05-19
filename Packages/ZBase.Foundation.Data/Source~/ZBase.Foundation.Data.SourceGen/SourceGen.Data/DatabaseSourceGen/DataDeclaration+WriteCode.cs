@@ -20,6 +20,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             var typeName = Symbol.Name;
             var typeFullName = FullName;
 
+            p.PrintLine("[global::System.Serializable]");
+
             if (idType != null)
             {
                 p.PrintLine($"[global::ZBase.Foundation.Data.Authoring.SourceGen.GeneratedSheetRow(typeof({idType.ToFullName()}), typeof({typeFullName}))]");
@@ -52,6 +54,10 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p.PrintEndLine();
             p.OpenScope();
             {
+                p.PrintLine(GENERATED_CODE);
+                p.PrintLine($"public static readonly __{typeName} Default = new __{typeName}();");
+                p.PrintEndLine();
+
                 WriteProperties(ref p, dataMap, verticalListMap, typeFullName, containingTypeFullName, idType);
                 WriteConvertMethod(ref p, dataMap);
                 WriteConvertArrayMethod(ref p, dataMap);
@@ -137,6 +143,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     foreach (var field in Fields)
                     {
                         var comma = first ? " " : ",";
+
                         first = false;
 
                         if (field.IsArray)
@@ -149,7 +156,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                             }
                             else
                             {
-                                p.PrintLine($"{comma} this.{field.PropertyName}.ToArray()");
+                                p.PrintLine($"{comma} this.{field.PropertyName}?.ToArray() ?? global::System.Array.Empty<{elemTypeFullName}>()");
                             }
                         }
                         else
@@ -158,11 +165,15 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                             if (dataMap.ContainsKey(fieldTypeFullName))
                             {
-                                p.PrintLine($"{comma} this.{field.PropertyName}.To{field.Type.Name}()");
+                                p.PrintLine($"{comma} (this.{field.PropertyName} ?? __{field.Type.Name}.Default).To{field.Type.Name}()");
                             }
                             else
                             {
-                                p.PrintLine($"{comma} this.{field.PropertyName}");
+                                var newExpression = field.Type.IsValueType
+                                    ? "" : field.TypeHasParameterlessConstructor
+                                    ? $" ?? new {fieldTypeFullName}()" : " ?? default";
+
+                                p.PrintLine($"{comma} this.{field.PropertyName}{newExpression}");
                             }
                         }
                     }
@@ -199,6 +210,12 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 p.PrintLine($"private {elemTypeFullName}[] To{elemTypeName}Array()");
                 p.OpenScope();
                 {
+                    p.PrintLine($"if (this.{field.PropertyName} == null || this.{field.PropertyName}.Count == 0)");
+                    p = p.IncreasedIndent();
+                    p.PrintLine($"return global::System.Array.Empty<{elemTypeFullName}>();");
+                    p = p.DecreasedIndent();
+                    p.PrintEndLine();
+
                     p.PrintLine($"var rows = this.{field.PropertyName};");
                     p.PrintLine("var count = rows.Count;");
                     p.PrintLine($"var result = new {elemTypeFullName}[count];");
@@ -207,7 +224,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     p.PrintLine("for (var i = 0; i < count; i++)");
                     p.OpenScope();
                     {
-                        p.PrintLine($"result[i] = rows[i].To{elemTypeName}();");
+                        p.PrintLine($"result[i] = (rows[i] ?? __{elemTypeName}.Default).To{elemTypeName}();");
                     }
                     p.CloseScope();
 

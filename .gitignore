@@ -5,6 +5,8 @@
 [Bb]uilds/
 [Ll]ogs/
 [Uu]ser[Ss]ettings/
+
+# Ignore every files except .keep file
 [Cc]redentials/**/*.*
 ![Cc]redentials/**/*.keep
 
