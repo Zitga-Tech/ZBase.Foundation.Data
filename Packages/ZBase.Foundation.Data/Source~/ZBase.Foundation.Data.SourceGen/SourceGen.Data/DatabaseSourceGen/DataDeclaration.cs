@@ -9,8 +9,9 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
     {
         public const string GENERATOR_NAME = nameof(DatabaseGenerator);
         public const string SERIALIZE_FIELD_ATTRIBUTE = "global::UnityEngine.SerializeField";
-        public const string LIST_TYPE = "global::System.Collections.Generic.List";
-        public const string VERTICAL_LIST_TYPE = "global::Cathei.BakingSheet.VerticalList";
+        public const string LIST_TYPE_T = "global::System.Collections.Generic.List<";
+        public const string DICTIONARY_TYPE_T = "global::System.Collections.Generic.Dictionary<";
+        public const string VERTICAL_LIST_TYPE = "global::Cathei.BakingSheet.VerticalList<";
 
         private const string AGGRESSIVE_INLINING = "[global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]";
         private const string GENERATED_CODE = "[global::System.CodeDom.Compiler.GeneratedCode(\"ZBase.Foundation.Data.DatabaseGenerator\", \"1.0.0\")]";
@@ -57,8 +58,22 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                 if (field.Type is IArrayTypeSymbol arrayType)
                 {
-                    fieldRef.IsArray = true;
-                    fieldRef.ArrayElementType = arrayType.ElementType;
+                    fieldRef.CollectionKind = CollectionKind.Array;
+                    fieldRef.CollectionElementType = arrayType.ElementType;
+                }
+                else if (field.Type is INamedTypeSymbol namedType)
+                {
+                    if (namedType.TryGetGenericType(LIST_TYPE_T, 1, out var listType))
+                    {
+                        fieldRef.CollectionKind = CollectionKind.List;
+                        fieldRef.CollectionElementType = listType.TypeArguments[0];
+                    }
+                    else if (namedType.TryGetGenericType(DICTIONARY_TYPE_T, 2, out var dictType))
+                    {
+                        fieldRef.CollectionKind = CollectionKind.Dictionary;
+                        fieldRef.CollectionKeyType = dictType.TypeArguments[0];
+                        fieldRef.CollectionElementType = dictType.TypeArguments[1];
+                    }
                 }
 
                 var fieldTypeMembers = field.Type.GetMembers();
@@ -104,13 +119,15 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
             public ITypeSymbol Type { get; set; }
 
+            public bool TypeHasParameterlessConstructor { get; set; }
+
             public string PropertyName { get; set; }
 
-            public bool IsArray { get; set; }
+            public CollectionKind CollectionKind { get; set; }
 
-            public ITypeSymbol ArrayElementType { get; set; }
+            public ITypeSymbol CollectionElementType { get; set; }
 
-            public bool TypeHasParameterlessConstructor { get; set; }
+            public ITypeSymbol CollectionKeyType { get; set; }
         }
     }
 }

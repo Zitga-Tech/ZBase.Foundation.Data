@@ -11,9 +11,11 @@ namespace ZBase.Foundation.Data.DataSourceGen
     {
         public const string SERIALIZE_FIELD_ATTRIBUTE = "global::UnityEngine.SerializeField";
         public const string DATA_MUTABLE_ATTRIBUTE = "global::ZBase.Foundation.Data.DataMutableAttribute";
-        private const string AGGRESSIVE_INLINING = "[global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]";
-        private const string GENERATED_CODE = "[global::System.CodeDom.Compiler.GeneratedCode(\"ZBase.Foundation.Data.DataGenerator\", \"1.0.0\")]";
-        private const string EXCLUDE_COVERAGE = "[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]";
+        public const string AGGRESSIVE_INLINING = "[global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]";
+        public const string GENERATED_CODE = "[global::System.CodeDom.Compiler.GeneratedCode(\"ZBase.Foundation.Data.DataGenerator\", \"1.0.0\")]";
+        public const string EXCLUDE_COVERAGE = "[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]";
+        public const string LIST_TYPE_T = "global::System.Collections.Generic.List<";
+        public const string DICTIONARY_TYPE_T = "global::System.Collections.Generic.Dictionary<";
 
         public TypeDeclarationSyntax Syntax { get; }
 
@@ -47,24 +49,42 @@ namespace ZBase.Foundation.Data.DataSourceGen
             
             foreach (var member in members)
             {
-                if (member is IFieldSymbol field && field.HasAttribute(SERIALIZE_FIELD_ATTRIBUTE))
+                if (member is not IFieldSymbol field
+                    || field.HasAttribute(SERIALIZE_FIELD_ATTRIBUTE) == false
+                )
                 {
-                    var propertyName = field.ToPropertyName();
-                    var fieldRef = new FieldRef {
-                        Field = field,
-                        Type = field.Type,
-                        PropertyName = propertyName,
-                        PropertyIsImplemented = existingProperties.Contains(propertyName),
-                    };
-
-                    if (field.Type is IArrayTypeSymbol arrayType)
-                    {
-                        fieldRef.IsArray = true;
-                        fieldRef.ArrayElementType = arrayType.ElementType;
-                    }
-
-                    memberArrayBuilder.Add(fieldRef);
+                    continue;
                 }
+
+                var propertyName = field.ToPropertyName();
+                var fieldRef = new FieldRef {
+                    Field = field,
+                    Type = field.Type,
+                    PropertyName = propertyName,
+                    PropertyIsImplemented = existingProperties.Contains(propertyName),
+                };
+
+                if (field.Type is IArrayTypeSymbol arrayType)
+                {
+                    fieldRef.CollectionKind = CollectionKind.Array;
+                    fieldRef.CollectionElementType = arrayType.ElementType;
+                }
+                else if (field.Type is INamedTypeSymbol namedType)
+                {
+                    if (namedType.TryGetGenericType(LIST_TYPE_T, 1, out var listType))
+                    {
+                        fieldRef.CollectionKind = CollectionKind.List;
+                        fieldRef.CollectionElementType = listType.TypeArguments[0];
+                    }
+                    else if (namedType.TryGetGenericType(DICTIONARY_TYPE_T, 2, out var dictType))
+                    {
+                        fieldRef.CollectionKind = CollectionKind.Dictionary;
+                        fieldRef.CollectionKeyType = dictType.TypeArguments[0];
+                        fieldRef.CollectionElementType = dictType.TypeArguments[1];
+                    }
+                }
+
+                memberArrayBuilder.Add(fieldRef);
             }
 
             Fields = memberArrayBuilder.ToImmutable();
@@ -80,9 +100,11 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
             public bool PropertyIsImplemented { get; set; }
 
-            public bool IsArray { get; set; }
+            public CollectionKind CollectionKind { get; set; }
 
-            public ITypeSymbol ArrayElementType { get; set; }
+            public ITypeSymbol CollectionElementType { get; set; }
+
+            public ITypeSymbol CollectionKeyType { get; set; }
         }
     }
 }

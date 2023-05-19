@@ -29,25 +29,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
         }
 
-        public static bool TryGetDataTableAssetT(ITypeSymbol symbol, out INamedTypeSymbol result)
-        {
-            var baseType = symbol.BaseType;
-
-            while (baseType != null)
-            {
-                if (baseType.ToFullName().StartsWith(DATA_TABLE_ASSET_T) && baseType.TypeArguments.Length == 2)
-                {
-                    result = baseType;
-                    return true;
-                }
-
-                baseType = baseType.BaseType;
-            }
-
-            result = null;
-            return false;
-        }
-
         private void InitializeTables()
         {
             var uniqueTypeNames = new HashSet<string>();
@@ -68,7 +49,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     continue;
                 }
 
-                if (TryGetDataTableAssetT(type, out var baseType) == false)
+                if (type.TryGetGenericType(DATA_TABLE_ASSET_T, 2, out var baseType) == false)
                 {
                     continue;
                 }
@@ -137,7 +118,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     if (args[2].Value is INamedTypeSymbol containingType
                         && containingType.IsAbstract == false
                         && containingType.IsGenericType == false
-                        && TryGetDataTableAssetT(containingType, out _)
+                        && containingType.TryGetGenericType(DATA_TABLE_ASSET_T, 2, out _)
                     )
                     {
                         dataTableAssetTypeFullName = containingType.ToFullName();

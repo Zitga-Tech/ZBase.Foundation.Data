@@ -58,9 +58,109 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 p.PrintLine($"public static readonly __{typeName} Default = new __{typeName}();");
                 p.PrintEndLine();
 
+                WriteConstructor(ref p, dataMap, verticalListMap, typeName, typeFullName, containingTypeFullName);
                 WriteProperties(ref p, dataMap, verticalListMap, typeFullName, containingTypeFullName, idType);
                 WriteConvertMethod(ref p, dataMap);
-                WriteConvertArrayMethod(ref p, dataMap);
+                WriteCopyFromMethod(ref p, dataMap);
+                WriteToCollectionMethod(ref p, dataMap);
+            }
+            p.CloseScope();
+            p.PrintEndLine();
+        }
+
+        private void WriteConstructor(
+              ref Printer p
+            , Dictionary<string, DataDeclaration> dataMap
+            , Dictionary<string, Dictionary<string, HashSet<string>>> verticalListMap
+            , string typeName
+            , string targetTypeFullName
+            , string containingTypeFullName
+        )
+        {
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
+            p.PrintLine($"public __{typeName}()");
+            p.OpenScope();
+            {
+                foreach (var field in Fields)
+                {
+                    string newExpression;
+
+                    switch (field.CollectionKind)
+                    {
+                        case CollectionKind.Array:
+                        case CollectionKind.List:
+                        {
+                            var collectionTypeName = LIST_TYPE_T;
+
+                            if (field.CollectionKind == CollectionKind.Array
+                                && verticalListMap.TryGetValue(targetTypeFullName, out var innerMap)
+                            )
+                            {
+                                if (innerMap.TryGetValue(containingTypeFullName, out var propertyNames)
+                                    || innerMap.TryGetValue(string.Empty, out propertyNames)
+                                )
+                                {
+                                    if (propertyNames.Contains(field.PropertyName))
+                                    {
+                                        collectionTypeName = VERTICAL_LIST_TYPE;
+                                    }
+                                }
+                            }
+
+                            var elemTypeFullName = field.CollectionElementType.ToFullName();
+                            var elemTypeName = dataMap.ContainsKey(elemTypeFullName)
+                            ? $"__{field.CollectionElementType.Name}" : elemTypeFullName;
+
+                            newExpression = $"new {collectionTypeName}{elemTypeName}>()";
+                            break;
+                        }
+
+                        case CollectionKind.Dictionary:
+                        {
+                            var keyTypeFullName = field.CollectionKeyType.ToFullName();
+                            var elemTypeFullName = field.CollectionElementType.ToFullName();
+
+                            var keyTypeName = dataMap.ContainsKey(keyTypeFullName)
+                            ? $"__{field.CollectionKeyType.Name}" : keyTypeFullName;
+
+                            var elemTypeName = dataMap.ContainsKey(elemTypeFullName)
+                            ? $"__{field.CollectionElementType.Name}" : elemTypeFullName;
+
+                            newExpression = $"new {DICTIONARY_TYPE_T}{keyTypeName}, {elemTypeName}>()";
+                            break;
+                        }
+
+                        default:
+                        {
+                            var fieldTypeFullName = field.Type.ToFullName();
+
+                            if (dataMap.ContainsKey(fieldTypeFullName))
+                            {
+                                newExpression = $"new __{field.Type.Name}()";
+                            }
+                            else if (field.Type.IsValueType)
+                            {
+                                newExpression = "default";
+                            }
+                            else if (fieldTypeFullName == "string")
+                            {
+                                newExpression = "string.Empty";
+                            }
+                            else if (field.TypeHasParameterlessConstructor)
+                            {
+                                newExpression = $"new {fieldTypeFullName}()";
+                            }
+                            else
+                            {
+                                newExpression = "default";
+                            }
+
+                            break;
+                        }
+                    }
+
+                    p.PrintLine($"this.{field.PropertyName} = {newExpression};");
+                }
             }
             p.CloseScope();
             p.PrintEndLine();
@@ -84,38 +184,63 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                 string propTypeName;
 
-                if (field.IsArray == false)
+                switch (field.CollectionKind)
                 {
-                    var fieldTypeFullName = field.Type.ToFullName();
-                    propTypeName = dataMap.ContainsKey(fieldTypeFullName)
-                        ? $"__{field.Type.Name}" : fieldTypeFullName;
-                }
-                else
-                {
-                    var arrayTypeName = LIST_TYPE;
-
-                    if (verticalListMap.TryGetValue(targetTypeFullName, out var innerMap))
+                    case CollectionKind.Array:
+                    case CollectionKind.List:
                     {
-                        if (innerMap.TryGetValue(containingTypeFullName, out var propertyNames)
-                            || innerMap.TryGetValue(string.Empty, out propertyNames)
+                        var collectionTypeName = LIST_TYPE_T;
+
+                        if (field.CollectionKind == CollectionKind.Array
+                            && verticalListMap.TryGetValue(targetTypeFullName, out var innerMap)
                         )
                         {
-                            if (propertyNames.Contains(field.PropertyName))
+                            if (innerMap.TryGetValue(containingTypeFullName, out var propertyNames)
+                                || innerMap.TryGetValue(string.Empty, out propertyNames)
+                            )
                             {
-                                arrayTypeName = VERTICAL_LIST_TYPE;
+                                if (propertyNames.Contains(field.PropertyName))
+                                {
+                                    collectionTypeName = VERTICAL_LIST_TYPE;
+                                }
                             }
                         }
+
+                        var elemTypeFullName = field.CollectionElementType.ToFullName();
+                        var elemTypeName = dataMap.ContainsKey(elemTypeFullName)
+                            ? $"__{field.CollectionElementType.Name}" : elemTypeFullName;
+
+                        propTypeName = $"{collectionTypeName}{elemTypeName}>";
+                        break;
                     }
 
-                    var elemTypeFullName = field.ArrayElementType.ToFullName();
-                    var elemTypeName = dataMap.ContainsKey(elemTypeFullName)
-                        ? $"__{field.ArrayElementType.Name}" : elemTypeFullName;
+                    case CollectionKind.Dictionary:
+                    {
+                        var keyTypeFullName = field.CollectionKeyType.ToFullName();
+                        var elemTypeFullName = field.CollectionElementType.ToFullName();
 
-                    propTypeName = $"{arrayTypeName}<{elemTypeName}>";
+                        var keyTypeName = dataMap.ContainsKey(keyTypeFullName)
+                            ? $"__{field.CollectionKeyType.Name}" : keyTypeFullName;
+
+                        var elemTypeName = dataMap.ContainsKey(elemTypeFullName)
+                            ? $"__{field.CollectionElementType.Name}" : elemTypeFullName;
+
+                        propTypeName = $"{DICTIONARY_TYPE_T}{keyTypeName}, {elemTypeName}>";
+                        break;
+                    }
+
+                    default:
+                    {
+                        var fieldTypeFullName = field.Type.ToFullName();
+                        propTypeName = dataMap.ContainsKey(fieldTypeFullName)
+                            ? $"__{field.Type.Name}" : fieldTypeFullName;
+
+                        break;
+                    }
                 }
 
                 p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-                p.PrintLine($"public {propTypeName} {field.PropertyName} {{ get; set; }}");
+                p.PrintLine($"public {propTypeName} {field.PropertyName} {{ get; private set; }}");
                 p.PrintEndLine();
             }
         }
@@ -146,34 +271,73 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                         first = false;
 
-                        if (field.IsArray)
+                        switch (field.CollectionKind)
                         {
-                            var elemTypeFullName = field.ArrayElementType.ToFullName();
+                            case CollectionKind.Array:
+                            {
+                                var elemTypeFullName = field.CollectionElementType.ToFullName();
 
-                            if (dataMap.ContainsKey(elemTypeFullName))
-                            {
-                                p.PrintLine($"{comma} this.To{field.ArrayElementType.Name}Array()");
+                                if (dataMap.ContainsKey(elemTypeFullName))
+                                {
+                                    p.PrintLine($"{comma} this.To{field.CollectionElementType.Name}Array()");
+                                }
+                                else
+                                {
+                                    p.PrintLine($"{comma} this.{field.PropertyName}?.ToArray() ?? global::System.Array.Empty<{elemTypeFullName}>()");
+                                }
+                                break;
                             }
-                            else
-                            {
-                                p.PrintLine($"{comma} this.{field.PropertyName}?.ToArray() ?? global::System.Array.Empty<{elemTypeFullName}>()");
-                            }
-                        }
-                        else
-                        {
-                            var fieldTypeFullName = field.Type.ToFullName();
 
-                            if (dataMap.ContainsKey(fieldTypeFullName))
+                            case CollectionKind.List:
                             {
-                                p.PrintLine($"{comma} (this.{field.PropertyName} ?? __{field.Type.Name}.Default).To{field.Type.Name}()");
+                                var elemTypeFullName = field.CollectionElementType.ToFullName();
+
+                                if (dataMap.ContainsKey(elemTypeFullName))
+                                {
+                                    p.PrintLine($"{comma} this.To{field.CollectionElementType.Name}List()");
+                                }
+                                else
+                                {
+                                    p.PrintLine($"{comma} this.{field.PropertyName} ?? new {LIST_TYPE_T}{elemTypeFullName}>()");
+                                }
+                                break;
                             }
-                            else
+
+                            case CollectionKind.Dictionary:
                             {
-                                var newExpression = field.Type.IsValueType
+                                var keyTypeFullName = field.CollectionKeyType.ToFullName();
+                                var elemTypeFullName = field.CollectionElementType.ToFullName();
+
+                                if (dataMap.ContainsKey(keyTypeFullName) == false
+                                    && dataMap.ContainsKey(elemTypeFullName) == false
+                                )
+                                {
+                                    p.PrintLine($"{comma} this.{field.PropertyName} ?? new {DICTIONARY_TYPE_T}{keyTypeFullName}, {elemTypeFullName}>()");
+                                }
+                                else
+                                {
+                                    p.PrintLine($"{comma} this.To{field.CollectionElementType.Name}Dictionary()");
+                                }
+                                break;
+                            }
+
+                            default:
+                            {
+                                var fieldTypeFullName = field.Type.ToFullName();
+
+                                if (dataMap.ContainsKey(fieldTypeFullName))
+                                {
+                                    p.PrintLine($"{comma} (this.{field.PropertyName} ?? __{field.Type.Name}.Default).To{field.Type.Name}()");
+                                }
+                                else
+                                {
+                                    var newExpression = field.Type.IsValueType
                                     ? "" : field.TypeHasParameterlessConstructor
                                     ? $" ?? new {fieldTypeFullName}()" : " ?? default";
 
-                                p.PrintLine($"{comma} this.{field.PropertyName}{newExpression}");
+                                    p.PrintLine($"{comma} this.{field.PropertyName}{newExpression}");
+                                }
+                                break;
                             }
                         }
                     }
@@ -188,52 +352,300 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p.PrintEndLine();
         }
 
-        private void WriteConvertArrayMethod(ref Printer p, Dictionary<string, DataDeclaration> dataMap)
+        private void WriteCopyFromMethod(
+              ref Printer p
+            , Dictionary<string, DataDeclaration> dataMap
+        )
+        {
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
+            p.PrintLine($"public void CopyFrom({Symbol.ToFullName()} data)");
+            p.OpenScope();
+            {
+                foreach (var field in Fields)
+                {
+                    switch (field.CollectionKind)
+                    {
+                        case CollectionKind.Array:
+                        {
+                            var elemTypeFullName = field.CollectionElementType.ToFullName();
+
+                            if (dataMap.ContainsKey(elemTypeFullName))
+                            {
+                                p.PrintLine($"foreach (var item in data.{field.PropertyName}.ToArray())");
+                                p.OpenScope();
+                                {
+                                    p.PrintLine($"var elem = new __{field.CollectionElementType.Name}();");
+                                    p.PrintLine("elem.CopyFrom(item);");
+                                    p.PrintLine($"this.{field.PropertyName}.Add(elem);");
+                                }
+                                p.CloseScope();
+                            }
+                            else
+                            {
+                                p.PrintLine($"this.{field.PropertyName}.AddRange(data.{field.PropertyName}.Span.ToArray());");
+                            }
+                            break;
+                        }
+
+                        case CollectionKind.List:
+                        {
+                            var elemTypeFullName = field.CollectionElementType.ToFullName();
+
+                            if (dataMap.ContainsKey(elemTypeFullName))
+                            {
+                                p.PrintLine($"foreach (var item in data.{field.PropertyName})");
+                                p.OpenScope();
+                                {
+                                    p.PrintLine($"var elem = new __{field.CollectionElementType.Name}();");
+                                    p.PrintLine("elem.CopyFrom(item);");
+                                    p.PrintLine($"this.{field.PropertyName}.Add(elem);");
+                                }
+                                p.CloseScope();
+                            }
+                            else
+                            {
+                                p.PrintLine($"this.{field.PropertyName}.AddRange(data.{field.PropertyName});");
+                            }
+                            break;
+                        }
+
+                        case CollectionKind.Dictionary:
+                        {
+                            var keyTypeFullName = field.CollectionKeyType.ToFullName();
+                            var elemTypeFullName = field.CollectionElementType.ToFullName();
+                            var keyIsData = dataMap.ContainsKey(keyTypeFullName);
+                            var elemIsData = dataMap.ContainsKey(elemTypeFullName);
+
+                            p.PrintLine($"foreach (var kv in data.{field.PropertyName})");
+                            p.OpenScope();
+                            {
+                                if (keyIsData == false && elemIsData == false)
+                                {
+                                    p.PrintLine($"this.{field.PropertyName}[kv.Key] = kv.Value;");
+                                }
+                                else
+                                {
+                                    if (keyIsData)
+                                    {
+                                        p.PrintEndLine();
+                                        p.PrintLine($"var key = new __{field.CollectionKeyType.Name}();");
+                                        p.PrintLine("key.CopyFrom(kv.Key);");
+                                    }
+                                    else
+                                    {
+                                        p.PrintLine($"var key = kv.Key;");
+                                    }
+
+                                    if (elemIsData)
+                                    {
+                                        p.PrintEndLine();
+                                        p.PrintLine($"var elem = new __{field.CollectionElementType.Name}();");
+                                        p.PrintLine("elem.CopyFrom(kv.Value);");
+                                    }
+                                    else
+                                    {
+                                        p.PrintLine($"var elem = kv.Value;");
+                                    }
+
+                                    p.PrintLine($"this.{field.PropertyName}[key] = elem;");
+                                }
+                            }
+                            p.CloseScope();
+                            break;
+                        }
+
+                        default:
+                        {
+                            var fieldTypeFullName = field.Type.ToFullName();
+
+                            if (dataMap.ContainsKey(fieldTypeFullName))
+                            {
+                                p.PrintLine($"this.{field.PropertyName}.CopyFrom(data.{field.PropertyName});");
+                            }
+                            else
+                            {
+                                p.PrintLine($"this.{field.PropertyName} = data.{field.PropertyName};");
+                            }
+                            break;
+                        }
+                    }
+
+                    p.PrintEndLine();
+                }
+            }
+            p.CloseScope();
+            p.PrintEndLine();
+        }
+
+        private void WriteToCollectionMethod(ref Printer p, Dictionary<string, DataDeclaration> dataMap)
         {
             foreach (var field in Fields)
             {
-                if (field.IsArray == false)
+                switch (field.CollectionKind)
                 {
-                    continue;
+                    case CollectionKind.Array:
+                    {
+                        WriteToArrayMethod(ref p, field, dataMap);
+                        break;
+                    }
+
+                    case CollectionKind.List:
+                    {
+                        WriteToListMethod(ref p, field, dataMap);
+                        break;
+                    }
+
+                    case CollectionKind.Dictionary:
+                    {
+                        WriteToDictionaryMethod(ref p, field, dataMap);
+                        break;
+                    }
                 }
+            }
+        }
 
-                var elemTypeFullName = field.ArrayElementType.ToFullName();
+        private static void WriteToArrayMethod(ref Printer p, FieldRef field, Dictionary<string, DataDeclaration> dataMap)
+        {
+            var elemTypeFullName = field.CollectionElementType.ToFullName();
 
-                if (dataMap.ContainsKey(elemTypeFullName) == false)
-                {
-                    continue;
-                }
+            if (dataMap.ContainsKey(elemTypeFullName) == false)
+            {
+                return;
+            }
 
-                var elemTypeName = field.ArrayElementType.Name;
+            var elemTypeName = field.CollectionElementType.Name;
 
-                p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-                p.PrintLine($"private {elemTypeFullName}[] To{elemTypeName}Array()");
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
+            p.PrintLine($"private {elemTypeFullName}[] To{elemTypeName}Array()");
+            p.OpenScope();
+            {
+                p.PrintLine($"if (this.{field.PropertyName} == null || this.{field.PropertyName}.Count == 0)");
+                p = p.IncreasedIndent();
+                p.PrintLine($"return global::System.Array.Empty<{elemTypeFullName}>();");
+                p = p.DecreasedIndent();
+                p.PrintEndLine();
+
+                p.PrintLine($"var rows = this.{field.PropertyName};");
+                p.PrintLine("var count = rows.Count;");
+                p.PrintLine($"var result = new {elemTypeFullName}[count];");
+                p.PrintEndLine();
+
+                p.PrintLine("for (var i = 0; i < count; i++)");
                 p.OpenScope();
                 {
-                    p.PrintLine($"if (this.{field.PropertyName} == null || this.{field.PropertyName}.Count == 0)");
-                    p = p.IncreasedIndent();
-                    p.PrintLine($"return global::System.Array.Empty<{elemTypeFullName}>();");
-                    p = p.DecreasedIndent();
-                    p.PrintEndLine();
-
-                    p.PrintLine($"var rows = this.{field.PropertyName};");
-                    p.PrintLine("var count = rows.Count;");
-                    p.PrintLine($"var result = new {elemTypeFullName}[count];");
-                    p.PrintEndLine();
-
-                    p.PrintLine("for (var i = 0; i < count; i++)");
-                    p.OpenScope();
-                    {
-                        p.PrintLine($"result[i] = (rows[i] ?? __{elemTypeName}.Default).To{elemTypeName}();");
-                    }
-                    p.CloseScope();
-
-                    p.PrintEndLine();
-                    p.PrintLine("return result;");
+                    p.PrintLine($"result[i] = (rows[i] ?? __{elemTypeName}.Default).To{elemTypeName}();");
                 }
                 p.CloseScope();
+
                 p.PrintEndLine();
+                p.PrintLine("return result;");
             }
+            p.CloseScope();
+            p.PrintEndLine();
+        }
+
+        private static void WriteToListMethod(ref Printer p, FieldRef field, Dictionary<string, DataDeclaration> dataMap)
+        {
+            var elemTypeFullName = field.CollectionElementType.ToFullName();
+
+            if (dataMap.ContainsKey(elemTypeFullName) == false)
+            {
+                return;
+            }
+
+            var elemTypeName = field.CollectionElementType.Name;
+
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
+            p.PrintLine($"private {LIST_TYPE_T}{elemTypeFullName}> To{elemTypeName}List()");
+            p.OpenScope();
+            {
+                p.PrintLine($"if (this.{field.PropertyName} == null || this.{field.PropertyName}.Count == 0)");
+                p = p.IncreasedIndent();
+                p.PrintLine($"return new {LIST_TYPE_T}{elemTypeFullName}>();");
+                p = p.DecreasedIndent();
+                p.PrintEndLine();
+
+                p.PrintLine($"var rows = this.{field.PropertyName};");
+                p.PrintLine("var count = rows.Count;");
+                p.PrintLine($"var result = new {LIST_TYPE_T}{elemTypeFullName}>(count);");
+                p.PrintEndLine();
+
+                p.PrintLine("for (var i = 0; i < count; i++)");
+                p.OpenScope();
+                {
+                    p.PrintLine($"var item = (rows[i] ?? __{elemTypeName}.Default).To{elemTypeName}();");
+                    p.PrintLine("result.Add(item);");
+                }
+                p.CloseScope();
+
+                p.PrintEndLine();
+                p.PrintLine("return result;");
+            }
+            p.CloseScope();
+            p.PrintEndLine();
+        }
+
+        private static void WriteToDictionaryMethod(ref Printer p, FieldRef field, Dictionary<string, DataDeclaration> dataMap)
+        {
+            var keyTypeFullName = field.CollectionKeyType.ToFullName();
+            var elemTypeFullName = field.CollectionElementType.ToFullName();
+            var keyIsData = dataMap.ContainsKey(keyTypeFullName);
+            var elemIsData = dataMap.ContainsKey(elemTypeFullName);
+
+            if (keyIsData == false && elemIsData == false)
+            {
+                return;
+            }
+
+            var keyTypeName = field.CollectionKeyType.Name;
+            var elemTypeName = field.CollectionElementType.Name;
+
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
+            p.PrintLine($"private {DICTIONARY_TYPE_T}{keyTypeFullName}, {elemTypeFullName}> To{elemTypeName}Dictionary()");
+            p.OpenScope();
+            {
+                p.PrintLine($"if (this.{field.PropertyName} == null || this.{field.PropertyName}.Count == 0)");
+                p = p.IncreasedIndent();
+                p.PrintLine($"return new {DICTIONARY_TYPE_T}{keyTypeFullName}, {elemTypeFullName}>();");
+                p = p.DecreasedIndent();
+                p.PrintEndLine();
+
+                p.PrintLine($"var rows = this.{field.PropertyName};");
+                p.PrintLine("var count = rows.Count;");
+                p.PrintLine($"var result = new {DICTIONARY_TYPE_T}{keyTypeFullName}, {elemTypeFullName}>(count);");
+                p.PrintEndLine();
+
+                p.PrintLine("foreach (var kv in rows)");
+                p.OpenScope();
+                {
+                    if (keyIsData)
+                    {
+                        p.PrintLine($"var key = (kv.Key ?? __{keyTypeName}.Default).To{keyTypeName}();");
+                    }
+                    else
+                    {
+                        p.PrintLine("var key = kv.Key;");
+                    }
+
+                    if (elemIsData)
+                    {
+                        p.PrintLine($"var value = (kv.Value ?? __{elemTypeName}.Default).To{elemTypeName}();");
+                    }
+                    else
+                    {
+                        p.PrintLine("var value = kv.Value;");
+                    }
+
+                    p.PrintEndLine();
+                    p.PrintLine("result[key] = value;");
+                }
+                p.CloseScope();
+
+                p.PrintEndLine();
+                p.PrintLine("return result;");
+            }
+            p.CloseScope();
+            p.PrintEndLine();
         }
     }
 }

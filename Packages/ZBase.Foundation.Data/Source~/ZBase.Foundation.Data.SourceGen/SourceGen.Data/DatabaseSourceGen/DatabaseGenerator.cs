@@ -18,6 +18,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public const string IDATA = "global::ZBase.Foundation.Data.IData";
         public const string SERIALIZE_FIELD_ATTRIBUTE = "global::UnityEngine.SerializeField";
         public const string DATABASE_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.DatabaseAttribute";
+        public const string LIST_TYPE_T = "global::System.Collections.Generic.List<";
+        public const string DICTIONARY_TYPE_T = "global::System.Collections.Generic.Dictionary<";
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
@@ -289,6 +291,24 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         {
                             queue.Enqueue(arrayType.ElementType);
                         }
+                        else if (field.Type is INamedTypeSymbol namedType)
+                        {
+                            var typeFullName = field.Type.ToFullName();
+
+                            if (typeFullName.StartsWith(LIST_TYPE_T)
+                                || typeFullName.StartsWith(DICTIONARY_TYPE_T)
+                            )
+                            {
+                                foreach (var typeArg in namedType.TypeArguments)
+                                {
+                                    queue.Enqueue(typeArg);
+                                }
+                            }
+                            else
+                            {
+                                queue.Enqueue(namedType);
+                            }
+                        }
                         else
                         {
                             queue.Enqueue(field.Type);
@@ -361,19 +381,27 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                 foreach (var field in declaration.Fields)
                 {
-                    var fieldTypeFullName = field.IsArray
-                            ? field.ArrayElementType.ToFullName()
-                            : field.Type.ToFullName();
-
-                    if (uniqueTypeNames.Contains(fieldTypeFullName))
+                    switch (field.CollectionKind)
                     {
-                        continue;
-                    }
+                        case CollectionKind.Array:
+                        case CollectionKind.List:
+                        {
+                            TryAdd(field.CollectionElementType, dataMap, uniqueTypeNames, typeQueue);
+                            break;
+                        }
 
-                    if (dataMap.TryGetValue(fieldTypeFullName, out var fieldTypeDeclaration))
-                    {
-                        typeQueue.Enqueue(fieldTypeDeclaration);
-                        uniqueTypeNames.Add(fieldTypeFullName);
+                        case CollectionKind.Dictionary:
+                        {
+                            TryAdd(field.CollectionKeyType, dataMap, uniqueTypeNames, typeQueue);
+                            TryAdd(field.CollectionElementType, dataMap, uniqueTypeNames, typeQueue);
+                            break;
+                        }
+
+                        default:
+                        {
+                            TryAdd(field.Type, dataMap, uniqueTypeNames, typeQueue);
+                            break;
+                        }
                     }
                 }
             }
@@ -384,6 +412,32 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             using var arrayBuilder = ImmutableArrayBuilder<string>.Rent();
             arrayBuilder.AddRange(uniqueTypeNames);
             dataTableAssetRef.NestedDataTypeFullNames = arrayBuilder.ToImmutable();
+
+            static void TryAdd(
+                  ITypeSymbol typeSymbol
+                , Dictionary<string, DataDeclaration> dataMap
+                , HashSet<string> uniqueTypeNames
+                , Queue<DataDeclaration> typeQueue
+            )
+            {
+                if (typeSymbol == null)
+                {
+                    return;
+                }
+
+                var typeFullName = typeSymbol.ToFullName();
+
+                if (uniqueTypeNames.Contains(typeFullName))
+                {
+                    return;
+                }
+
+                if (dataMap.TryGetValue(typeFullName, out var typeDeclaration))
+                {
+                    typeQueue.Enqueue(typeDeclaration);
+                    uniqueTypeNames.Add(typeFullName);
+                }
+            }
         }
 
         private static readonly DiagnosticDescriptor s_errorDescriptor

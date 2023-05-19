@@ -30,18 +30,38 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     }
 
                     var fieldName = field.Field.Name;
-                    bool isArray;
+                    bool isCollection;
                     string typeName;
 
-                    if (field.IsArray)
+                    switch (field.CollectionKind)
                     {
-                        isArray = true;
-                        typeName = $"global::System.ReadOnlyMemory<{field.ArrayElementType.ToFullName()}>";
-                    }
-                    else
-                    {
-                        isArray = false;
-                        typeName = field.Type.ToFullName();
+                        case CollectionKind.Array:
+                        {
+                            isCollection = true;
+                            typeName = $"global::System.ReadOnlyMemory<{field.CollectionElementType.ToFullName()}>";
+                            break;
+                        }
+
+                        case CollectionKind.List:
+                        {
+                            isCollection = true;
+                            typeName = $"global::System.Collections.Generic.IReadOnlyList<{field.CollectionElementType.ToFullName()}>";
+                            break;
+                        }
+
+                        case CollectionKind.Dictionary:
+                        {
+                            isCollection = true;
+                            typeName = $"global::System.Collections.Generic.IReadOnlyDictionary<{field.CollectionKeyType.ToFullName()}, {field.CollectionElementType.ToFullName()}>";
+                            break;
+                        }
+
+                        default:
+                        {
+                            isCollection = false;
+                            typeName = field.Type.ToFullName();
+                            break;
+                        }
                     }
 
                     p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
@@ -51,7 +71,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                         p.PrintLine(AGGRESSIVE_INLINING);
                         p.PrintLine($"get => this.{fieldName};");
 
-                        if (IsMutable && !isArray)
+                        if (IsMutable && !isCollection)
                         {
                             p.PrintEndLine();
                             p.PrintLine(AGGRESSIVE_INLINING);
@@ -61,7 +81,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     p.CloseScope();
                     p.PrintEndLine();
 
-                    if (IsMutable && isArray)
+                    if (IsMutable && isCollection)
                     {
                         p.PrintLine(AGGRESSIVE_INLINING).PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
                         p.PrintLine($"public void Set{field.PropertyName}({field.Type.ToFullName()} value)");

@@ -73,6 +73,25 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     .PrintEndLine();
                 p.OpenScope();
                 {
+                    p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
+                    p.PrintLine($"public void CopyFrom({dataTableAssetTypeName} dataTableAsset)");
+                    p.OpenScope();
+                    {
+                        p.PrintLine("if (dataTableAsset == false) return;");
+                        p.PrintEndLine();
+
+                        p.PrintLine("foreach (var row in dataTableAsset.Rows.Span)");
+                        p.OpenScope();
+                        {
+                            p.PrintLine($"var item = new __{dataType.Name}();");
+                            p.PrintLine("item.CopyFrom(row);");
+                            p.PrintLine("Add(item);");
+                        }
+                        p.CloseScope();
+                    }
+                    p.CloseScope();
+                    p.PrintEndLine();
+
                     if (dataTypeDeclaration != null)
                     {
                         var typeFullName = dataTypeDeclaration.FullName;
