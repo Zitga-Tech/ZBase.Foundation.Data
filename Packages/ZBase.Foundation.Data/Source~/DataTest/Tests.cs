@@ -116,22 +116,18 @@ namespace MyGame.Authoring
 
 
     [Table(typeof(Heroes.HeroDataTableAsset), "Hero", NamingStrategy.SnakeCase)]
-    [VerticalList(typeof(Heroes.HeroData), nameof(Heroes.HeroData.Multipliers))]
+    [VerticalList(typeof(Heroes.HeroData), nameof(Heroes.HeroData.Multipliers), typeof(Heroes.HeroDataTableAsset))]
     partial class Database
     {
-        partial class HeroDataSheet
-        {
-            public void Convert()
-            {
-                var rows = this.Items;
-                var count = this.Count;
-            }
-        }
+        partial class HeroDataSheet { }
     }
 
 
     [Table(typeof(Enemies.EnemyDataTableAsset), "Enemy", NamingStrategy.SnakeCase)]
-    partial class Database { }
+    partial class Database
+    {
+        partial class EnemyDataSheet { }
+    }
 
 }
 #endif

@@ -37,6 +37,11 @@ namespace ZBase.Foundation.Data.Authoring
         /// <param name="dataTableAssetType">Type derived from <see cref="DataTableAsset{TId, TData}"/></param>
         public VerticalListAttribute(Type targetType, string propertyName, Type dataTableAssetType)
         {
+            if (targetType == null)
+            {
+                throw new ArgumentNullException(nameof(targetType));
+            }
+
             if (typeof(IData).IsAssignableFrom(targetType) == false)
             {
                 throw new InvalidCastException($"{targetType} does not implement {typeof(IData)}");
@@ -47,7 +52,25 @@ namespace ZBase.Foundation.Data.Authoring
                 throw new InvalidOperationException($"{targetType} cannot be abstract");
             }
 
-            if (dataTableAssetType != null && typeof(DataTableAsset).IsAssignableFrom(dataTableAssetType) == false)
+            if (string.IsNullOrWhiteSpace(propertyName))
+            {
+                throw new ArgumentException($"Property name `{propertyName}` is invalid", nameof(propertyName));
+            }
+
+            if (targetType.GetProperty(propertyName) == null)
+            {
+                throw new ArgumentException($"Target type {targetType} does not contain any property named `{propertyName}`", nameof(propertyName));
+            }
+
+            this.TargetType = targetType;
+            this.PropertyName = propertyName;
+
+            if (dataTableAssetType == null)
+            {
+                return;
+            }
+
+            if (typeof(DataTableAsset).IsAssignableFrom(dataTableAssetType) == false)
             {
                 throw new InvalidCastException($"{dataTableAssetType} does not implement {typeof(DataTableAsset)}<TId, TData>");
             }
@@ -62,8 +85,6 @@ namespace ZBase.Foundation.Data.Authoring
                 throw new InvalidOperationException($"{dataTableAssetType} cannot be open generic");
             }
 
-            this.TargetType = targetType;
-            this.PropertyName = propertyName;
             this.DataTableAssetType = dataTableAssetType;
         }
     }

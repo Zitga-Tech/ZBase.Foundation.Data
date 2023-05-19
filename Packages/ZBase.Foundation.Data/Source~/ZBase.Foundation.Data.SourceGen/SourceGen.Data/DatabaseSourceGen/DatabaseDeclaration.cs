@@ -121,7 +121,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 if (args.Length < 2
                     || args[0].Value is not INamedTypeSymbol targetType
                     || targetType.IsAbstract
-                    || targetType.InheritsFromInterface(IDATA, true)
+                    || targetType.InheritsFromInterface(IDATA, true) == false
                     || args[1].Value is not string propertyName
                     || string.IsNullOrWhiteSpace(propertyName)
                 )
@@ -130,15 +130,26 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 }
 
                 var targetTypeFullName = targetType.ToFullName();
-                string containingTypeFullName;
+                string dataTableAssetTypeFullName;
 
-                if (args.Length > 2 && args[2].Value is INamedTypeSymbol containingType)
+                if (args.Length > 2)
                 {
-                    containingTypeFullName = containingType.ToFullName();
+                    if (args[2].Value is INamedTypeSymbol containingType
+                        && containingType.IsAbstract == false
+                        && containingType.IsGenericType == false
+                        && TryGetDataTableAssetT(containingType, out _)
+                    )
+                    {
+                        dataTableAssetTypeFullName = containingType.ToFullName();
+                    }
+                    else
+                    {
+                        continue;
+                    }
                 }
                 else
                 {
-                    containingTypeFullName = string.Empty;
+                    dataTableAssetTypeFullName = string.Empty;
                 }
 
                 if (verticalListMap.TryGetValue(targetTypeFullName, out var innerMap) == false)
@@ -146,9 +157,9 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     verticalListMap[targetTypeFullName] = innerMap = new();
                 }
 
-                if (innerMap.TryGetValue(containingTypeFullName, out var propertNames) == false)
+                if (innerMap.TryGetValue(dataTableAssetTypeFullName, out var propertNames) == false)
                 {
-                    innerMap[containingTypeFullName] = propertNames = new();
+                    innerMap[dataTableAssetTypeFullName] = propertNames = new();
                 }
 
                 propertNames.Add(propertyName);

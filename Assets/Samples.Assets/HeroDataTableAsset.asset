@@ -20,7 +20,16 @@ MonoBehaviour:
     _stat:
       _hp: 10
       _atk: 1
-    _multipliers: []
+    _multipliers:
+    - _level: 1
+      _hp: 1
+      _atk: 1
+    - _level: 2
+      _hp: 2
+      _atk: 2
+    - _level: 3
+      _hp: 3
+      _atk: 3
   - _id:
       _kind: 0
       _id: 2
@@ -28,4 +37,13 @@ MonoBehaviour:
     _stat:
       _hp: 8
       _atk: 2
-    _multipliers: []
+    _multipliers:
+    - _level: 1
+      _hp: 1
+      _atk: 1
+    - _level: 2
+      _hp: 1
+      _atk: 3
+    - _level: 3
+      _hp: 2
+      _atk: 4

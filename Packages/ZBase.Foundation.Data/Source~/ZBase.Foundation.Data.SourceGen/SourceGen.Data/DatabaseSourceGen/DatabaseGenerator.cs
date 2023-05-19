@@ -18,7 +18,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public const string IDATA = "global::ZBase.Foundation.Data.IData";
         public const string SERIALIZE_FIELD_ATTRIBUTE = "global::UnityEngine.SerializeField";
         public const string DATABASE_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.DatabaseAttribute";
-        public const string TABLE_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.TableAttribute";
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
@@ -279,9 +278,18 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                     foreach (var member in members)
                     {
-                        if (member is IFieldSymbol field
-                            && field.HasAttribute(SERIALIZE_FIELD_ATTRIBUTE)
+                        if (member is not IFieldSymbol field
+                            || field.HasAttribute(SERIALIZE_FIELD_ATTRIBUTE) == false
                         )
+                        {
+                            continue;
+                        }
+
+                        if (field.Type is IArrayTypeSymbol arrayType)
+                        {
+                            queue.Enqueue(arrayType.ElementType);
+                        }
+                        else
                         {
                             queue.Enqueue(field.Type);
                         }
