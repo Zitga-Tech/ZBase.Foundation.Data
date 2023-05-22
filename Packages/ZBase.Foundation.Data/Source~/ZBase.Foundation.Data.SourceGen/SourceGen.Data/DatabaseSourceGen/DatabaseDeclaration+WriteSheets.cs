@@ -113,8 +113,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         , dataMap
                         , verticalListMap
                         , dataTableAssetTypeName
-                        , inheritSheetRow: true
-                        , idTypeDeclaration?.Symbol
+                        , idTypeDeclaration?.Symbol ?? idType
                     );
 
                     idTypeDeclaration?.WriteCode(
@@ -122,7 +121,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         , dataMap
                         , verticalListMap
                         , dataTableAssetTypeName
-                        , inheritSheetRow: false
                         , idType: null
                     );
 
@@ -135,7 +133,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                                 , dataMap
                                 , verticalListMap
                                 , dataTableAssetTypeName
-                                , inheritSheetRow: false
                                 , idType: null
                             );
                         }

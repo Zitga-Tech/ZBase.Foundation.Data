@@ -14,17 +14,16 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             , Dictionary<string, DataDeclaration> dataMap
             , Dictionary<string, Dictionary<string, HashSet<string>>> verticalListMap
             , string containingTypeFullName
-            , bool inheritSheetRow = false
             , ITypeSymbol idType = null
         )
         {
             var typeName = Symbol.Name;
             var typeFullName = FullName;
-            var idTypeName = idType?.ToFullName() ?? "string";
+            var idTypeName = idType?.ToFullName() ?? string.Empty;
 
             p.PrintLine("[global::System.Serializable]");
 
-            if (inheritSheetRow)
+            if (string.IsNullOrWhiteSpace(idTypeName) == false)
             {
                 p.PrintLine($"[global::ZBase.Foundation.Data.Authoring.SourceGen.GeneratedSheetRow(typeof({idTypeName}), typeof({typeFullName}))]");
             }
@@ -37,7 +36,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p.PrintBeginLine()
                 .Print($"public partial class __{typeName}");
 
-            if (inheritSheetRow)
+            if (string.IsNullOrWhiteSpace(idTypeName) == false)
             {
                 p.Print(" : global::Cathei.BakingSheet.SheetRow");
 
