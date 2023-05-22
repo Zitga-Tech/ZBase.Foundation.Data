@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using ZBase.Foundation.SourceGen;
 
@@ -85,9 +86,16 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 tables.Add(table);
             }
 
-            using var arrayBuilder = ImmutableArrayBuilder<DatabaseRef.Table>.Rent();
-            arrayBuilder.AddRange(tables);
-            DatabaseRef.Tables = arrayBuilder.ToImmutable();
+            if (tables.Count > 0)
+            {
+                using var arrayBuilder = ImmutableArrayBuilder<DatabaseRef.Table>.Rent();
+                arrayBuilder.AddRange(tables);
+                DatabaseRef.Tables = arrayBuilder.ToImmutable();
+            }
+            else
+            {
+                DatabaseRef.Tables = ImmutableArray<DatabaseRef.Table>.Empty;
+            }
         }
 
         private void InitializeVerticalLists()

@@ -127,7 +127,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                           context
                         , outputSourceGenFiles
                         , declaration.DatabaseRef.Syntax
-                        , declaration.WriteContainer(dataTableAssetRefMap)
+                        , declaration.WriteContainer(dataTableAssetRefMap, dataMap)
                         , databaseHintName
                         , databaseSourceFilePath
                     );
@@ -137,6 +137,11 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     foreach (var table in tables)
                     {
                         if (dataTableAssetRefMap.TryGetValue(table.Type.ToFullName(), out var dataTableAssetRef) == false)
+                        {
+                            continue;
+                        }
+
+                        if (dataMap.TryGetValue(dataTableAssetRef.DataType.ToFullName(), out var dataTypeDeclaration) == false)
                         {
                             continue;
                         }
@@ -157,7 +162,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                               context
                             , outputSourceGenFiles
                             , declaration.DatabaseRef.Syntax
-                            , declaration.WriteSheet(table, dataTableAssetRef, dataMap)
+                            , declaration.WriteSheet(table, dataTableAssetRef, dataTypeDeclaration, dataMap)
                             , sheetHintName
                             , sheetSourceFilePath
                         );
@@ -275,7 +280,14 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         continue;
                     }
 
-                    map[typeName] = new DataDeclaration(type);
+                    var dataDeclaration = new DataDeclaration(type);
+
+                    if (dataDeclaration.Fields.Length < 1)
+                    {
+                        continue;
+                    }
+
+                    map[typeName] = dataDeclaration;
                     var members = type.GetMembers();
 
                     foreach (var member in members)
@@ -409,9 +421,16 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             uniqueTypeNames.Remove(idTypeFullName);
             uniqueTypeNames.Remove(dataTypeFullName);
 
-            using var arrayBuilder = ImmutableArrayBuilder<string>.Rent();
-            arrayBuilder.AddRange(uniqueTypeNames);
-            dataTableAssetRef.NestedDataTypeFullNames = arrayBuilder.ToImmutable();
+            if (uniqueTypeNames.Count > 0)
+            {
+                using var arrayBuilder = ImmutableArrayBuilder<string>.Rent();
+                arrayBuilder.AddRange(uniqueTypeNames);
+                dataTableAssetRef.NestedDataTypeFullNames = arrayBuilder.ToImmutable();
+            }
+            else
+            {
+                dataTableAssetRef.NestedDataTypeFullNames = ImmutableArray<string>.Empty;
+            }
 
             static void TryAdd(
                   ITypeSymbol typeSymbol

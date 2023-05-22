@@ -6,7 +6,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
     partial class DatabaseDeclaration
     {
         public string WriteContainer(
-            Dictionary<string, DataTableAssetRef> dataTableAssetRefMap
+              Dictionary<string, DataTableAssetRef> dataTableAssetRefMap
+            , Dictionary<string, DataDeclaration> dataMap
         )
         {
             var syntax = DatabaseRef.Syntax;
@@ -38,6 +39,12 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         }
 
                         var dataType = dataTableAssetRef.DataType;
+
+                        if (dataMap.ContainsKey(dataType.ToFullName()) == false)
+                        {
+                            continue;
+                        }
+
                         var typeName = $"{dataType.Name}Sheet";
                         var name = $"{dataType.Name}Sheet";
 
@@ -58,6 +65,12 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                             }
 
                             var dataType = dataTableAssetRef.DataType;
+
+                            if (dataMap.ContainsKey(dataType.ToFullName()) == false)
+                            {
+                                continue;
+                            }
+
                             var typeName = $"{dataType.Name}Sheet";
                             var sheetName = $"{dataType.Name}Sheet";
 
@@ -79,6 +92,12 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                             }
 
                             var dataType = dataTableAssetRef.DataType;
+
+                            if (dataMap.ContainsKey(dataType.ToFullName()) == false)
+                            {
+                                continue;
+                            }
+
                             var tableTypeName = dataTableAssetRef.Symbol.ToFullName();
                             var sheetName = $"{dataType.Name}Sheet";
                             var variableName = $"m{dataTableAssetRef.Symbol.Name}";

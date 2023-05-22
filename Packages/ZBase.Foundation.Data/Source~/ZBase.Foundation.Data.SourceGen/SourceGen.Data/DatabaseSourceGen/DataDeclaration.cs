@@ -110,7 +110,14 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 memberArrayBuilder.Add(fieldRef);
             }
 
-            Fields = memberArrayBuilder.ToImmutable();
+            if (memberArrayBuilder.Count > 0)
+            {
+                Fields = memberArrayBuilder.ToImmutable();
+            }
+            else
+            {
+                Fields = ImmutableArray<FieldRef>.Empty;
+            }
         }
 
         public class FieldRef

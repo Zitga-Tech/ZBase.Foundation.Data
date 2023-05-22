@@ -10,6 +10,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public string WriteSheet(
               DatabaseRef.Table table
             , DataTableAssetRef dataTableAssetRef
+            , DataDeclaration dataTypeDeclaration
             , Dictionary<string, DataDeclaration> dataMap
         )
         {
@@ -19,30 +20,14 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             var idTypeFullName = idType.ToFullName();
             var dataTypeFullName = dataType.ToFullName();
             var dataTableAssetTypeName = dataTableAssetType.ToFullName();
-            var sheetName = $"{dataType.Name}Sheet";
             var nestedDataTypeFullNames = dataTableAssetRef.NestedDataTypeFullNames;
             var verticalListMap = DatabaseRef.VerticalListMap;
 
-            string sheetIdTypeName;
-            string sheetDataTypeName;
-
-            if (dataMap.TryGetValue(idTypeFullName, out var idTypeDeclaration))
-            {
-                sheetIdTypeName = $"{sheetName}.__{idType.Name}";
-            }
-            else
-            {
-                sheetIdTypeName = idTypeFullName;
-            }
-
-            if (dataMap.TryGetValue(dataTypeFullName, out var dataTypeDeclaration))
-            {
-                sheetDataTypeName = $"{sheetName}.__{dataType.Name}";
-            }
-            else
-            {
-                sheetDataTypeName = dataTypeFullName;
-            }
+            var sheetName = $"{dataType.Name}Sheet";
+            var sheetDataTypeName = $"{sheetName}.__{dataType.Name}";
+            var sheetIdTypeName = dataMap.TryGetValue(idTypeFullName, out var idTypeDeclaration)
+                ? $"{sheetName}.__{idType.Name}"
+                : idTypeFullName;
 
             var scopePrinter = new SyntaxNodeScopePrinter(Printer.DefaultLarge, DatabaseRef.Syntax.Parent);
             var p = scopePrinter.printer;
@@ -73,6 +58,9 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     .PrintEndLine();
                 p.OpenScope();
                 {
+                    var typeFullName = dataTypeDeclaration.FullName;
+                    var typeName = dataTypeDeclaration.Symbol.Name;
+
                     p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
                     p.PrintLine($"public void CopyFrom({dataTableAssetTypeName} dataTableAsset)");
                     p.OpenScope();
@@ -92,48 +80,42 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     p.CloseScope();
                     p.PrintEndLine();
 
-                    if (dataTypeDeclaration != null)
+                    p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
+                    p.PrintLine($"public {typeFullName}[] To{typeName}Array()");
+                    p.OpenScope();
                     {
-                        var typeFullName = dataTypeDeclaration.FullName;
-                        var typeName = dataTypeDeclaration.Symbol.Name;
-
-                        p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-                        p.PrintLine($"public {typeFullName}[] To{typeName}Array()");
-                        p.OpenScope();
-                        {
-                            p.PrintLine($"if (this.Items == null || this.Count == 0)");
-                            p = p.IncreasedIndent();
-                            p.PrintLine($"return global::System.Array.Empty<{typeFullName}>();");
-                            p = p.DecreasedIndent();
-                            p.PrintEndLine();
-
-                            p.PrintLine("var rows = this.Items;");
-                            p.PrintLine("var count = this.Count;");
-                            p.PrintLine($"var result = new {typeFullName}[count];");
-                            p.PrintEndLine();
-
-                            p.PrintLine("for (var i = 0; i < count; i++)");
-                            p.OpenScope();
-                            {
-                                p.PrintLine($"result[i] = (rows[i] ?? __{typeName}.Default).To{typeName}();");
-                            }
-                            p.CloseScope();
-
-                            p.PrintEndLine();
-                            p.PrintLine("return result;");
-                        }
-                        p.CloseScope();
+                        p.PrintLine($"if (this.Items == null || this.Count == 0)");
+                        p = p.IncreasedIndent();
+                        p.PrintLine($"return global::System.Array.Empty<{typeFullName}>();");
+                        p = p.DecreasedIndent();
                         p.PrintEndLine();
 
-                        dataTypeDeclaration.WriteCode(
-                              ref p
-                            , dataMap
-                            , verticalListMap
-                            , dataTableAssetTypeName
-                            , inheritSheetRow: true
-                            , idTypeDeclaration?.Symbol
-                        );
+                        p.PrintLine("var rows = this.Items;");
+                        p.PrintLine("var count = this.Count;");
+                        p.PrintLine($"var result = new {typeFullName}[count];");
+                        p.PrintEndLine();
+
+                        p.PrintLine("for (var i = 0; i < count; i++)");
+                        p.OpenScope();
+                        {
+                            p.PrintLine($"result[i] = (rows[i] ?? __{typeName}.Default).To{typeName}();");
+                        }
+                        p.CloseScope();
+
+                        p.PrintEndLine();
+                        p.PrintLine("return result;");
                     }
+                    p.CloseScope();
+                    p.PrintEndLine();
+
+                    dataTypeDeclaration.WriteCode(
+                          ref p
+                        , dataMap
+                        , verticalListMap
+                        , dataTableAssetTypeName
+                        , inheritSheetRow: true
+                        , idTypeDeclaration?.Symbol
+                    );
 
                     idTypeDeclaration?.WriteCode(
                           ref p

@@ -76,26 +76,6 @@ namespace ZBase.Foundation.Data.DataTableAssetSourceGen
                 baseType = baseType.BaseType;
             }
 
-            //foreach (var baseType in classSyntax.BaseList.Types)
-            //{
-            //    var typeInfo = semanticModel.GetTypeInfo(baseType.Type, token);
-                
-            //    if (typeInfo.Type is INamedTypeSymbol typeSymbol)
-            //    {
-            //        if (typeSymbol.IsGenericType
-            //            && typeSymbol.TypeArguments.Length == 2
-            //            && typeSymbol.ToFullName().StartsWith(DATA_TABLE_ASSET_T))
-            //        {
-            //            return new DataTableAssetRef {
-            //                Syntax = classSyntax,
-            //                Symbol = symbol,
-            //                IdType = typeSymbol.TypeArguments[0],
-            //                DataType = typeSymbol.TypeArguments[1],
-            //            };
-            //        }
-            //    }
-            //}
-
             return null;
         }
 
