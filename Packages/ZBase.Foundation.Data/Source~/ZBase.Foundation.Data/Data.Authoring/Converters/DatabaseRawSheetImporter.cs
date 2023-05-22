@@ -185,6 +185,8 @@ namespace ZBase.Foundation.Data.Authoring
 
                 if (string.IsNullOrWhiteSpace(idCellValue) == false)
                 {
+                    emptyRowStreak = 0;
+
                     if (idCellValue.StartsWith(Config.Comment))
                     {
                         continue;
