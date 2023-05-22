@@ -8,5 +8,6 @@
   "dependencies": {
     "org.nuget.system.runtime.compilerservices.unsafe": "6.0.0",
     "com.cathei.bakingsheet": "4.1.1"
-  }
+  },
+  "description": "A tool to export ScriptableObject database from either Google Spreadsheet, CSV, or JSON by utilising cathei/BakingSheet and C# Source Genetor."
 }
