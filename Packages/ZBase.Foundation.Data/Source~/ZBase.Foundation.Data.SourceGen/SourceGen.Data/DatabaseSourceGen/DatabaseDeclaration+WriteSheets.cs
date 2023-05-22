@@ -130,6 +130,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                             , dataMap
                             , verticalListMap
                             , dataTableAssetTypeName
+                            , inheritSheetRow: true
                             , idTypeDeclaration?.Symbol
                         );
                     }
@@ -139,6 +140,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         , dataMap
                         , verticalListMap
                         , dataTableAssetTypeName
+                        , inheritSheetRow: false
+                        , idType: null
                     );
 
                     foreach (var nestedFullName in nestedDataTypeFullNames)
@@ -150,6 +153,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                                 , dataMap
                                 , verticalListMap
                                 , dataTableAssetTypeName
+                                , inheritSheetRow: false
+                                , idType: null
                             );
                         }
                     }
