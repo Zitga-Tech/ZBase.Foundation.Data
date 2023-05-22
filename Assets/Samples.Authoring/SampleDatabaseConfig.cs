@@ -9,9 +9,9 @@ using ZBase.Foundation.Data.Authoring;
 
 namespace Samples.Authoring
 {
-    [CreateAssetMenu(fileName = "SampleDatabase", menuName = "Sample Database", order = 0)]
+    [CreateAssetMenu(fileName = "SampleDatabaseConfig", menuName = "Sample Database Config", order = 0)]
     [Database]
-    public partial class SampleDatabase : ScriptableObject
+    public partial class SampleDatabaseConfig : ScriptableObject
     {
         [Title("Google Credentials")]
         [LabelText("Service Account File Path")]
@@ -111,7 +111,7 @@ namespace Samples.Authoring
 
             await sheetContainer.Bake(googleSheetConverter);
 
-            var exporter = new DatabaseAssetExporter(AssetOutputFolderPath, $"{nameof(SampleDatabase)}Asset");
+            var exporter = new DatabaseAssetExporter(AssetOutputFolderPath, $"{nameof(SampleDatabaseConfig)}Asset");
 
             await sheetContainer.Store(exporter);
 
@@ -121,13 +121,13 @@ namespace Samples.Authoring
 
     [Table(typeof(HeroDataTableAsset), "Hero", NamingStrategy.SnakeCase)]
     [VerticalList(typeof(HeroData), nameof(HeroData.Multipliers))]
-    partial class SampleDatabase
+    partial class SampleDatabaseConfig
     {
         partial class HeroDataSheet { }
     }
 
     [Table(typeof(EnemyDataTableAsset), "Enemy", NamingStrategy.SnakeCase)]
-    partial class SampleDatabase
+    partial class SampleDatabaseConfig
     {
         partial class EnemyDataSheet { }
     }
