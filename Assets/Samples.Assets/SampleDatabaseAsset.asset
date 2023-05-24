@@ -12,8 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20bb0b8cf74165a4fb3a2463845a077f, type: 3}
   m_Name: SampleDatabaseAsset
   m_EditorClassIdentifier: 
-  _assets:
+  _assetRefs:
   - name: HeroDataTableAsset
     reference: {fileID: 11400000, guid: 57989a15a6e00e7469bfb9b3c0da2c33, type: 2}
   - name: EnemyDataTableAsset
     reference: {fileID: 11400000, guid: 6ea6baf2ea22ca747a319a2a6524c7ef, type: 2}
+  _redundantAssetRefs: []

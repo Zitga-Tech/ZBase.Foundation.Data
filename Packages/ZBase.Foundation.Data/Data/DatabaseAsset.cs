@@ -7,22 +7,28 @@ namespace ZBase.Foundation.Data
     public sealed class DatabaseAsset : ScriptableObject
     {
         [SerializeField, HideInInspector]
-        internal Asset[] _assets = new Asset[0];
+        internal TableAssetRef[] _assetRefs = Array.Empty<TableAssetRef>();
 
-        private readonly Dictionary<string, LazyLoadReference<DataTableAsset>> _assetMap = new();
-        
-        public void LazyInitialize()
+        [SerializeField, HideInInspector]
+        internal TableAssetRef[] _redundantAssetRefs = Array.Empty<TableAssetRef>();
+
+        private readonly Dictionary<string, DataTableAsset> _assetMap = new();
+        private bool _initialized;
+
+        public void Initialize()
         {
-            var assets = _assets;
+            var assetRefs = _assetRefs;
             var assetMap = _assetMap;
 
             assetMap.Clear();
-            assetMap.EnsureCapacity(assets.Length);
+            assetMap.EnsureCapacity(assetRefs.Length);
 
-            foreach (var asset in assets)
+            foreach (var assetRef in assetRefs)
             {
-                assetMap[asset.name] = asset.reference;
+                assetMap[assetRef.name] = assetRef.reference.asset;
             }
+
+            _initialized = true;
         }
 
         public bool TryGetDataTableAsset<T>(out T tableAsset)
@@ -32,12 +38,28 @@ namespace ZBase.Foundation.Data
         public bool TryGetDataTableAsset<T>(string name, out T tableAsset)
             where T : DataTableAsset
         {
-            if (_assetMap.TryGetValue(name, out var reference)
-                && reference.asset is T assetT
-            )
+            if (_initialized == false)
             {
-                tableAsset = assetT;
-                return true;
+                LogIfDatabaseIsNotInitialized();
+                tableAsset = null;
+                return false;
+            }
+
+            if (_assetMap.TryGetValue(name, out var asset))
+            {
+                if (asset is T assetT)
+                {
+                    tableAsset = assetT;
+                    return true;
+                }
+                else
+                {
+                    LogIfFoundAssetIsNotValidType<T>(asset);
+                }
+            }
+            else
+            {
+                LogIfCannotFindAsset(name);
             }
 
             tableAsset = null;
@@ -46,31 +68,65 @@ namespace ZBase.Foundation.Data
 
         internal void Clear()
         {
-            _assets = new Asset[0];
+            _assetRefs = Array.Empty<TableAssetRef>();
+            _redundantAssetRefs = Array.Empty<TableAssetRef>();
         }
 
-        internal void AddRange(IEnumerable<DataTableAsset> assets)
+        internal void AddRange(
+              IEnumerable<DataTableAsset> assets
+            , IEnumerable<DataTableAsset> redundantAssets
+        )
         {
             if (assets == null)
             {
                 throw new NullReferenceException(nameof(assets));
             }
 
-            var list = new List<Asset>();
+            var list = new List<TableAssetRef>();
 
             foreach (var asset in assets)
             {
-                list.Add(new Asset {
+                list.Add(new TableAssetRef {
                     name = asset.GetType().Name,
                     reference = asset,
                 });
             }
 
-            _assets = list.ToArray();
+            _assetRefs = list.ToArray();
+            list.Clear();
+
+            if (redundantAssets != null)
+            {
+                foreach (var asset in redundantAssets)
+                {
+                    list.Add(new TableAssetRef {
+                        name = asset.GetType().Name,
+                        reference = asset,
+                    });
+                }
+
+                _redundantAssetRefs = list.ToArray();
+                list.Clear();
+            }
+        }
+
+        private void LogIfDatabaseIsNotInitialized()
+        {
+            Debug.LogError($"The database is not initialized yet. Please invoke {nameof(Initialize)} method beofre using.", this);
+        }
+
+        private void LogIfCannotFindAsset(string name)
+        {
+            Debug.LogError($"Cannot find any data table asset named {name}.", this);
+        }
+
+        private void LogIfFoundAssetIsNotValidType<T>(DataTableAsset asset)
+        {
+            Debug.LogError($"The data table asset is not an instance of {typeof(T)}", asset);
         }
 
         [Serializable]
-        internal class Asset
+        internal struct TableAssetRef
         {
             [HideInInspector]
             public string name;

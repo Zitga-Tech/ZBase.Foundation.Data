@@ -39,13 +39,11 @@ namespace ZBase.Foundation.Data.Authoring
                 , _databaseName
                 , out var databaseAsset
                 , out var dataTableAssets
-                , out var redundantAssets
             );
 
-            RemoveAssets(redundantAssets);
             SaveAsset(databaseAsset, dataTableAssets);
-
             Result = databaseAsset;
+
             return Task.FromResult(true);
         }
 
@@ -68,7 +66,6 @@ namespace ZBase.Foundation.Data.Authoring
             , string databaseName
             , out DatabaseAsset databaseAsset
             , out List<DataTableAsset> dataTableAssetList
-            , out HashSet<DataTableAsset> redundantAssets
         )
         {
             var databaseAssetPath = Path.Combine(savePath, $"{databaseName}.asset");
@@ -81,17 +78,22 @@ namespace ZBase.Foundation.Data.Authoring
                 AssetDatabase.CreateAsset(databaseAsset, databaseAssetPath);
             }
 
-            redundantAssets = new HashSet<DataTableAsset>();
+            var redundantAssets = new HashSet<DataTableAsset>();
             
-            foreach (var asset in databaseAsset._assets)
+            foreach (var asset in databaseAsset._assetRefs)
+            {
+                redundantAssets.Add(asset.reference.asset);
+            }
+
+            foreach (var asset in databaseAsset._redundantAssetRefs)
             {
                 redundantAssets.Add(asset.reference.asset);
             }
 
             databaseAsset.Clear();
+            dataTableAssetList = new List<DataTableAsset>();
 
             var sheetProperties = context.Container.GetSheetProperties();
-            dataTableAssetList = new List<DataTableAsset>();
 
             foreach (var pair in sheetProperties)
             {
@@ -128,7 +130,7 @@ namespace ZBase.Foundation.Data.Authoring
                 }
             }
 
-            databaseAsset.AddRange(dataTableAssetList);
+            databaseAsset.AddRange(dataTableAssetList, redundantAssets);
         }
 
         private static bool TryGetGeneratedSheetAttribute(
@@ -168,15 +170,6 @@ namespace ZBase.Foundation.Data.Authoring
             }
 
             return true;
-        }
-
-        private static void RemoveAssets(IEnumerable<DataTableAsset> assets)
-        {
-            foreach (var asset in assets)
-            {
-                var path = AssetDatabase.GetAssetPath(asset);
-                AssetDatabase.DeleteAsset(path);
-            }
         }
 
         private static void SaveAsset(DatabaseAsset databaseAsset, List<DataTableAsset> dataTableAssets)
