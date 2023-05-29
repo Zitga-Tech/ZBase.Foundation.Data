@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace ZBase.Foundation.Data
@@ -31,6 +32,67 @@ namespace ZBase.Foundation.Data
             _initialized = true;
         }
 
+        public bool TryGetDataTableAsset(string name, out DataTableAsset tableAsset)
+        {
+            if (_initialized == false)
+            {
+                LogIfDatabaseIsNotInitialized();
+                tableAsset = null;
+                return false;
+            }
+
+            if (_assetMap.TryGetValue(name, out var asset))
+            {
+                tableAsset = asset;
+                return true;
+            }
+            else
+            {
+                LogIfCannotFindAsset(name);
+            }
+
+            tableAsset = null;
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryGetDataTableAsset(Type type, out DataTableAsset tableAsset)
+            => TryGetDataTableAsset(type, type.Name, out tableAsset);
+
+        public bool TryGetDataTableAsset(Type type, string name, out DataTableAsset tableAsset)
+        {
+            if (type == null)
+                throw new ArgumentNullException(nameof(type));
+
+            if (_initialized == false)
+            {
+                LogIfDatabaseIsNotInitialized();
+                tableAsset = null;
+                return false;
+            }
+
+            if (_assetMap.TryGetValue(name, out var asset))
+            {
+                if (asset.GetType() == type)
+                {
+                    tableAsset = asset;
+                    return true;
+                }
+                else
+                {
+                    LogIfFoundAssetIsNotValidType(type, asset);
+                }
+            }
+            else
+            {
+                LogIfCannotFindAsset(name);
+            }
+
+            tableAsset = null;
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetDataTableAsset<T>(out T tableAsset)
             where T : DataTableAsset
             => TryGetDataTableAsset<T>(typeof(T).Name, out tableAsset);
@@ -123,6 +185,11 @@ namespace ZBase.Foundation.Data
         private void LogIfFoundAssetIsNotValidType<T>(DataTableAsset asset)
         {
             Debug.LogError($"The data table asset is not an instance of {typeof(T)}", asset);
+        }
+
+        private void LogIfFoundAssetIsNotValidType(Type type, DataTableAsset asset)
+        {
+            Debug.LogError($"The data table asset is not an instance of {type}", asset);
         }
 
         [Serializable]
