@@ -268,7 +268,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     var type = queue.Dequeue();
                     
-                    if (type.ImplementsInterface(IDATA) == false)
+                    if (type.InheritsFromInterface(IDATA) == false)
                     {
                         continue;
                     }
@@ -288,24 +288,16 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     }
 
                     map[typeName] = dataDeclaration;
-                    var members = type.GetMembers();
 
-                    foreach (var member in members)
+                    foreach (var fieldRef in dataDeclaration.Fields)
                     {
-                        if (member is not IFieldSymbol field
-                            || field.HasAttribute(SERIALIZE_FIELD_ATTRIBUTE) == false
-                        )
-                        {
-                            continue;
-                        }
-
-                        if (field.Type is IArrayTypeSymbol arrayType)
+                        if (fieldRef.Type is IArrayTypeSymbol arrayType)
                         {
                             queue.Enqueue(arrayType.ElementType);
                         }
-                        else if (field.Type is INamedTypeSymbol namedType)
+                        else if (fieldRef.Type is INamedTypeSymbol namedType)
                         {
-                            var typeFullName = field.Type.ToFullName();
+                            var typeFullName = fieldRef.Type.ToFullName();
 
                             if (typeFullName.StartsWith(LIST_TYPE_T)
                                 || typeFullName.StartsWith(DICTIONARY_TYPE_T)
@@ -323,7 +315,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         }
                         else
                         {
-                            queue.Enqueue(field.Type);
+                            queue.Enqueue(fieldRef.Type);
                         }
                     }
                 }

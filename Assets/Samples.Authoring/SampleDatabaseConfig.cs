@@ -122,14 +122,14 @@ namespace Samples.Authoring
         }
     }
 
-    [Table(typeof(HeroDataTableAsset), "Hero", NamingStrategy.SnakeCase)]
+    [Table(typeof(HeroDataTableAsset), "Heroes", NamingStrategy.SnakeCase)]
     [VerticalList(typeof(HeroData), nameof(HeroData.Multipliers))]
     partial class SampleDatabaseConfig
     {
         partial class HeroDataSheet { }
     }
 
-    [Table(typeof(EnemyDataTableAsset), "Enemy", NamingStrategy.SnakeCase)]
+    [Table(typeof(EnemyDataTableAsset), "Enemies", NamingStrategy.SnakeCase)]
     partial class SampleDatabaseConfig
     {
         partial class EnemyDataSheet { }

@@ -3,7 +3,7 @@ using ZBase.Foundation.Data;
 
 namespace Samples
 {
-    public partial struct StatMultiplierData : IData
+    public partial class StatMultiplierData : IData
     {
         [SerializeField]
         private int _level;

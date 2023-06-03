@@ -277,11 +277,11 @@ namespace ZBase.Foundation.Data.Authoring
                         // for Id column, throw and exclude whole column
                         if (pageColumn == 0)
                         {
-                            context.Logger.LogError(ex, "Failed to set id \"{CellValue}\"", cellValue);
+                            context.Logger.LogError(ex, "Failed to set id \"{CellValue}\". {Reason}", cellValue, ex.Message);
                             throw;
                         }
 
-                        context.Logger.LogError(ex, "Failed to set value \"{CellValue}\"", cellValue);
+                        context.Logger.LogError(ex, "Failed to set value \"{CellValue}\". {Reason}", cellValue, ex.Message);
                     }
                 }
             }

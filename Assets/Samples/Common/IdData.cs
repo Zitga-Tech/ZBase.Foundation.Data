@@ -3,7 +3,7 @@ using ZBase.Foundation.Data;
 
 namespace Samples
 {
-    public partial struct IdData : IData
+    public partial class IdData : IData
     {
         [SerializeField]
         private EntityKind _kind;

@@ -1,4 +1,3 @@
-using UnityEngine;
 using ZBase.Foundation.Data;
 
 namespace Samples

@@ -4,6 +4,8 @@ namespace ZBase.Foundation.Data.DataSourceGen
 {
     partial class DataDeclaration
     {
+        private const string GENERATED_PROPERTY_FROM_FIELD_ATTRIBUTE = "[global::ZBase.Foundation.Data.SourceGen.GeneratedPropertyFromField(nameof({0}), typeof({1}))]";
+
         public string WriteCode()
         {
             var keyword = Symbol.IsValueType ? "struct" : "class";
@@ -64,6 +66,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                         }
                     }
 
+                    p.PrintLine(string.Format(GENERATED_PROPERTY_FROM_FIELD_ATTRIBUTE, fieldName, field.Type.ToFullName()));
                     p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
                     p.PrintLine($"public {typeName} {field.PropertyName}");
                     p.OpenScope();

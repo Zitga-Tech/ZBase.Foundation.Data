@@ -13,6 +13,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public const string DICTIONARY_TYPE_T = "global::System.Collections.Generic.Dictionary<";
         public const string VERTICAL_LIST_TYPE = "global::Cathei.BakingSheet.VerticalList<";
 
+        private const string GENERATED_PROPERTY_FROM_FIELD = "global::ZBase.Foundation.Data.SourceGen.GeneratedPropertyFromFieldAttribute";
         private const string AGGRESSIVE_INLINING = "[global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]";
         private const string GENERATED_CODE = "[global::System.CodeDom.Compiler.GeneratedCode(\"ZBase.Foundation.Data.DatabaseGenerator\", \"1.0.0\")]";
         private const string EXCLUDE_COVERAGE = "[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]";
@@ -28,8 +29,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             Symbol = symbol;
             FullName = Symbol.ToFullName();
 
-            var existingProperties = new HashSet<string>();
             var fields = new List<IFieldSymbol>();
+            var properties = new List<(string propertyName, string fieldName, ITypeSymbol fieldType)>();
 
             using var memberArrayBuilder = ImmutableArrayBuilder<FieldRef>.Rent();
             var members = Symbol.GetMembers();
@@ -38,7 +39,16 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             {
                 if (member is IPropertySymbol property)
                 {
-                    existingProperties.Add(property.Name);
+                    var attribute = property.GetAttribute(GENERATED_PROPERTY_FROM_FIELD);
+                    
+                    if (attribute != null
+                        && attribute.ConstructorArguments.Length > 1
+                        && attribute.ConstructorArguments[0].Value is string fieldName
+                        && attribute.ConstructorArguments[1].Value is ITypeSymbol fieldType
+                    )
+                    {
+                        properties.Add((property.Name, fieldName, fieldType));
+                    }
                 }
                 else if (member is IFieldSymbol field && field.HasAttribute(SERIALIZE_FIELD_ATTRIBUTE))
                 {
@@ -46,22 +56,52 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 }
             }
 
+            var uniqueFieldNames = new HashSet<string>();
+
             foreach (var field in fields)
             {
-                var propertyName = field.ToPropertyName();
+                if (uniqueFieldNames.Contains(field.Name))
+                {
+                    continue;
+                }
+
+                uniqueFieldNames.Add(field.Name);
+
                 var fieldRef = new FieldRef {
-                    Field = field,
                     Type = field.Type,
-                    PropertyName = propertyName,
+                    PropertyName = field.ToPropertyName(),
                     TypeHasParameterlessConstructor = false,
                 };
 
-                if (field.Type is IArrayTypeSymbol arrayType)
+                memberArrayBuilder.Add(fieldRef);
+            }
+
+            foreach (var property in properties)
+            {
+                if (uniqueFieldNames.Contains(property.fieldName))
+                {
+                    continue;
+                }
+
+                uniqueFieldNames.Add(property.fieldName);
+
+                var fieldRef = new FieldRef {
+                    Type = property.fieldType,
+                    PropertyName = property.propertyName,
+                    TypeHasParameterlessConstructor = false,
+                };
+
+                memberArrayBuilder.Add(fieldRef);
+            }
+
+            foreach (var fieldRef in memberArrayBuilder.WrittenSpan)
+            {
+                if (fieldRef.Type is IArrayTypeSymbol arrayType)
                 {
                     fieldRef.CollectionKind = CollectionKind.Array;
                     fieldRef.CollectionElementType = arrayType.ElementType;
                 }
-                else if (field.Type is INamedTypeSymbol namedType)
+                else if (fieldRef.Type is INamedTypeSymbol namedType)
                 {
                     if (namedType.TryGetGenericType(LIST_TYPE_T, 1, out var listType))
                     {
@@ -76,7 +116,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     }
                 }
 
-                var fieldTypeMembers = field.Type.GetMembers();
+                var fieldTypeMembers = fieldRef.Type.GetMembers();
                 bool? fieldTypeHasParameterlessConstructor = null;
                 var fieldTypeParameterConstructorCount = 0;
 
@@ -106,8 +146,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     fieldRef.TypeHasParameterlessConstructor = fieldTypeParameterConstructorCount == 0;
                 }
-
-                memberArrayBuilder.Add(fieldRef);
             }
 
             if (memberArrayBuilder.Count > 0)
@@ -122,8 +160,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
         public class FieldRef
         {
-            public IFieldSymbol Field { get; set; }
-
             public ITypeSymbol Type { get; set; }
 
             public bool TypeHasParameterlessConstructor { get; set; }

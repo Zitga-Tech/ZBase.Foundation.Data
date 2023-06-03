@@ -3,7 +3,7 @@ using ZBase.Foundation.Data;
 
 namespace Samples
 {
-    public partial struct EnemyData : IData
+    public partial class EnemyData : IData
     {
         [SerializeField]
         private IdData _id;
