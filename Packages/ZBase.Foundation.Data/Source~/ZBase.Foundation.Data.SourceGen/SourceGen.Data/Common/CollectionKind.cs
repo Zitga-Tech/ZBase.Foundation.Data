@@ -6,5 +6,8 @@
         Array,
         List,
         Dictionary,
+        HashSet,
+        Queue,
+        Stack,
     }
 }

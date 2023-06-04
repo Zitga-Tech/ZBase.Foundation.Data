@@ -389,6 +389,9 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     {
                         case CollectionKind.Array:
                         case CollectionKind.List:
+                        case CollectionKind.HashSet:
+                        case CollectionKind.Queue:
+                        case CollectionKind.Stack:
                         {
                             TryAdd(field.CollectionElementType, dataMap, uniqueTypeNames, typeQueue);
                             break;

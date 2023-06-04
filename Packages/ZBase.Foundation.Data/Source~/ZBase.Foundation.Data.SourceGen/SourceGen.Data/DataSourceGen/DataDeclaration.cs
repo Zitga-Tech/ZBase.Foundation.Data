@@ -16,6 +16,9 @@ namespace ZBase.Foundation.Data.DataSourceGen
         public const string EXCLUDE_COVERAGE = "[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]";
         public const string LIST_TYPE_T = "global::System.Collections.Generic.List<";
         public const string DICTIONARY_TYPE_T = "global::System.Collections.Generic.Dictionary<";
+        public const string HASH_SET_TYPE_T = "global::System.Collections.Generic.HashSet<";
+        public const string QUEUE_TYPE_T = "global::System.Collections.Generic.Queue<";
+        public const string STACK_TYPE_T = "global::System.Collections.Generic.Stack<";
 
         public TypeDeclarationSyntax Syntax { get; }
 
@@ -81,6 +84,21 @@ namespace ZBase.Foundation.Data.DataSourceGen
                         fieldRef.CollectionKind = CollectionKind.Dictionary;
                         fieldRef.CollectionKeyType = dictType.TypeArguments[0];
                         fieldRef.CollectionElementType = dictType.TypeArguments[1];
+                    }
+                    else if (namedType.TryGetGenericType(HASH_SET_TYPE_T, 1, out var hashSetType))
+                    {
+                        fieldRef.CollectionKind = CollectionKind.HashSet;
+                        fieldRef.CollectionElementType = hashSetType.TypeArguments[0];
+                    }
+                    else if (namedType.TryGetGenericType(QUEUE_TYPE_T, 1, out var queueType))
+                    {
+                        fieldRef.CollectionKind = CollectionKind.Queue;
+                        fieldRef.CollectionElementType = queueType.TypeArguments[0];
+                    }
+                    else if (namedType.TryGetGenericType(STACK_TYPE_T, 1, out var stackType))
+                    {
+                        fieldRef.CollectionKind = CollectionKind.Stack;
+                        fieldRef.CollectionElementType = stackType.TypeArguments[0];
                     }
                 }
 

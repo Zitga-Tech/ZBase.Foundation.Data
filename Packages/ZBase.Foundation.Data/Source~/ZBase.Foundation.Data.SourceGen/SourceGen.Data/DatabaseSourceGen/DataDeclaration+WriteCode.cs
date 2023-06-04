@@ -88,6 +88,9 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     {
                         case CollectionKind.Array:
                         case CollectionKind.List:
+                        case CollectionKind.HashSet:
+                        case CollectionKind.Queue:
+                        case CollectionKind.Stack:
                         {
                             var collectionTypeName = LIST_TYPE_T;
 
@@ -187,6 +190,9 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     case CollectionKind.Array:
                     case CollectionKind.List:
+                    case CollectionKind.HashSet:
+                    case CollectionKind.Queue:
+                    case CollectionKind.Stack:
                     {
                         var collectionTypeName = LIST_TYPE_T;
 
@@ -320,6 +326,51 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                                 break;
                             }
 
+                            case CollectionKind.HashSet:
+                            {
+                                var elemTypeFullName = field.CollectionElementType.ToFullName();
+
+                                if (dataMap.ContainsKey(elemTypeFullName))
+                                {
+                                    p.PrintLine($"{comma} this.To{field.CollectionElementType.Name}HashSet()");
+                                }
+                                else
+                                {
+                                    p.PrintLine($"{comma} this.{field.PropertyName} == null ? new {HASH_SET_TYPE_T}{elemTypeFullName}>() : new {HASH_SET_TYPE_T}{elemTypeFullName}>(this.{field.PropertyName})");
+                                }
+                                break;
+                            }
+                            
+                            case CollectionKind.Queue:
+                            {
+                                var elemTypeFullName = field.CollectionElementType.ToFullName();
+
+                                if (dataMap.ContainsKey(elemTypeFullName))
+                                {
+                                    p.PrintLine($"{comma} this.To{field.CollectionElementType.Name}Queue()");
+                                }
+                                else
+                                {
+                                    p.PrintLine($"{comma} this.{field.PropertyName} == null ? new {QUEUE_TYPE_T}{elemTypeFullName}>() : new {QUEUE_TYPE_T}{elemTypeFullName}>(this.{field.PropertyName})");
+                                }
+                                break;
+                            }
+                            
+                            case CollectionKind.Stack:
+                            {
+                                var elemTypeFullName = field.CollectionElementType.ToFullName();
+
+                                if (dataMap.ContainsKey(elemTypeFullName))
+                                {
+                                    p.PrintLine($"{comma} this.To{field.CollectionElementType.Name}Stack()");
+                                }
+                                else
+                                {
+                                    p.PrintLine($"{comma} this.{field.PropertyName} == null ? new {STACK_TYPE_T}{elemTypeFullName}>() : new {STACK_TYPE_T}{elemTypeFullName}>(this.{field.PropertyName})");
+                                }
+                                break;
+                            }
+
                             default:
                             {
                                 var fieldTypeFullName = field.Type.ToFullName();
@@ -387,6 +438,9 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         }
 
                         case CollectionKind.List:
+                        case CollectionKind.HashSet:
+                        case CollectionKind.Queue:
+                        case CollectionKind.Stack:
                         {
                             var elemTypeFullName = field.CollectionElementType.ToFullName();
 
@@ -497,6 +551,24 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     case CollectionKind.Dictionary:
                     {
                         WriteToDictionaryMethod(ref p, field, dataMap);
+                        break;
+                    }
+
+                    case CollectionKind.HashSet:
+                    {
+                        WriteToHashSetMethod(ref p, field, dataMap);
+                        break;
+                    }
+
+                    case CollectionKind.Queue:
+                    {
+                        WriteToQueueMethod(ref p, field, dataMap);
+                        break;
+                    }
+
+                    case CollectionKind.Stack:
+                    {
+                        WriteToStackMethod(ref p, field, dataMap);
                         break;
                     }
                 }
@@ -637,6 +709,129 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                     p.PrintEndLine();
                     p.PrintLine("result[key] = value;");
+                }
+                p.CloseScope();
+
+                p.PrintEndLine();
+                p.PrintLine("return result;");
+            }
+            p.CloseScope();
+            p.PrintEndLine();
+        }
+
+        private static void WriteToHashSetMethod(ref Printer p, FieldRef field, Dictionary<string, DataDeclaration> dataMap)
+        {
+            var elemTypeFullName = field.CollectionElementType.ToFullName();
+
+            if (dataMap.ContainsKey(elemTypeFullName) == false)
+            {
+                return;
+            }
+
+            var elemTypeName = field.CollectionElementType.Name;
+
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
+            p.PrintLine($"private {HASH_SET_TYPE_T}{elemTypeFullName}> To{elemTypeName}HashSet()");
+            p.OpenScope();
+            {
+                p.PrintLine($"if (this.{field.PropertyName} == null || this.{field.PropertyName}.Count == 0)");
+                p = p.IncreasedIndent();
+                p.PrintLine($"return new {HASH_SET_TYPE_T}{elemTypeFullName}>();");
+                p = p.DecreasedIndent();
+                p.PrintEndLine();
+
+                p.PrintLine($"var rows = this.{field.PropertyName};");
+                p.PrintLine("var count = rows.Count;");
+                p.PrintLine($"var result = new {HASH_SET_TYPE_T}{elemTypeFullName}>(count);");
+                p.PrintEndLine();
+
+                p.PrintLine("for (var i = 0; i < count; i++)");
+                p.OpenScope();
+                {
+                    p.PrintLine($"var item = (rows[i] ?? __{elemTypeName}.Default).To{elemTypeName}();");
+                    p.PrintLine("result.Add(item);");
+                }
+                p.CloseScope();
+
+                p.PrintEndLine();
+                p.PrintLine("return result;");
+            }
+            p.CloseScope();
+            p.PrintEndLine();
+        }
+
+        private static void WriteToQueueMethod(ref Printer p, FieldRef field, Dictionary<string, DataDeclaration> dataMap)
+        {
+            var elemTypeFullName = field.CollectionElementType.ToFullName();
+
+            if (dataMap.ContainsKey(elemTypeFullName) == false)
+            {
+                return;
+            }
+
+            var elemTypeName = field.CollectionElementType.Name;
+
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
+            p.PrintLine($"private {QUEUE_TYPE_T}{elemTypeFullName}> To{elemTypeName}Queue()");
+            p.OpenScope();
+            {
+                p.PrintLine($"if (this.{field.PropertyName} == null || this.{field.PropertyName}.Count == 0)");
+                p = p.IncreasedIndent();
+                p.PrintLine($"return new {QUEUE_TYPE_T}{elemTypeFullName}>();");
+                p = p.DecreasedIndent();
+                p.PrintEndLine();
+
+                p.PrintLine($"var rows = this.{field.PropertyName};");
+                p.PrintLine("var count = rows.Count;");
+                p.PrintLine($"var result = new {QUEUE_TYPE_T}{elemTypeFullName}>(count);");
+                p.PrintEndLine();
+
+                p.PrintLine("for (var i = 0; i < count; i++)");
+                p.OpenScope();
+                {
+                    p.PrintLine($"var item = (rows[i] ?? __{elemTypeName}.Default).To{elemTypeName}();");
+                    p.PrintLine("result.Enqueue(item);");
+                }
+                p.CloseScope();
+
+                p.PrintEndLine();
+                p.PrintLine("return result;");
+            }
+            p.CloseScope();
+            p.PrintEndLine();
+        }
+
+        private static void WriteToStackMethod(ref Printer p, FieldRef field, Dictionary<string, DataDeclaration> dataMap)
+        {
+            var elemTypeFullName = field.CollectionElementType.ToFullName();
+
+            if (dataMap.ContainsKey(elemTypeFullName) == false)
+            {
+                return;
+            }
+
+            var elemTypeName = field.CollectionElementType.Name;
+
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
+            p.PrintLine($"private {STACK_TYPE_T}{elemTypeFullName}> To{elemTypeName}Stack()");
+            p.OpenScope();
+            {
+                p.PrintLine($"if (this.{field.PropertyName} == null || this.{field.PropertyName}.Count == 0)");
+                p = p.IncreasedIndent();
+                p.PrintLine($"return new {STACK_TYPE_T}{elemTypeFullName}>();");
+                p = p.DecreasedIndent();
+                p.PrintEndLine();
+
+                p.PrintLine($"var rows = this.{field.PropertyName};");
+                p.PrintLine("var count = rows.Count;");
+                p.PrintLine($"var result = new {STACK_TYPE_T}{elemTypeFullName}>(count);");
+                p.PrintEndLine();
+
+                p.PrintLine("for (var i = 0; i < count; i++)");
+                p.OpenScope();
+                {
+                    p.PrintLine($"var item = (rows[i] ?? __{elemTypeName}.Default).To{elemTypeName}();");
+                    p.PrintLine("result.Push(item);");
                 }
                 p.CloseScope();
 

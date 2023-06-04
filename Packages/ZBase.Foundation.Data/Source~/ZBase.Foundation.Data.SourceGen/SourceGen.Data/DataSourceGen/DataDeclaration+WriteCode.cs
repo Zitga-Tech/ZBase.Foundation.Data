@@ -58,6 +58,15 @@ namespace ZBase.Foundation.Data.DataSourceGen
                             break;
                         }
 
+                        case CollectionKind.HashSet:
+                        case CollectionKind.Queue:
+                        case CollectionKind.Stack:
+                        {
+                            isCollection = true;
+                            typeName = $"global::System.Collections.Generic.IReadOnlyCollection<{field.CollectionElementType.ToFullName()}>";
+                            break;
+                        }
+
                         default:
                         {
                             isCollection = false;
@@ -97,9 +106,8 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     }
                 }
 
-                p.PrintEndLine().Print("#if UNITY_EDITOR").PrintEndLine();
                 p.PrintEndLine();
-
+                
                 p.PrintLine("[global::System.Obsolete(\"This method is not intended to be used directly by user code.\")]");
                 p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
                 p.PrintLine("internal void SetValues(");
@@ -123,7 +131,6 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     }
                 }
                 p.CloseScope();
-                p.PrintEndLine().Print("#endif").PrintEndLine();
             }
             p.CloseScope();
 

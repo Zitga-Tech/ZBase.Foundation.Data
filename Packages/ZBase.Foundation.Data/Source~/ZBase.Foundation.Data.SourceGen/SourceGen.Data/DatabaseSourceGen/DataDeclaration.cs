@@ -11,6 +11,9 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public const string SERIALIZE_FIELD_ATTRIBUTE = "global::UnityEngine.SerializeField";
         public const string LIST_TYPE_T = "global::System.Collections.Generic.List<";
         public const string DICTIONARY_TYPE_T = "global::System.Collections.Generic.Dictionary<";
+        public const string HASH_SET_TYPE_T = "global::System.Collections.Generic.HashSet<";
+        public const string QUEUE_TYPE_T = "global::System.Collections.Generic.Queue<";
+        public const string STACK_TYPE_T = "global::System.Collections.Generic.Stack<";
         public const string VERTICAL_LIST_TYPE = "global::Cathei.BakingSheet.VerticalList<";
 
         private const string GENERATED_PROPERTY_FROM_FIELD = "global::ZBase.Foundation.Data.SourceGen.GeneratedPropertyFromFieldAttribute";
@@ -93,7 +96,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                 memberArrayBuilder.Add(fieldRef);
             }
-
+            
             foreach (var fieldRef in memberArrayBuilder.WrittenSpan)
             {
                 if (fieldRef.Type is IArrayTypeSymbol arrayType)
@@ -113,6 +116,21 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         fieldRef.CollectionKind = CollectionKind.Dictionary;
                         fieldRef.CollectionKeyType = dictType.TypeArguments[0];
                         fieldRef.CollectionElementType = dictType.TypeArguments[1];
+                    }
+                    else if (namedType.TryGetGenericType(HASH_SET_TYPE_T, 1, out var hashSetType))
+                    {
+                        fieldRef.CollectionKind = CollectionKind.HashSet;
+                        fieldRef.CollectionElementType = hashSetType.TypeArguments[0];
+                    }
+                    else if (namedType.TryGetGenericType(QUEUE_TYPE_T, 1, out var queueType))
+                    {
+                        fieldRef.CollectionKind = CollectionKind.Queue;
+                        fieldRef.CollectionElementType = queueType.TypeArguments[0];
+                    }
+                    else if (namedType.TryGetGenericType(STACK_TYPE_T, 1, out var stackType))
+                    {
+                        fieldRef.CollectionKind = CollectionKind.Stack;
+                        fieldRef.CollectionElementType = stackType.TypeArguments[0];
                     }
                 }
 
