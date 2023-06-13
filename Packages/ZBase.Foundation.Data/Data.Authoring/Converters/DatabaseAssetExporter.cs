@@ -16,11 +16,28 @@ namespace ZBase.Foundation.Data.Authoring
     {
         private readonly string _savePath;
         private readonly string _databaseName;
+        private readonly HashSet<string> _ignoredSheetProperties;
 
-        public DatabaseAssetExporter(string savePath, string databaseName = "_Database")
+        /// <param name="savePath">The location to store the exported data table assets</param>
+        /// <param name="databaseName">The name of the exported database asset</param>
+        /// <param name="ignoredSheetProperties">The properties of <see cref="SheetContainerBase"/> to be ignored</param>
+        public DatabaseAssetExporter(
+              string savePath
+            , string databaseName = "_Database"
+            , IEnumerable<string> ignoredSheetProperties = null
+        )
         {
             _savePath = savePath;
             _databaseName = databaseName;
+            _ignoredSheetProperties = new();
+
+            if (ignoredSheetProperties != null)
+            {
+                foreach (var prop in ignoredSheetProperties)
+                {
+                    _ignoredSheetProperties.Add(prop);
+                }
+            }
         }
 
         public TimeZoneInfo TimeZoneInfo => TimeZoneInfo.Utc;
@@ -37,6 +54,7 @@ namespace ZBase.Foundation.Data.Authoring
                   context
                 , savePath
                 , _databaseName
+                , _ignoredSheetProperties
                 , out var databaseAsset
                 , out var dataTableAssets
             );
@@ -64,6 +82,7 @@ namespace ZBase.Foundation.Data.Authoring
               SheetConvertingContext context
             , string savePath
             , string databaseName
+            , HashSet<string> ignoredSheetProperties
             , out DatabaseAsset databaseAsset
             , out List<DataTableAsset> dataTableAssetList
         )
@@ -97,6 +116,11 @@ namespace ZBase.Foundation.Data.Authoring
 
             foreach (var pair in sheetProperties)
             {
+                if (ignoredSheetProperties.Contains(pair.Key))
+                {
+                    continue;
+                }
+
                 using (context.Logger.BeginScope(pair.Key))
                 {
                     if (pair.Value.GetValue(context.Container) is not ISheet sheet)
