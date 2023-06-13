@@ -16,7 +16,6 @@ namespace ZBase.Foundation.Data.Authoring
     {
         private readonly string _savePath;
         private readonly string _databaseName;
-        private readonly HashSet<string> _ignoredSheetProperties;
 
         /// <param name="savePath">The location to store the exported data table assets</param>
         /// <param name="databaseName">The name of the exported database asset</param>
@@ -24,20 +23,10 @@ namespace ZBase.Foundation.Data.Authoring
         public DatabaseAssetExporter(
               string savePath
             , string databaseName = "_Database"
-            , IEnumerable<string> ignoredSheetProperties = null
         )
         {
             _savePath = savePath;
             _databaseName = databaseName;
-            _ignoredSheetProperties = new();
-
-            if (ignoredSheetProperties != null)
-            {
-                foreach (var prop in ignoredSheetProperties)
-                {
-                    _ignoredSheetProperties.Add(prop);
-                }
-            }
         }
 
         public TimeZoneInfo TimeZoneInfo => TimeZoneInfo.Utc;
@@ -54,7 +43,6 @@ namespace ZBase.Foundation.Data.Authoring
                   context
                 , savePath
                 , _databaseName
-                , _ignoredSheetProperties
                 , out var databaseAsset
                 , out var dataTableAssets
             );
@@ -82,7 +70,6 @@ namespace ZBase.Foundation.Data.Authoring
               SheetConvertingContext context
             , string savePath
             , string databaseName
-            , HashSet<string> ignoredSheetProperties
             , out DatabaseAsset databaseAsset
             , out List<DataTableAsset> dataTableAssetList
         )
@@ -113,54 +100,95 @@ namespace ZBase.Foundation.Data.Authoring
             dataTableAssetList = new List<DataTableAsset>();
 
             var sheetProperties = context.Container.GetSheetProperties();
+            var dataSheetContainer = context.Container as DataSheetContainerBase;
 
             foreach (var pair in sheetProperties)
             {
                 using (context.Logger.BeginScope(pair.Key))
                 {
-                    if (pair.Value.GetValue(context.Container) is not ISheet sheet)
+                    var ignored = dataSheetContainer?.CheckSheetPropertyIsIgnored(pair.Key) ?? false;
+
+                    if (ignored)
                     {
-                        continue;
+                        if (TryGetGeneratedSheetAttribute(context, sheetProperties, pair.Key, out var sheetAttrib) == false)
+                        {
+                            continue;
+                        }
+
+
+                        var dataTableAssetType = sheetAttrib.DataTableAssetType;
+                        var dataTableAssetPath = Path.Combine(savePath, $"{dataTableAssetType.Name}.asset");
+                        var dataTableAsset = AssetDatabase.LoadAssetAtPath<DataTableAsset>(dataTableAssetPath);
+
+                        if (dataTableAsset == null)
+                        {
+                            continue;
+                        }
+
+                        redundantAssets.Remove(dataTableAsset);
+                        dataTableAssetList.Add(dataTableAsset);
                     }
-
-                    if (TryGetGeneratedSheetAttribute(context, sheet, out var sheetAttrib) == false
-                        || TryGetToDataArrayMethod(context, sheet, sheetAttrib.DataType, out var toDataArrayMethod) == false
-                    )
+                    else
                     {
-                        continue;
-                    }
+                        if (pair.Value.GetValue(context.Container) is not ISheet sheet)
+                        {
+                            continue;
+                        }
 
-                    var ignored = ignoredSheetProperties.Contains(pair.Key);
-                    var dataTableAssetType = sheetAttrib.DataTableAssetType;
-                    var dataTableAssetPath = Path.Combine(savePath, $"{dataTableAssetType.Name}.asset");
-                    var dataTableAsset = AssetDatabase.LoadAssetAtPath<DataTableAsset>(dataTableAssetPath);
+                        if (TryGetGeneratedSheetAttribute(context, sheet, out var sheetAttrib) == false
+                            || TryGetToDataArrayMethod(context, sheet, sheetAttrib.DataType, out var toDataArrayMethod) == false
+                        )
+                        {
+                            continue;
+                        }
 
-                    if (dataTableAsset == null && ignored == false)
-                    {
-                        dataTableAsset = ScriptableObject.CreateInstance(dataTableAssetType) as DataTableAsset;
-                        AssetDatabase.CreateAsset(dataTableAsset, dataTableAssetPath);
-                    }
+                        var dataTableAssetType = sheetAttrib.DataTableAssetType;
+                        var dataTableAssetPath = Path.Combine(savePath, $"{dataTableAssetType.Name}.asset");
+                        var dataTableAsset = AssetDatabase.LoadAssetAtPath<DataTableAsset>(dataTableAssetPath);
 
-                    if (dataTableAsset == null)
-                    {
-                        continue;
-                    }
+                        if (dataTableAsset == null)
+                        {
+                            dataTableAsset = ScriptableObject.CreateInstance(dataTableAssetType) as DataTableAsset;
+                            AssetDatabase.CreateAsset(dataTableAsset, dataTableAssetPath);
+                        }
 
-                    redundantAssets.Remove(dataTableAsset);
-
-                    if (ignored == false)
-                    {
+                        redundantAssets.Remove(dataTableAsset);
                         dataTableAsset.name = dataTableAssetType.Name;
 
                         var dataArray = toDataArrayMethod.Invoke(sheet, null);
                         dataTableAsset.SetRows(dataArray);
-                    }
 
-                    dataTableAssetList.Add(dataTableAsset);
+                        dataTableAssetList.Add(dataTableAsset);
+                    }
                 }
             }
 
             databaseAsset.AddRange(dataTableAssetList, redundantAssets);
+        }
+
+        private static bool TryGetGeneratedSheetAttribute(
+              SheetConvertingContext context
+            , IReadOnlyDictionary<string, PropertyInfo> sheetProperties
+            , string sheetProperty
+            , out GeneratedSheetAttribute attribute
+        )
+        {
+            if (sheetProperties.TryGetValue(sheetProperty, out var property))
+            {
+                var sheetType = property.PropertyType;
+                attribute = sheetType.GetCustomAttribute<GeneratedSheetAttribute>();
+
+                if (attribute == null)
+                {
+                    context.Logger.LogError("Cannot find {Attribute} on {Sheet}", typeof(GeneratedSheetAttribute), sheetType);
+                    return false;
+                }
+
+                return true;
+            }
+
+            attribute = default;
+            return false;
         }
 
         private static bool TryGetGeneratedSheetAttribute(

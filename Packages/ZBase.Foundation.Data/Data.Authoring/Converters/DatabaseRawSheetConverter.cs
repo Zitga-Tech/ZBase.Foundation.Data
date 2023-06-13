@@ -18,6 +18,7 @@ namespace ZBase.Foundation.Data.Authoring
         public bool SplitHeader { get; set; }
 
         protected abstract Task<bool> SaveData();
+
         protected abstract IRawSheetExporterPage CreatePage(string sheetName);
 
         protected DatabaseRawSheetConverter(
@@ -25,18 +26,22 @@ namespace ZBase.Foundation.Data.Authoring
             , IFormatProvider formatProvider
             , bool splitHeader = false
             , int emptyRowStreakThreshold = 5
-            , IEnumerable<string> ignoredSheetProperties = null
         )
-            : base(timeZoneInfo, formatProvider, emptyRowStreakThreshold, ignoredSheetProperties)
+            : base(timeZoneInfo, formatProvider, emptyRowStreakThreshold)
         {
             SplitHeader = splitHeader;
         }
 
         public async Task<bool> Export(SheetConvertingContext context)
         {
-            foreach (var pair in context.Container.GetSheetProperties())
+            var sheetProperties = context.Container.GetSheetProperties();
+            var dataSheetContainer = context.Container as DataSheetContainerBase;
+
+            foreach (var pair in sheetProperties)
             {
-                if (CheckSheetPropertyIgnored(pair.Key))
+                var ignored = dataSheetContainer?.CheckSheetPropertyIsIgnored(pair.Key) ?? false;
+
+                if (ignored)
                 {
                     continue;
                 }

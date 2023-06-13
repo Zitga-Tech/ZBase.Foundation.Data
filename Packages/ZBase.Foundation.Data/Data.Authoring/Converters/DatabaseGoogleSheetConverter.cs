@@ -30,9 +30,8 @@ namespace ZBase.Foundation.Data.Authoring
             , TimeZoneInfo timeZoneInfo = null
             , IFormatProvider formatProvider = null
             , int emptyRowStreakThreshold = 5
-            , IEnumerable<string> ignoredSheetProperties = null
         )
-            : base(timeZoneInfo, formatProvider, emptyRowStreakThreshold, ignoredSheetProperties)
+            : base(timeZoneInfo, formatProvider, emptyRowStreakThreshold)
         {
             _gsheetAddress = gsheetAddress;
             _credential = GoogleCredential

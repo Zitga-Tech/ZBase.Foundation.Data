@@ -19,35 +19,17 @@ namespace ZBase.Foundation.Data.Authoring
     /// </summary>
     public abstract class DatabaseRawSheetImporter : ISheetImporter, ISheetFormatter
     {
-        private readonly HashSet<string> _ignoredSheetProperties;
-
         private bool _isLoaded;
 
         public DatabaseRawSheetImporter(
               TimeZoneInfo timeZoneInfo
             , IFormatProvider formatProvider
             , int emptyRowStreakThreshold
-            , IEnumerable<string> ignoredSheetProperties
         )
         {
-            _ignoredSheetProperties = new();
-
             TimeZoneInfo = timeZoneInfo ?? TimeZoneInfo.Utc;
             FormatProvider = formatProvider ?? CultureInfo.InvariantCulture;
             EmptyRowStreakThreshold = emptyRowStreakThreshold;
-
-            if (ignoredSheetProperties != null)
-            {
-                foreach (var prop in ignoredSheetProperties)
-                {
-                    _ignoredSheetProperties.Add(prop);
-                }
-            }
-        }
-
-        protected bool CheckSheetPropertyIgnored(string sheetProperty)
-        {
-            return _ignoredSheetProperties.Contains(sheetProperty);
         }
 
         protected abstract Task<bool> LoadData();
@@ -80,11 +62,14 @@ namespace ZBase.Foundation.Data.Authoring
                 _isLoaded = true;
             }
 
-            var ignoredSheetProperties = _ignoredSheetProperties;
+            var sheetProperties = context.Container.GetSheetProperties();
+            var dataSheetContainer = context.Container as DataSheetContainerBase;
 
-            foreach (var pair in context.Container.GetSheetProperties())
+            foreach (var pair in sheetProperties)
             {
-                if (ignoredSheetProperties.Contains(pair.Key))
+                var ignored = dataSheetContainer?.CheckSheetPropertyIsIgnored(pair.Key) ?? false;
+
+                if (ignored)
                 {
                     continue;
                 }

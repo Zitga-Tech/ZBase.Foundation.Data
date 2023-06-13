@@ -28,7 +28,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             {
                 p.PrintLine("[global::ZBase.Foundation.Data.Authoring.SourceGen.GeneratedSheetContainer]");
                 p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-                p.PrintLine($"public partial class SheetContainer : global::Cathei.BakingSheet.SheetContainerBase");
+                p.PrintLine($"public partial class SheetContainer : global::ZBase.Foundation.Data.Authoring.DataSheetContainerBase");
                 p.OpenScope();
                 {
                     foreach (var table in tables)
