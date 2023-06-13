@@ -16,11 +16,28 @@ namespace ZBase.Foundation.Data.Authoring
     {
         private readonly string _savePath;
         private readonly string _databaseName;
+        private readonly HashSet<string> _ignoredSheetProperties;
 
-        public DatabaseAssetExporter(string savePath, string databaseName = "_Database")
+        /// <param name="savePath">The location to store the exported data table assets</param>
+        /// <param name="databaseName">The name of the exported database asset</param>
+        /// <param name="ignoredSheetProperties">The properties of <see cref="SheetContainerBase"/> to be ignored</param>
+        public DatabaseAssetExporter(
+              string savePath
+            , string databaseName = "_Database"
+            , IEnumerable<string> ignoredSheetProperties = null
+        )
         {
             _savePath = savePath;
             _databaseName = databaseName;
+            _ignoredSheetProperties = new();
+
+            if (ignoredSheetProperties != null)
+            {
+                foreach (var prop in ignoredSheetProperties)
+                {
+                    _ignoredSheetProperties.Add(prop);
+                }
+            }
         }
 
         public TimeZoneInfo TimeZoneInfo => TimeZoneInfo.Utc;
@@ -37,6 +54,7 @@ namespace ZBase.Foundation.Data.Authoring
                   context
                 , savePath
                 , _databaseName
+                , _ignoredSheetProperties
                 , out var databaseAsset
                 , out var dataTableAssets
             );
@@ -64,6 +82,7 @@ namespace ZBase.Foundation.Data.Authoring
               SheetConvertingContext context
             , string savePath
             , string databaseName
+            , HashSet<string> ignoredSheetProperties
             , out DatabaseAsset databaseAsset
             , out List<DataTableAsset> dataTableAssetList
         )
@@ -111,21 +130,32 @@ namespace ZBase.Foundation.Data.Authoring
                         continue;
                     }
 
+                    var ignored = ignoredSheetProperties.Contains(pair.Key);
                     var dataTableAssetType = sheetAttrib.DataTableAssetType;
                     var dataTableAssetPath = Path.Combine(savePath, $"{dataTableAssetType.Name}.asset");
                     var dataTableAsset = AssetDatabase.LoadAssetAtPath<DataTableAsset>(dataTableAssetPath);
 
-                    if (dataTableAsset == null)
+                    if (dataTableAsset == null && ignored == false)
                     {
                         dataTableAsset = ScriptableObject.CreateInstance(dataTableAssetType) as DataTableAsset;
                         AssetDatabase.CreateAsset(dataTableAsset, dataTableAssetPath);
                     }
 
-                    redundantAssets.Remove(dataTableAsset);
-                    dataTableAsset.name = dataTableAssetType.Name;
+                    if (dataTableAsset == null)
+                    {
+                        continue;
+                    }
 
-                    var dataArray = toDataArrayMethod.Invoke(sheet, null);
-                    dataTableAsset.SetRows(dataArray);
+                    redundantAssets.Remove(dataTableAsset);
+
+                    if (ignored == false)
+                    {
+                        dataTableAsset.name = dataTableAssetType.Name;
+
+                        var dataArray = toDataArrayMethod.Invoke(sheet, null);
+                        dataTableAsset.SetRows(dataArray);
+                    }
+
                     dataTableAssetList.Add(dataTableAsset);
                 }
             }

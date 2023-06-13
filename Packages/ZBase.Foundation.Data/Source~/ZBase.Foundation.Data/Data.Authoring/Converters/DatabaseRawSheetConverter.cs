@@ -25,8 +25,9 @@ namespace ZBase.Foundation.Data.Authoring
             , IFormatProvider formatProvider
             , bool splitHeader = false
             , int emptyRowStreakThreshold = 5
+            , IEnumerable<string> ignoredSheetProperties = null
         )
-            : base(timeZoneInfo, formatProvider, emptyRowStreakThreshold)
+            : base(timeZoneInfo, formatProvider, emptyRowStreakThreshold, ignoredSheetProperties)
         {
             SplitHeader = splitHeader;
         }
@@ -35,6 +36,11 @@ namespace ZBase.Foundation.Data.Authoring
         {
             foreach (var pair in context.Container.GetSheetProperties())
             {
+                if (CheckSheetPropertyIgnored(pair.Key))
+                {
+                    continue;
+                }
+
                 using (context.Logger.BeginScope(pair.Key))
                 {
                     if (pair.Value.GetValue(context.Container) is not ISheet sheet)
