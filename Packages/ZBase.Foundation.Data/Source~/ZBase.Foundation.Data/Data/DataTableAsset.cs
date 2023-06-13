@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -12,13 +11,11 @@ namespace ZBase.Foundation.Data
         internal protected virtual void Initialize() { }
     }
 
-    public abstract class DataTableAsset<TId, TData> : DataTableAsset, ISerializationCallbackReceiver
+    public abstract class DataTableAsset<TId, TData> : DataTableAsset
         where TData : IData
     {
         [SerializeField]
         private TData[] _rows;
-
-        private readonly Dictionary<TId, int> _rowMap = new();
 
         public ReadOnlyMemory<TData> Rows
         {
@@ -52,26 +49,5 @@ namespace ZBase.Foundation.Data
         }
 
         protected abstract TId GetId(in TData row);
-
-        void ISerializationCallbackReceiver.OnAfterDeserialize()
-        {
-            var rowMap = _rowMap;
-            rowMap.Clear();
-
-            var rows = _rows;
-            var length = rows.Length;
-            rowMap.EnsureCapacity(length);
-
-            for (var i = 0; i < length; i++)
-            {
-                var row = rows[i];
-                var id = GetId(row);
-                rowMap[id] = i;
-            }
-        }
-
-        void ISerializationCallbackReceiver.OnBeforeSerialize()
-        {
-        }
     }
 }
