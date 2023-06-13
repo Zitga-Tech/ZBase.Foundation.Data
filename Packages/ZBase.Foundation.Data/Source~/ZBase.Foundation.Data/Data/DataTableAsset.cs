@@ -8,6 +8,8 @@ namespace ZBase.Foundation.Data
     public abstract class DataTableAsset : ScriptableObject
     {
         internal abstract void SetRows(object obj);
+
+        internal protected virtual void Initialize() { }
     }
 
     public abstract class DataTableAsset<TId, TData> : DataTableAsset, ISerializationCallbackReceiver

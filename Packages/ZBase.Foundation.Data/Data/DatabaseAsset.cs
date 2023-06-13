@@ -27,6 +27,7 @@ namespace ZBase.Foundation.Data
             foreach (var assetRef in assetRefs)
             {
                 assetMap[assetRef.name] = assetRef.reference.asset;
+                assetRef.reference.asset.Initialize();
             }
 
             _initialized = true;
