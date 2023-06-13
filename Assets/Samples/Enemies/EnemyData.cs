@@ -3,10 +3,19 @@ using ZBase.Foundation.Data;
 
 namespace Samples
 {
+    public partial class EnemyIdData : IData
+    {
+        [SerializeField]
+        private IdData _kindId;
+
+        [SerializeField]
+        private int _rarity;
+    }
+
     public partial class EnemyData : IData
     {
         [SerializeField]
-        private IdData _id;
+        private EnemyIdData _id;
 
         [SerializeField]
         private string _name;

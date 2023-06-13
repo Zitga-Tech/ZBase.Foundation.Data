@@ -137,7 +137,6 @@ namespace ZBase.Foundation.Data.Authoring
                 return;
             }
 
-            var columnNames = new List<string>();
             var headerRows = new List<string> {
                 // first row is always header row
                 null
@@ -145,20 +144,36 @@ namespace ZBase.Foundation.Data.Authoring
 
             var headerRow = 1;
 
-            // if the column next to the id column is empty,
+            // if the columns next to the id column are empty,
             // it means the id column is split
-            // so the next row would be a part of header row too
-            if (page.IsEmptyCell(1, 0))
+            // so the next rows would be a part of header row too
+            for (int pageColumn = 1; ; ++pageColumn)
             {
-                headerRows.Add(null);
-                headerRow = 2;
+                try
+                {
+                    if (page.IsEmptyCell(pageColumn, 0))
+                    {
+                        headerRows.Add(null);
+                        headerRow += 1;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                catch
+                {
+                    break;
+                }
             }
 
-            // if id column is empty they are split header row
+            // if the next rows are empty they are part of header row too
             for (; page.IsEmptyCell(0, headerRow) && page.IsEmptyRow(headerRow) == false; headerRow++)
             {
                 headerRows.Add(null);
             }
+
+            var columnNames = new List<string>();
 
             for (int pageColumn = 0; ; ++pageColumn)
             {

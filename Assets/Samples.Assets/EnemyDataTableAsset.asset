@@ -14,15 +14,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _rows:
   - _id:
-      _kind: 1
-      _id: 1
+      _kindId:
+        _kind: 1
+        _id: 1
+      _rarity: 1
     _name: Wolf
     _stat:
       _hp: 1
       _atk: 1
   - _id:
-      _kind: 1
-      _id: 2
+      _kindId:
+        _kind: 1
+        _id: 1
+      _rarity: 2
     _name: Goblin
     _stat:
       _hp: 2

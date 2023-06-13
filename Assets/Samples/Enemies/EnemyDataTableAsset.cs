@@ -2,7 +2,7 @@
 
 namespace Samples
 {
-    public partial class EnemyDataTableAsset : DataTableAsset<IdData, EnemyData>
+    public partial class EnemyDataTableAsset : DataTableAsset<EnemyIdData, EnemyData>
     {
     }
 }
