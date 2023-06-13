@@ -186,8 +186,10 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     for (var i = 0; i < Fields.Length; i++)
                     {
                         var fieldName = Fields[i].Field.Name;
+                        var fieldType = Fields[i].Type.ToFullName();
                         var and = i == 0 ? "  " : "&&";
-                        p.PrintLine($"{and} this.{fieldName}.Equals(other.{fieldName})");
+
+                        p.PrintLine($"{and} global::System.Collections.Generic.EqualityComparer<{fieldType}>.Default.Equals(this.{fieldName}, other.{fieldName})");
                     }
                 }
                 p = p.DecreasedIndent();
