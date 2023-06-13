@@ -116,11 +116,6 @@ namespace ZBase.Foundation.Data.Authoring
 
             foreach (var pair in sheetProperties)
             {
-                if (ignoredSheetProperties.Contains(pair.Key))
-                {
-                    continue;
-                }
-
                 using (context.Logger.BeginScope(pair.Key))
                 {
                     if (pair.Value.GetValue(context.Container) is not ISheet sheet)
@@ -135,21 +130,32 @@ namespace ZBase.Foundation.Data.Authoring
                         continue;
                     }
 
+                    var ignored = ignoredSheetProperties.Contains(pair.Key);
                     var dataTableAssetType = sheetAttrib.DataTableAssetType;
                     var dataTableAssetPath = Path.Combine(savePath, $"{dataTableAssetType.Name}.asset");
                     var dataTableAsset = AssetDatabase.LoadAssetAtPath<DataTableAsset>(dataTableAssetPath);
 
-                    if (dataTableAsset == null)
+                    if (dataTableAsset == null && ignored == false)
                     {
                         dataTableAsset = ScriptableObject.CreateInstance(dataTableAssetType) as DataTableAsset;
                         AssetDatabase.CreateAsset(dataTableAsset, dataTableAssetPath);
                     }
 
-                    redundantAssets.Remove(dataTableAsset);
-                    dataTableAsset.name = dataTableAssetType.Name;
+                    if (dataTableAsset == null)
+                    {
+                        continue;
+                    }
 
-                    var dataArray = toDataArrayMethod.Invoke(sheet, null);
-                    dataTableAsset.SetRows(dataArray);
+                    redundantAssets.Remove(dataTableAsset);
+
+                    if (ignored == false)
+                    {
+                        dataTableAsset.name = dataTableAssetType.Name;
+
+                        var dataArray = toDataArrayMethod.Invoke(sheet, null);
+                        dataTableAsset.SetRows(dataArray);
+                    }
+
                     dataTableAssetList.Add(dataTableAsset);
                 }
             }
