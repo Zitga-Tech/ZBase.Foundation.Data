@@ -26,6 +26,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 .PrintEndLine();
             p.OpenScope();
             {
+                p.PrintLine("[global::System.Serializable]");
                 p.PrintLine("[global::ZBase.Foundation.Data.Authoring.SourceGen.GeneratedSheetContainer]");
                 p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
                 p.PrintLine($"public partial class SheetContainer : global::ZBase.Foundation.Data.Authoring.DataSheetContainerBase");
