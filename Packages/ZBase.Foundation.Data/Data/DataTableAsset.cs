@@ -23,12 +23,19 @@ namespace ZBase.Foundation.Data
             get => _rows;
         }
 
-        public bool TryGetRow(TId id, out TData row)
+        public virtual bool TryGetRow(TId id, out TData row)
         {
-            if (_rowMap.TryGetValue(id, out var index))
+            var span = Rows.Span;
+            
+            for (var i = 0; i < span.Length; i++)
             {
-                row = _rows[index];
-                return true;
+                ref readonly var item = ref span[i];
+
+                if (GetId(item).Equals(id))
+                {
+                    row = item;
+                    return true;
+                }
             }
 
             row = default;
