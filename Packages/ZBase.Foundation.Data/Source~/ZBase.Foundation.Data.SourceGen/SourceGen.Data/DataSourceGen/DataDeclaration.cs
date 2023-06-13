@@ -28,6 +28,12 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
         public ImmutableArray<FieldRef> Fields { get; }
 
+        public bool HasGetHashCodeMethod { get; }
+
+        public bool HasEqualsMethod { get; }
+
+        public bool HasIEquatableMethod { get; }
+
         public DataDeclaration(
               TypeDeclarationSyntax candidate
             , SemanticModel semanticModel
@@ -47,6 +53,35 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 if (member is IPropertySymbol property)
                 {
                     existingProperties.Add(property.Name);
+                    continue;
+                }
+                
+                if (member is IMethodSymbol method)
+                {
+                    if (method.Name == "GetHashCode" && method.Parameters.Length == 0)
+                    {
+                        HasGetHashCodeMethod = true;
+                        continue;
+                    }
+
+                    if (method.Name == "Equals" && method.Parameters.Length == 1
+                        && method.ReturnType.SpecialType == SpecialType.System_Boolean
+                    )
+                    {
+                        var param = method.Parameters[0];
+
+                        if (param.Type.SpecialType == SpecialType.System_Object)
+                        {
+                            HasEqualsMethod = true;
+                            continue;
+                        }
+
+                        if (param.Type.Name == Symbol.Name)
+                        {
+                            HasIEquatableMethod = true;
+                            continue;
+                        }
+                    }
                 }
             }
             
