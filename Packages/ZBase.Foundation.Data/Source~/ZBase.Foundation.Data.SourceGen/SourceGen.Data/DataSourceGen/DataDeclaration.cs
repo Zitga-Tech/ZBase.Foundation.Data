@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Threading;
 using ZBase.Foundation.SourceGen;
 
 namespace ZBase.Foundation.Data.DataSourceGen
@@ -37,10 +38,11 @@ namespace ZBase.Foundation.Data.DataSourceGen
         public DataDeclaration(
               TypeDeclarationSyntax candidate
             , SemanticModel semanticModel
+            , CancellationToken token
         )
         {
             Syntax = candidate;
-            Symbol = semanticModel.GetDeclaredSymbol(candidate);
+            Symbol = semanticModel.GetDeclaredSymbol(candidate, token);
             IsMutable = Symbol.HasAttribute(DATA_MUTABLE_ATTRIBUTE);
 
             var existingProperties = new HashSet<string>();

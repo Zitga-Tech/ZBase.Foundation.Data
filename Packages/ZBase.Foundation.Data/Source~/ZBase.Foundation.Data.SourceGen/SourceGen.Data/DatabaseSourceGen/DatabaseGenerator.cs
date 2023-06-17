@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -65,7 +64,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
 
             var semanticModel = context.SemanticModel;
-            var symbol = semanticModel.GetDeclaredSymbol(classSyntax);
+            var symbol = semanticModel.GetDeclaredSymbol(classSyntax, token);
             
             if (symbol.HasAttribute(DATABASE_ATTRIBUTE))
             {
