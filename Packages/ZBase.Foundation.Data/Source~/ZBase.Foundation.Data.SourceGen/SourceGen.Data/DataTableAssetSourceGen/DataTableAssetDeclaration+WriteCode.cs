@@ -23,6 +23,10 @@ namespace ZBase.Foundation.Data.DataTableAssetSourceGen
                 .PrintEndLine();
             p.OpenScope();
             {
+                p.PrintLine(GENERATED_CODE);
+                p.PrintLine($"public const string NAME = nameof({syntax.Identifier.Text});");
+                p.PrintEndLine();
+
                 p.PrintLine(AGGRESSIVE_INLINING).PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
                 p.PrintLine($"protected override {idTypeName} GetId(in {dataTypeName} row)");
                 p.OpenScope();
