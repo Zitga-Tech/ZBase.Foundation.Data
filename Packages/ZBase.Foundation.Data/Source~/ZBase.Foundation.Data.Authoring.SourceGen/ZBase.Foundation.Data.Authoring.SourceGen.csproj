@@ -27,7 +27,7 @@
         <ItemGroup>
             <DataFiles Include="$(ProjectDir)$(OutDir)*.dll" />
         </ItemGroup>
-        <Copy SourceFiles="@(DataFiles)" DestinationFolder="$(ProjectDir)../../Data.SourceGenerator/" SkipUnchangedFiles="true" />
+        <Copy SourceFiles="@(DataFiles)" DestinationFolder="$(ProjectDir)../../Data.Authoring.SourceGenerator/" SkipUnchangedFiles="true" />
     </Target>
 
 </Project>

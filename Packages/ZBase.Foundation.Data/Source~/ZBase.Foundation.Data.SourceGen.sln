@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BakingSheet", "BakingSheet\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZBase.Foundation.Data.SourceGen", "ZBase.Foundation.Data.SourceGen\ZBase.Foundation.Data.SourceGen.csproj", "{04F111E2-EDC6-4B77-8D19-AD488889886B}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZBase.Foundation.Data.Authoring.SourceGen", "ZBase.Foundation.Data.Authoring.SourceGen\ZBase.Foundation.Data.Authoring.SourceGen.csproj", "{490AFCA3-B88E-4C2E-A03B-8A682A86C28B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{04F111E2-EDC6-4B77-8D19-AD488889886B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{04F111E2-EDC6-4B77-8D19-AD488889886B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{04F111E2-EDC6-4B77-8D19-AD488889886B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{490AFCA3-B88E-4C2E-A03B-8A682A86C28B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{490AFCA3-B88E-4C2E-A03B-8A682A86C28B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{490AFCA3-B88E-4C2E-A03B-8A682A86C28B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{490AFCA3-B88E-4C2E-A03B-8A682A86C28B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
