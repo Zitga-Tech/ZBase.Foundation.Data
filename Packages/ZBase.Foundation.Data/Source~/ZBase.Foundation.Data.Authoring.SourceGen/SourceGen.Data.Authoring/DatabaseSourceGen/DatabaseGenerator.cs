@@ -149,7 +149,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                               syntaxTree
                             , GENERATOR_NAME
                             , candidate.Syntax
-                            , $"{databaseIdentifier}_{dataTableAssetRef.DataType.Name}Sheet"
+                            , $"{databaseIdentifier}_{dataTableAssetRef.Symbol.Name}_{dataTableAssetRef.DataType.Name}Sheet"
                         );
 
                         var sheetSourceFilePath = GetSourceFilePath(

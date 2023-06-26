@@ -23,6 +23,7 @@
         <ProjectReference Include="../ZBase.Foundation.Data/ZBase.Foundation.Data.csproj" />
         <ProjectReference Include="../BakingSheet/BakingSheet.csproj" />
         <ProjectReference Include="../ZBase.Foundation.Data.SourceGen/ZBase.Foundation.Data.SourceGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="../ZBase.Foundation.Data.Authoring.SourceGen/ZBase.Foundation.Data.Authoring.SourceGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
 </Project>

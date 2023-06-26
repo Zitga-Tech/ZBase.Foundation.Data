@@ -131,6 +131,10 @@ namespace MyGame.Enemies
     public partial class EnemyDataTableAsset : EnemyDataTableAsset<EnemyData>
     {
     }
+
+    public partial class NewEnemyDataTableAsset : EnemyDataTableAsset<EnemyData>
+    {
+    }
 }
 
 #if UNITY_EDITOR
@@ -150,15 +154,16 @@ namespace MyGame.Authoring
     [VerticalList(typeof(Heroes.HeroData), nameof(Heroes.HeroData.Multipliers), typeof(Heroes.HeroDataTableAsset))]
     partial class Database
     {
-        partial class HeroDataSheet
+        partial class HeroDataTableAsset_HeroDataSheet
         {
         }
     }
 
     [Table(typeof(Enemies.EnemyDataTableAsset), "Enemy", NamingStrategy.SnakeCase)]
+    [Table(typeof(Enemies.NewEnemyDataTableAsset), "NewEnemy", NamingStrategy.SnakeCase)]
     partial class Database
     {
-        partial class EnemyDataSheet
+        partial class EnemyDataTableAsset_EnemyDataSheet
         {
         }
     }

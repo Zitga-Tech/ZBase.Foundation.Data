@@ -23,7 +23,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             var nestedDataTypeFullNames = dataTableAssetRef.NestedDataTypeFullNames;
             var verticalListMap = DatabaseRef.VerticalListMap;
 
-            var sheetName = $"{dataType.Name}Sheet";
+            var sheetName = GetSheetName(table, dataType);
             var sheetDataTypeName = $"{sheetName}.__{dataType.Name}";
             var sheetIdTypeName = dataMap.TryGetValue(idTypeFullName, out var idTypeDeclaration)
                 ? $"{sheetName}.__{idType.Name}"

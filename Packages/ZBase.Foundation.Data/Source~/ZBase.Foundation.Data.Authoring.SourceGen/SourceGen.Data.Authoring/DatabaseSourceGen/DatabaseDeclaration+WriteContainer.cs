@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Microsoft.CodeAnalysis;
 using ZBase.Foundation.SourceGen;
 
 namespace ZBase.Foundation.Data.DatabaseSourceGen
@@ -46,11 +47,11 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                             continue;
                         }
 
-                        var typeName = $"{dataType.Name}Sheet";
-                        var name = $"{dataType.Name}Sheet";
+                        var typeName = GetSheetName(table, dataType);
+                        var sheetName = typeName;
 
                         p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-                        p.PrintLine($"public {typeName} {name} {{ get; private set; }}");
+                        p.PrintLine($"public {typeName} {sheetName} {{ get; private set; }}");
                         p.PrintEndLine();
                     }
 
@@ -72,8 +73,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                                 continue;
                             }
 
-                            var typeName = $"{dataType.Name}Sheet";
-                            var sheetName = $"{dataType.Name}Sheet";
+                            var typeName = GetSheetName(table, dataType);
+                            var sheetName = typeName;
 
                             p.PrintLine($"this.{sheetName} = new {typeName}();");
                         }
@@ -100,7 +101,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                             }
 
                             var tableTypeName = dataTableAssetRef.Symbol.ToFullName();
-                            var sheetName = $"{dataType.Name}Sheet";
+                            var sheetName = GetSheetName(table, dataType);
                             var variableName = $"m{dataTableAssetRef.Symbol.Name}";
 
                             p.PrintLine($"if (databaseAsset.TryGetDataTableAsset<{tableTypeName}>(out var {variableName}))");
@@ -121,5 +122,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p = p.DecreasedIndent();
             return p.Result;
         }
+
+        private static string GetSheetName(DatabaseRef.Table table, ITypeSymbol dataType)
+            => $"{table.Type.Name}_{dataType.Name}Sheet";
     }
 }
