@@ -284,7 +284,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                                 if (dataMap.ContainsKey(elemTypeFullName))
                                 {
-                                    p.PrintLine($"{comma} this.To{field.CollectionElementType.Name}Array()");
+                                    var methodName = GetToCollectionMethodName(field, "Array");
+                                    p.PrintLine($"{comma} this.{methodName}()");
                                 }
                                 else
                                 {
@@ -299,7 +300,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                                 if (dataMap.ContainsKey(elemTypeFullName))
                                 {
-                                    p.PrintLine($"{comma} this.To{field.CollectionElementType.Name}List()");
+                                    var methodName = GetToCollectionMethodName(field, "List");
+                                    p.PrintLine($"{comma} this.{methodName}()");
                                 }
                                 else
                                 {
@@ -321,7 +323,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                                 }
                                 else
                                 {
-                                    p.PrintLine($"{comma} this.To{field.CollectionElementType.Name}Dictionary()");
+                                    var methodName = GetToCollectionMethodName(field, "Dictionary");
+                                    p.PrintLine($"{comma} this.{methodName}()");
                                 }
                                 break;
                             }
@@ -332,7 +335,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                                 if (dataMap.ContainsKey(elemTypeFullName))
                                 {
-                                    p.PrintLine($"{comma} this.To{field.CollectionElementType.Name}HashSet()");
+                                    var methodName = GetToCollectionMethodName(field, "HashSet");
+                                    p.PrintLine($"{comma} this.{methodName}()");
                                 }
                                 else
                                 {
@@ -347,7 +351,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                                 if (dataMap.ContainsKey(elemTypeFullName))
                                 {
-                                    p.PrintLine($"{comma} this.To{field.CollectionElementType.Name}Queue()");
+                                    var methodName = GetToCollectionMethodName(field, "Queue");
+                                    p.PrintLine($"{comma} this.{methodName}()");
                                 }
                                 else
                                 {
@@ -362,7 +367,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                                 if (dataMap.ContainsKey(elemTypeFullName))
                                 {
-                                    p.PrintLine($"{comma} this.To{field.CollectionElementType.Name}Stack()");
+                                    var methodName = GetToCollectionMethodName(field, "Stack");
+                                    p.PrintLine($"{comma} this.{methodName}()");
                                 }
                                 else
                                 {
@@ -585,9 +591,10 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
 
             var elemTypeName = field.CollectionElementType.Name;
+            var methodName = GetToCollectionMethodName(field, "Array");
 
             p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-            p.PrintLine($"private {elemTypeFullName}[] To{elemTypeName}Array()");
+            p.PrintLine($"private {elemTypeFullName}[] {methodName}()");
             p.OpenScope();
             {
                 p.PrintLine($"if (this.{field.PropertyName} == null || this.{field.PropertyName}.Count == 0)");
@@ -625,9 +632,10 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
 
             var elemTypeName = field.CollectionElementType.Name;
+            var methodName = GetToCollectionMethodName(field, "List");
 
             p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-            p.PrintLine($"private {LIST_TYPE_T}{elemTypeFullName}> To{elemTypeName}List()");
+            p.PrintLine($"private {LIST_TYPE_T}{elemTypeFullName}> {methodName}()");
             p.OpenScope();
             {
                 p.PrintLine($"if (this.{field.PropertyName} == null || this.{field.PropertyName}.Count == 0)");
@@ -670,9 +678,10 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
             var keyTypeName = field.CollectionKeyType.Name;
             var elemTypeName = field.CollectionElementType.Name;
+            var methodName = GetToCollectionMethodName(field, "Dictionary");
 
             p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-            p.PrintLine($"private {DICTIONARY_TYPE_T}{keyTypeFullName}, {elemTypeFullName}> To{elemTypeName}Dictionary()");
+            p.PrintLine($"private {DICTIONARY_TYPE_T}{keyTypeFullName}, {elemTypeFullName}> {methodName}()");
             p.OpenScope();
             {
                 p.PrintLine($"if (this.{field.PropertyName} == null || this.{field.PropertyName}.Count == 0)");
@@ -729,9 +738,10 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
 
             var elemTypeName = field.CollectionElementType.Name;
+            var methodName = GetToCollectionMethodName(field, "HashSet");
 
             p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-            p.PrintLine($"private {HASH_SET_TYPE_T}{elemTypeFullName}> To{elemTypeName}HashSet()");
+            p.PrintLine($"private {HASH_SET_TYPE_T}{elemTypeFullName}> {methodName}()");
             p.OpenScope();
             {
                 p.PrintLine($"if (this.{field.PropertyName} == null || this.{field.PropertyName}.Count == 0)");
@@ -770,9 +780,10 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
 
             var elemTypeName = field.CollectionElementType.Name;
+            var methodName = GetToCollectionMethodName(field, "Queue");
 
             p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-            p.PrintLine($"private {QUEUE_TYPE_T}{elemTypeFullName}> To{elemTypeName}Queue()");
+            p.PrintLine($"private {QUEUE_TYPE_T}{elemTypeFullName}> {methodName}()");
             p.OpenScope();
             {
                 p.PrintLine($"if (this.{field.PropertyName} == null || this.{field.PropertyName}.Count == 0)");
@@ -811,9 +822,10 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
 
             var elemTypeName = field.CollectionElementType.Name;
+            var methodName = GetToCollectionMethodName(field, "Stack");
 
             p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-            p.PrintLine($"private {STACK_TYPE_T}{elemTypeFullName}> To{elemTypeName}Stack()");
+            p.PrintLine($"private {STACK_TYPE_T}{elemTypeFullName}> {methodName}()");
             p.OpenScope();
             {
                 p.PrintLine($"if (this.{field.PropertyName} == null || this.{field.PropertyName}.Count == 0)");
@@ -840,6 +852,12 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
             p.CloseScope();
             p.PrintEndLine();
+        }
+
+        private static string GetToCollectionMethodName(FieldRef field, string collectionName)
+        {
+            var elemTypeName = field.CollectionElementType.Name;
+            return $"To{elemTypeName}{collectionName}For{field.PropertyName}";
         }
     }
 }

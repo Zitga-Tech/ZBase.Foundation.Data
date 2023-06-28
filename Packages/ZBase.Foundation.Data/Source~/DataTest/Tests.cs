@@ -86,6 +86,9 @@ namespace MyGame.Heroes
         private StatMultiplierData[] _multipliers;
 
         [SerializeField]
+        private StatMultiplierData[] _multipliersX;
+
+        [SerializeField]
         private List<StatMultiplierData> _abc;
 
         [SerializeField]
