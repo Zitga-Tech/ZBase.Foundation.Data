@@ -9,6 +9,8 @@ namespace ZBase.Foundation.Data
         internal abstract void SetRows(object obj);
 
         internal protected virtual void Initialize() { }
+
+        internal protected virtual void Deinitialize() { }
     }
 
     public abstract class DataTableAsset<TId, TData> : DataTableAsset

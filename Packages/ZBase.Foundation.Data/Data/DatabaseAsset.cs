@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace ZBase.Foundation.Data
 {
-    public sealed class DatabaseAsset : ScriptableObject
+    public class DatabaseAsset : ScriptableObject
     {
         [SerializeField, HideInInspector]
         internal TableAssetRef[] _assetRefs = Array.Empty<TableAssetRef>();
@@ -16,7 +16,7 @@ namespace ZBase.Foundation.Data
         private readonly Dictionary<string, DataTableAsset> _assetMap = new();
         private bool _initialized;
 
-        public void Initialize()
+        public virtual void Initialize()
         {
             var assetRefs = _assetRefs;
             var assetMap = _assetMap;
@@ -26,11 +26,20 @@ namespace ZBase.Foundation.Data
 
             foreach (var assetRef in assetRefs)
             {
-                assetMap[assetRef.name] = assetRef.reference.asset;
-                assetRef.reference.asset.Initialize();
+                var asset = assetRef.reference.asset;
+                assetMap[assetRef.name] = asset;
+                asset.Initialize();
             }
 
             _initialized = true;
+        }
+
+        public virtual void Deinitialize()
+        {
+            foreach (var asset in _assetMap.Values)
+            {
+                asset.Deinitialize();
+            }
         }
 
         public bool TryGetDataTableAsset(string name, out DataTableAsset tableAsset)
