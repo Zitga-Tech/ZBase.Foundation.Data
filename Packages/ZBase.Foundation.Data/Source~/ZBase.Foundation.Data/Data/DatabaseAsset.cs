@@ -5,60 +5,95 @@ using UnityEngine;
 
 namespace ZBase.Foundation.Data
 {
+    using TableAssetRef = LazyLoadReference<DataTableAsset>;
+
     public class DatabaseAsset : ScriptableObject
     {
-        [SerializeField, HideInInspector]
+        [SerializeField]
         internal TableAssetRef[] _assetRefs = Array.Empty<TableAssetRef>();
 
-        [SerializeField, HideInInspector]
+        [SerializeField]
         internal TableAssetRef[] _redundantAssetRefs = Array.Empty<TableAssetRef>();
 
-        private readonly Dictionary<string, DataTableAsset> _assetMap = new();
-        private bool _initialized;
+        protected readonly Dictionary<string, DataTableAsset> AssetMap = new();
+
+        protected ReadOnlyMemory<TableAssetRef> AssetRefs => _assetRefs;
+
+        protected ReadOnlyMemory<TableAssetRef> RedundantAssetRefs => _redundantAssetRefs;
+
+        public bool Initialized { get; protected set; }
 
         public virtual void Initialize()
         {
-            var assetRefs = _assetRefs;
-            var assetMap = _assetMap;
+            if (Initialized)
+            {
+                return;
+            }
+
+            var assetRefs = AssetRefs.Span;
+            var assetMap = AssetMap;
 
             assetMap.Clear();
             assetMap.EnsureCapacity(assetRefs.Length);
 
-            foreach (var assetRef in assetRefs)
+            for (var i = 0; i < assetRefs.Length; i++)
             {
-                var asset = assetRef.reference.asset;
-                assetMap[assetRef.name] = asset;
+                var assetRef = assetRefs[i];
+
+                if (assetRef.isSet == false || assetRef.isBroken)
+                {
+                    LogIfReferenceIsInvalid(i, this);
+                    continue;
+                }
+
+                var asset = assetRef.asset;
+
+                if (asset == false)
+                {
+                    LogIfAssetIsInvalid(i, this);
+                    continue;
+                }
+
+                var type = asset.GetType();
+                assetMap[type.Name] = asset;
                 asset.Initialize();
             }
 
-            _initialized = true;
+            Initialized = true;
         }
 
         public virtual void Deinitialize()
         {
-            foreach (var asset in _assetMap.Values)
+            if (Initialized == false)
+            {
+                return;
+            }
+
+            foreach (var asset in AssetMap.Values)
             {
                 asset.Deinitialize();
             }
+
+            Initialized = false;
         }
 
         public bool TryGetDataTableAsset(string name, out DataTableAsset tableAsset)
         {
-            if (_initialized == false)
+            if (Initialized == false)
             {
-                LogIfDatabaseIsNotInitialized();
+                LogIfDatabaseIsNotInitialized(this);
                 tableAsset = null;
                 return false;
             }
 
-            if (_assetMap.TryGetValue(name, out var asset))
+            if (AssetMap.TryGetValue(name, out var asset))
             {
                 tableAsset = asset;
                 return true;
             }
             else
             {
-                LogIfCannotFindAsset(name);
+                LogIfCannotFindAsset(name, this);
             }
 
             tableAsset = null;
@@ -74,14 +109,14 @@ namespace ZBase.Foundation.Data
             if (type == null)
                 throw new ArgumentNullException(nameof(type));
 
-            if (_initialized == false)
+            if (Initialized == false)
             {
-                LogIfDatabaseIsNotInitialized();
+                LogIfDatabaseIsNotInitialized(this);
                 tableAsset = null;
                 return false;
             }
 
-            if (_assetMap.TryGetValue(name, out var asset))
+            if (AssetMap.TryGetValue(name, out var asset))
             {
                 if (asset.GetType() == type)
                 {
@@ -95,7 +130,7 @@ namespace ZBase.Foundation.Data
             }
             else
             {
-                LogIfCannotFindAsset(name);
+                LogIfCannotFindAsset(name, this);
             }
 
             tableAsset = null;
@@ -110,14 +145,14 @@ namespace ZBase.Foundation.Data
         public bool TryGetDataTableAsset<T>(string name, out T tableAsset)
             where T : DataTableAsset
         {
-            if (_initialized == false)
+            if (Initialized == false)
             {
-                LogIfDatabaseIsNotInitialized();
+                LogIfDatabaseIsNotInitialized(this);
                 tableAsset = null;
                 return false;
             }
 
-            if (_assetMap.TryGetValue(name, out var asset))
+            if (AssetMap.TryGetValue(name, out var asset))
             {
                 if (asset is T assetT)
                 {
@@ -131,85 +166,41 @@ namespace ZBase.Foundation.Data
             }
             else
             {
-                LogIfCannotFindAsset(name);
+                LogIfCannotFindAsset(name, this);
             }
 
             tableAsset = null;
             return false;
         }
 
-        internal void Clear()
+        private static void LogIfReferenceIsInvalid(int index, DatabaseAsset context)
         {
-            _assetRefs = Array.Empty<TableAssetRef>();
-            _redundantAssetRefs = Array.Empty<TableAssetRef>();
+            Debug.LogError($"Table Asset reference at index {index} is invalid.", context);
         }
 
-        internal void AddRange(
-              IEnumerable<DataTableAsset> assets
-            , IEnumerable<DataTableAsset> redundantAssets
-        )
+        private static void LogIfAssetIsInvalid(int index, DatabaseAsset context)
         {
-            if (assets == null)
-            {
-                throw new NullReferenceException(nameof(assets));
-            }
-
-            var list = new List<TableAssetRef>();
-
-            foreach (var asset in assets)
-            {
-                list.Add(new TableAssetRef {
-                    name = asset.GetType().Name,
-                    reference = asset,
-                });
-            }
-
-            _assetRefs = list.ToArray();
-            list.Clear();
-
-            if (redundantAssets != null)
-            {
-                foreach (var asset in redundantAssets)
-                {
-                    list.Add(new TableAssetRef {
-                        name = asset.GetType().Name,
-                        reference = asset,
-                    });
-                }
-
-                _redundantAssetRefs = list.ToArray();
-                list.Clear();
-            }
+            Debug.LogError($"Table Asset at index {index} is invalid.", context);
         }
 
-        private void LogIfDatabaseIsNotInitialized()
+        private static void LogIfDatabaseIsNotInitialized(DatabaseAsset context)
         {
-            Debug.LogError($"The database is not initialized yet. Please invoke {nameof(Initialize)} method beofre using.", this);
+            Debug.LogError($"The database is not initialized yet. Please invoke {nameof(Initialize)} method beofre using.", context);
         }
 
-        private void LogIfCannotFindAsset(string name)
+        private static void LogIfCannotFindAsset(string name, DatabaseAsset context)
         {
-            Debug.LogError($"Cannot find any data table asset named {name}.", this);
+            Debug.LogError($"Cannot find any data table asset named {name}.", context);
         }
 
-        private void LogIfFoundAssetIsNotValidType<T>(DataTableAsset asset)
+        private static void LogIfFoundAssetIsNotValidType<T>(DataTableAsset context)
         {
-            Debug.LogError($"The data table asset is not an instance of {typeof(T)}", asset);
+            Debug.LogError($"The data table asset is not an instance of {typeof(T)}", context);
         }
 
-        private void LogIfFoundAssetIsNotValidType(Type type, DataTableAsset asset)
+        private static void LogIfFoundAssetIsNotValidType(Type type, DataTableAsset context)
         {
-            Debug.LogError($"The data table asset is not an instance of {type}", asset);
-        }
-
-        [Serializable]
-        internal struct TableAssetRef
-        {
-            [HideInInspector]
-            public string name;
-
-            [HideInInspector]
-            public LazyLoadReference<DataTableAsset> reference;
+            Debug.LogError($"The data table asset is not an instance of {type}", context);
         }
     }
 }

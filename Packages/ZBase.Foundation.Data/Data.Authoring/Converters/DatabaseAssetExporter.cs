@@ -9,21 +9,26 @@ using UnityEditor;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 using ZBase.Foundation.Data.Authoring.SourceGen;
+using System.Linq;
 
 namespace ZBase.Foundation.Data.Authoring
 {
-    public class DatabaseAssetExporter : ISheetExporter, ISheetFormatter
+    public class DatabaseAssetExporter : DatabaseAssetExporter<DatabaseAsset>
+    {
+        public DatabaseAssetExporter(string savePath, string databaseName = nameof(DatabaseAsset))
+            : base(savePath, databaseName)
+        { }
+    }
+
+    public class DatabaseAssetExporter<TDatabaseAsset> : ISheetExporter, ISheetFormatter
+        where TDatabaseAsset : DatabaseAsset
     {
         private readonly string _savePath;
         private readonly string _databaseName;
 
         /// <param name="savePath">The location to store the exported data table assets</param>
         /// <param name="databaseName">The name of the exported database asset</param>
-        /// <param name="ignoredSheetProperties">The properties of <see cref="SheetContainerBase"/> to be ignored</param>
-        public DatabaseAssetExporter(
-              string savePath
-            , string databaseName = "_Database"
-        )
+        public DatabaseAssetExporter(string savePath, string databaseName)
         {
             _savePath = savePath;
             _databaseName = databaseName;
@@ -33,7 +38,7 @@ namespace ZBase.Foundation.Data.Authoring
 
         public IFormatProvider FormatProvider => CultureInfo.InvariantCulture;
 
-        public DatabaseAsset Result { get; private set; }
+        public TDatabaseAsset Result { get; private set; }
 
         public Task<bool> Export(SheetConvertingContext context)
         {
@@ -70,30 +75,30 @@ namespace ZBase.Foundation.Data.Authoring
               SheetConvertingContext context
             , string savePath
             , string databaseName
-            , out DatabaseAsset databaseAsset
+            , out TDatabaseAsset databaseAsset
             , out List<DataTableAsset> dataTableAssetList
         )
         {
             var databaseAssetPath = Path.Combine(savePath, $"{databaseName}.asset");
-            
-            databaseAsset = AssetDatabase.LoadAssetAtPath<DatabaseAsset>(databaseAssetPath);
+
+            databaseAsset = AssetDatabase.LoadAssetAtPath<TDatabaseAsset>(databaseAssetPath);
 
             if (databaseAsset == false)
             {
-                databaseAsset = ScriptableObject.CreateInstance<DatabaseAsset>();
+                databaseAsset = ScriptableObject.CreateInstance<TDatabaseAsset>();
                 AssetDatabase.CreateAsset(databaseAsset, databaseAssetPath);
             }
 
             var redundantAssets = new HashSet<DataTableAsset>();
-            
-            foreach (var asset in databaseAsset._assetRefs)
+
+            foreach (var assetRef in databaseAsset._assetRefs)
             {
-                redundantAssets.Add(asset.reference.asset);
+                redundantAssets.Add(assetRef.asset);
             }
 
-            foreach (var asset in databaseAsset._redundantAssetRefs)
+            foreach (var assetRef in databaseAsset._redundantAssetRefs)
             {
-                redundantAssets.Add(asset.reference.asset);
+                redundantAssets.Add(assetRef.asset);
             }
 
             databaseAsset.Clear();
@@ -163,7 +168,7 @@ namespace ZBase.Foundation.Data.Authoring
                 }
             }
 
-            databaseAsset.AddRange(dataTableAssetList, redundantAssets);
+            databaseAsset.AddRange(dataTableAssetList.ToArray(), redundantAssets.ToArray());
         }
 
         private static bool TryGetGeneratedSheetAttribute(
@@ -230,7 +235,10 @@ namespace ZBase.Foundation.Data.Authoring
             return true;
         }
 
-        private static void SaveAsset(DatabaseAsset databaseAsset, List<DataTableAsset> dataTableAssets)
+        private static void SaveAsset(
+              TDatabaseAsset databaseAsset
+            , List<DataTableAsset> dataTableAssets
+        )
         {
             EditorUtility.SetDirty(databaseAsset);
 
