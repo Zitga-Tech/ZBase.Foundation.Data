@@ -53,10 +53,16 @@ namespace ZBase.Foundation.Data
             else
             {
                 _rows = Array.Empty<TData>();
-                Debug.LogError($"Cannot cast {obj.GetType()} into {typeof(TData[])}");
+                LogIfCannotCast(obj, this);
             }
         }
 
         protected abstract TId GetId(in TData row);
+
+        [HideInCallstack]
+        protected static void LogIfCannotCast(object obj, UnityEngine.Object context)
+        {
+            Debug.LogError($"Cannot cast {obj.GetType()} into {typeof(TData[])}", context);
+        }
     }
 }
