@@ -99,15 +99,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     SourceGenHelpers.ProjectPath = projectPath;
 
                     var declaration = new DatabaseDeclaration(candidate);
-
-                    if (declaration.DatabaseRef.Tables.Length < 1)
-                    {
-                        return;
-                    }
-
                     var assemblyName = compilation.Assembly.Name;
-                    var dataMap = BuildDataMap(declaration);
-                    var dataTableAssetRefMap = BuildDataTableAssetRefMap(declaration, dataMap);
                     var syntaxTree = candidate.Syntax.SyntaxTree;
                     var databaseIdentifier = candidate.Symbol.ToValidIdentifier();
 
@@ -121,6 +113,24 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                           assemblyName
                         , GENERATOR_NAME
                     );
+
+                    if (declaration.DatabaseRef.Tables.Length < 1)
+                    {
+
+                        OutputSource(
+                              context
+                            , outputSourceGenFiles
+                            , declaration.DatabaseRef.Syntax
+                            , declaration.WriteContainer(null, null)
+                            , databaseHintName
+                            , databaseSourceFilePath
+                        );
+
+                        return;
+                    }
+
+                    var dataMap = BuildDataMap(declaration);
+                    var dataTableAssetRefMap = BuildDataTableAssetRefMap(declaration, dataMap);
 
                     OutputSource(
                           context
