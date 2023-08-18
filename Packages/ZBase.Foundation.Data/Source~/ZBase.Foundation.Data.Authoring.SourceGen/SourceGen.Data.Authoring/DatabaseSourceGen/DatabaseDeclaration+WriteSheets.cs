@@ -22,6 +22,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             var dataTableAssetTypeName = dataTableAssetType.ToFullName();
             var nestedDataTypeFullNames = dataTableAssetRef.NestedDataTypeFullNames;
             var verticalListMap = DatabaseRef.VerticalListMap;
+            var databaseClassName = DatabaseRef.Syntax.Identifier.Text;
 
             var sheetName = GetSheetName(table, dataType);
             var sheetDataTypeName = $"{sheetName}.__{dataType.Name}";
@@ -38,7 +39,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p.PrintEndLine();
 
             p.PrintBeginLine()
-                .Print($"partial class ").Print(DatabaseRef.Syntax.Identifier.Text)
+                .Print($"partial class ").Print(databaseClassName)
+                .Print($" : global::ZBase.Foundation.Data.Authoring.SourceGen.IContains<{databaseClassName}.{sheetName}>")
                 .PrintEndLine();
             p.OpenScope();
             {

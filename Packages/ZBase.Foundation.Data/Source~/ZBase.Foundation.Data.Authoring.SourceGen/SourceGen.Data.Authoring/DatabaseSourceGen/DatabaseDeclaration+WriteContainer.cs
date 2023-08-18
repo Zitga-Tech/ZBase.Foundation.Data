@@ -14,6 +14,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             var syntax = DatabaseRef.Syntax;
             var tables = DatabaseRef.Tables;
             var containsTables = tables.Length > 0 && dataTableAssetRefMap != null && dataMap != null;
+            var databaseClassName = syntax.Identifier.Text;
 
             var scopePrinter = new SyntaxNodeScopePrinter(Printer.DefaultLarge, DatabaseRef.Syntax.Parent);
             var p = scopePrinter.printer;
@@ -24,7 +25,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p.PrintEndLine();
 
             p.PrintBeginLine()
-                .Print($"partial class ").Print(syntax.Identifier.Text)
+                .Print($"partial class ").Print(databaseClassName)
+                .Print($" : global::ZBase.Foundation.Data.Authoring.SourceGen.IContains<{databaseClassName}.SheetContainer>")
                 .PrintEndLine();
             p.OpenScope();
             {
