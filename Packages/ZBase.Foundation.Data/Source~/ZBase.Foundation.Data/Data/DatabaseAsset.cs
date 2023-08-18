@@ -173,31 +173,37 @@ namespace ZBase.Foundation.Data
             return false;
         }
 
+        [HideInCallstack]
         private static void LogIfReferenceIsInvalid(int index, DatabaseAsset context)
         {
             Debug.LogError($"Table Asset reference at index {index} is invalid.", context);
         }
 
+        [HideInCallstack]
         private static void LogIfAssetIsInvalid(int index, DatabaseAsset context)
         {
             Debug.LogError($"Table Asset at index {index} is invalid.", context);
         }
 
+        [HideInCallstack]
         private static void LogIfDatabaseIsNotInitialized(DatabaseAsset context)
         {
             Debug.LogError($"The database is not initialized yet. Please invoke {nameof(Initialize)} method beofre using.", context);
         }
 
+        [HideInCallstack]
         private static void LogIfCannotFindAsset(string name, DatabaseAsset context)
         {
             Debug.LogError($"Cannot find any data table asset named {name}.", context);
         }
 
+        [HideInCallstack]
         private static void LogIfFoundAssetIsNotValidType<T>(DataTableAsset context)
         {
             Debug.LogError($"The data table asset is not an instance of {typeof(T)}", context);
         }
 
+        [HideInCallstack]
         private static void LogIfFoundAssetIsNotValidType(Type type, DataTableAsset context)
         {
             Debug.LogError($"The data table asset is not an instance of {type}", context);

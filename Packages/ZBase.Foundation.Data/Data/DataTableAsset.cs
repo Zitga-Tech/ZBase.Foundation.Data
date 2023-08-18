@@ -28,7 +28,7 @@ namespace ZBase.Foundation.Data
         public virtual bool TryGetRow(TId id, out TData row)
         {
             var span = Rows.Span;
-            
+
             for (var i = 0; i < span.Length; i++)
             {
                 ref readonly var item = ref span[i];
