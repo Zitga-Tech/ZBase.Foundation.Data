@@ -10,7 +10,6 @@ using ZBase.Foundation.Data.Authoring;
 namespace Samples.Authoring
 {
     [CreateAssetMenu(fileName = "SampleDatabaseConfig", menuName = "Sample Database Config", order = 0)]
-    [Database]
     public partial class SampleDatabaseConfig : ScriptableObject
     {
         [Title("Google Credentials")]
@@ -107,7 +106,7 @@ namespace Samples.Authoring
                 , TimeZoneInfo.Utc
             );
 
-            var sheetContainer = new SheetContainer(UnityLogger.Default);
+            var sheetContainer = new DatabaseDefinition.SheetContainer(UnityLogger.Default);
 
             await sheetContainer.Bake(googleSheetConverter);
 
@@ -122,16 +121,15 @@ namespace Samples.Authoring
         }
     }
 
+    [Database]
+    public partial class DatabaseDefinition { }
+
+
     [Table(typeof(HeroDataTableAsset), "Heroes", NamingStrategy.SnakeCase)]
     [VerticalList(typeof(HeroData), nameof(HeroData.Multipliers))]
-    partial class SampleDatabaseConfig
-    {
-        partial class HeroDataSheet { }
-    }
+    partial class DatabaseDefinition { }
+
 
     [Table(typeof(EnemyDataTableAsset), "Enemies", NamingStrategy.SnakeCase)]
-    partial class SampleDatabaseConfig
-    {
-        partial class EnemyDataSheet { }
-    }
+    partial class DatabaseDefinition { }
 }
