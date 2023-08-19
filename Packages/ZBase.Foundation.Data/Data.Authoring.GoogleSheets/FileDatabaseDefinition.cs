@@ -4,11 +4,11 @@ namespace ZBase.Foundation.Data.Authoring.GoogleSheets
 {
     [Database]
     [Table(typeof(FileDataTableAsset), "Files", NamingStrategy.SnakeCase)]
-    internal partial class FileDatabaseDefinition { }
+    public partial class FileDatabaseDefinition { }
 
-    internal sealed partial class FileDataTableAsset : DataTableAsset<int, FileData> { }
+    public sealed partial class FileDataTableAsset : DataTableAsset<int, FileData> { }
 
-    internal sealed partial class FileData : IData
+    public sealed partial class FileData : IData
     {
         [SerializeField]
         private int _id;
