@@ -1,0 +1,37 @@
+{
+    "name": "ZBase.Foundation.Data.Authoring.GoogleSheets",
+    "rootNamespace": "ZBase.Foundation.Data.Authoring.GoogleSheets",
+    "references": [
+        "BakingSheet",
+        "BakingSheet.Csv",
+        "BakingSheet.Excel",
+        "BakingSheet.Google",
+        "BakingSheet.ScriptableObject",
+        "ZBase.Foundation.Data",
+        "ZBase.Foundation.Data.Authoring",
+        "UniTask",
+        "Unity.EditorCoroutines.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.editorcoroutines",
+            "expression": "",
+            "define": "USE_UNITY_EDITORCOROUTINES"
+        },
+        {
+            "name": "com.cysharp.unitask",
+            "expression": "",
+            "define": "USE_CYSHARP_UNITASK"
+        }
+    ],
+    "noEngineReferences": false
+}
