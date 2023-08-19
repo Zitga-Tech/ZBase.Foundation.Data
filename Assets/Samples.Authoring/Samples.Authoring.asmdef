@@ -6,6 +6,7 @@
         "BakingSheet",
         "ZBase.Foundation.Data",
         "ZBase.Foundation.Data.Authoring",
+        "ZBase.Foundation.Data.Authoring.GoogleSheets",
         "TriInspector",
         "UniTask"
     ],

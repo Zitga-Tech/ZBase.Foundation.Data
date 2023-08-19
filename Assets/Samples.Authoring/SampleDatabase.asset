@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3756d2e62817804e8c5a71bab9ea285, type: 3}
   m_Name: SampleDatabase
   m_EditorClassIdentifier: 
-  _relativeCredentialFilePath: ../Credentials/google-service-account.json
-  _spreadSheetIdFilePath: ../Credentials/spreadsheet-id.txt
+  _relativeServiceAccountFilePath: ../Credentials/google-service-account.json
+  _relativeSpreadSheetIdFilePath: ../Credentials/spreadsheet-id.txt
   _relativeOutputFolderPath: Samples.Assets
