@@ -1,6 +1,6 @@
 {
-    "name": "ZBase.Foundation.Data.Authoring.GoogleSheets",
-    "rootNamespace": "ZBase.Foundation.Data.Authoring.GoogleSheets",
+    "name": "ZBase.Foundation.Data.Authoring.Configs",
+    "rootNamespace": "ZBase.Foundation.Data.Authoring.Configs",
     "references": [
         "BakingSheet",
         "BakingSheet.Csv",

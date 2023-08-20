@@ -2,10 +2,10 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace ZBase.Foundation.Data.Authoring.GoogleSheets
+namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 {
-    [CustomEditor(typeof(GoogleSheetConfigBase), true)]
-    internal class GoogleSheetConfigBaseEditor : UnityEditor.Editor
+    [CustomEditor(typeof(DatabaseGoogleSheetConfigBase), true)]
+    internal class DatabaseGoogleSheetConfigBaseEditor : UnityEditor.Editor
     {
         private SerializedProperty _relativeServiceAccountFilePath;
         private SerializedProperty _relativeSpreadSheetIdFilePath;
@@ -17,16 +17,11 @@ namespace ZBase.Foundation.Data.Authoring.GoogleSheets
 
         private void OnEnable()
         {
-            if (this.target is not GoogleSheetConfigBase config)
-            {
-                return;
-            }
-
             var so = this.serializedObject;
 
-            _relativeServiceAccountFilePath = so.FindProperty(nameof(GoogleSheetConfigBase._relativeServiceAccountFilePath));
-            _relativeSpreadSheetIdFilePath = so.FindProperty(nameof(GoogleSheetConfigBase._relativeSpreadSheetIdFilePath));
-            _relativeOutputFolderPath = so.FindProperty(nameof(GoogleSheetConfigBase._relativeOutputFolderPath));
+            _relativeServiceAccountFilePath = so.FindProperty(nameof(DatabaseGoogleSheetConfigBase._relativeServiceAccountFilePath));
+            _relativeSpreadSheetIdFilePath = so.FindProperty(nameof(DatabaseGoogleSheetConfigBase._relativeSpreadSheetIdFilePath));
+            _relativeOutputFolderPath = so.FindProperty(nameof(DatabaseGoogleSheetConfigBase._relativeOutputFolderPath));
 
             _labelServiceAccountFilePath = new GUIContent(
                   "Service Account File Path"
@@ -46,7 +41,7 @@ namespace ZBase.Foundation.Data.Authoring.GoogleSheets
 
         public override void OnInspectorGUI()
         {
-            if (this.target is not GoogleSheetConfigBase config)
+            if (this.target is not DatabaseGoogleSheetConfigBase config)
             {
                 OnInspectorGUI();
                 return;

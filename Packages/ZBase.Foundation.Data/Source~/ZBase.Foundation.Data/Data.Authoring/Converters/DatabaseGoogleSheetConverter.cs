@@ -62,6 +62,16 @@ namespace ZBase.Foundation.Data.Authoring
             _pages.Clear();
         }
 
+        protected override IEnumerable<IRawSheetImporterPage> GetPages(string sheetName)
+        {
+            if (_pages.TryGetValue(sheetName, out var pages))
+            {
+                return pages;
+            }
+
+            return Enumerable.Empty<IRawSheetImporterPage>();
+        }
+
         protected override async Task<bool> LoadData()
         {
             using (var service = new SheetsService(new BaseClientService.Initializer() {
@@ -118,16 +128,6 @@ namespace ZBase.Foundation.Data.Authoring
                 var value = _grid.RowData[row].Values?[col];
                 return value?.FormattedValue;
             }
-        }
-
-        protected override IEnumerable<IRawSheetImporterPage> GetPages(string sheetName)
-        {
-            if (_pages.TryGetValue(sheetName, out var pages))
-            {
-                return pages;
-            }
-
-            return Enumerable.Empty<IRawSheetImporterPage>();
         }
     }
 }

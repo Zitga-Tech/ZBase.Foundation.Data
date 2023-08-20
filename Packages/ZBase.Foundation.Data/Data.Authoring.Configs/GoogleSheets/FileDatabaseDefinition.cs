@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace ZBase.Foundation.Data.Authoring.GoogleSheets
+namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 {
     [Database]
     [Table(typeof(FileDataTableAsset), "Files", NamingStrategy.SnakeCase)]

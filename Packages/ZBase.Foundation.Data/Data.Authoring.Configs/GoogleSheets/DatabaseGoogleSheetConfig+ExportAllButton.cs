@@ -4,9 +4,9 @@ using UnityEngine;
 using Unity.EditorCoroutines.Editor;
 #endif
 
-namespace ZBase.Foundation.Data.Authoring.GoogleSheets
+namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 {
-    partial class GoogleSheetConfig<TDatabaseAsset, TSheetContainer>
+    partial class DatabaseGoogleSheetConfig<TDatabaseAsset, TSheetContainer>
     {
         public override void ExportAllAssets()
         {
@@ -34,7 +34,7 @@ namespace ZBase.Foundation.Data.Authoring.GoogleSheets
 
             if (string.IsNullOrWhiteSpace(databaseAssetName))
             {
-                Debug.LogError("The name of Master Database Asset must not be null or contain only white spaces.");
+                Debug.LogError("The name of Database Asset must not be null or contain only white spaces.");
                 return;
             }
 

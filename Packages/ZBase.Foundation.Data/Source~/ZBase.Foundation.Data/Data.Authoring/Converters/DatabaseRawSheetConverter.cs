@@ -60,7 +60,7 @@ namespace ZBase.Foundation.Data.Authoring
 
             var success = await SaveData();
 
-            if (!success)
+            if (success == false)
             {
                 context.Logger.LogError("Failed to save data");
                 return false;

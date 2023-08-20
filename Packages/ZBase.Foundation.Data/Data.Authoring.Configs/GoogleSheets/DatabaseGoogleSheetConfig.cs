@@ -14,14 +14,14 @@ using Cysharp.Threading.Tasks;
 using Unity.EditorCoroutines.Editor;
 #endif
 
-namespace ZBase.Foundation.Data.Authoring.GoogleSheets
+namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 {
-    public abstract partial class GoogleSheetConfig<TSheetContainer> : GoogleSheetConfig<DatabaseAsset, TSheetContainer>
+    public abstract partial class DatabaseGoogleSheetConfig<TSheetContainer> : DatabaseGoogleSheetConfig<DatabaseAsset, TSheetContainer>
         where TSheetContainer : DataSheetContainerBase
     {
     }
 
-    public abstract partial class GoogleSheetConfig<TDatabaseAsset, TSheetContainer> : GoogleSheetConfigBase
+    public abstract partial class DatabaseGoogleSheetConfig<TDatabaseAsset, TSheetContainer> : DatabaseGoogleSheetConfigBase
         where TDatabaseAsset : DatabaseAsset
         where TSheetContainer : DataSheetContainerBase
     {
@@ -241,7 +241,7 @@ namespace ZBase.Foundation.Data.Authoring.GoogleSheets
         }
     }
 
-    public abstract class GoogleSheetConfigBase : ScriptableObject
+    public abstract class DatabaseGoogleSheetConfigBase : ScriptableObject
     {
         [SerializeField]
         internal string _relativeServiceAccountFilePath;

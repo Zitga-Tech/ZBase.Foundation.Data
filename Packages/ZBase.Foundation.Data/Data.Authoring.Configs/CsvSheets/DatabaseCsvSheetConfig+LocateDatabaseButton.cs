@@ -1,9 +1,9 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace ZBase.Foundation.Data.Authoring.GoogleSheets
+namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
 {
-    partial class GoogleSheetConfig<TDatabaseAsset, TSheetContainer>
+    partial class DatabaseCsvSheetConfig<TDatabaseAsset, TSheetContainer>
     {
         public override void LocateDatabaseAsset()
         {
