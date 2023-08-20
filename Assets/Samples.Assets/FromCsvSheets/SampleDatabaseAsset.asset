@@ -9,9 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b3756d2e62817804e8c5a71bab9ea285, type: 3}
-  m_Name: SampleDatabase
+  m_Script: {fileID: 11500000, guid: 20bb0b8cf74165a4fb3a2463845a077f, type: 3}
+  m_Name: SampleDatabaseAsset
   m_EditorClassIdentifier: 
-  _relativeServiceAccountFilePath: ../Credentials/google-service-account.json
-  _relativeSpreadSheetIdFilePath: ../Credentials/spreadsheet-id.txt
-  _relativeOutputFolderPath: Samples.Assets
+  _assetRefs:
+  - {fileID: 11400000, guid: 1d5973bf74eccb942b96b7a8dd5bd524, type: 2}
+  - {fileID: 11400000, guid: 5cd445802f98b4a4ba96417b57da31f3, type: 2}
+  _redundantAssetRefs: []
