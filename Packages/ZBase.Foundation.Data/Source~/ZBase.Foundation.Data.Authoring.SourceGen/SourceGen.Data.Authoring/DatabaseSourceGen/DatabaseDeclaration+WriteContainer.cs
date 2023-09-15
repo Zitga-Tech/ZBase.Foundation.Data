@@ -21,7 +21,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p = p.IncreasedIndent();
 
             p.PrintEndLine();
-            p.PrintLine("#pragma warning disable");
+            p.Print("#pragma warning disable").PrintEndLine();
             p.PrintEndLine();
 
             p.PrintBeginLine()

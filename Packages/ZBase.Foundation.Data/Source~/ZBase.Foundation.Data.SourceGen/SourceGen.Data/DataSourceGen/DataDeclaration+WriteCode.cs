@@ -15,7 +15,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
             p = p.IncreasedIndent();
 
             p.PrintEndLine();
-            p.PrintLine("#pragma warning disable");
+            p.Print("#pragma warning disable").PrintEndLine();
             p.PrintEndLine();
 
             p.PrintLine("[global::System.Serializable]");
