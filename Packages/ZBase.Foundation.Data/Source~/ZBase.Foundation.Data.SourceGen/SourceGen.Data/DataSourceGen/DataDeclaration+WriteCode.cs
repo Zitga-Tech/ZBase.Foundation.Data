@@ -83,17 +83,14 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 p.CloseScope();
                 p.PrintEndLine();
 
-                if (IsMutable)
+                p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
+                p.PrintLine($"private void SetValue_{prop.Property.Name}({typeName} value)");
+                p.OpenScope();
                 {
-                    p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
-                    p.PrintLine($"private void SetValue_{prop.Property.Name}({typeName} value)");
-                    p.OpenScope();
-                    {
-                        p.PrintLine($"this.{fieldName} = value;");
-                    }
-                    p.CloseScope();
-                    p.PrintEndLine();
+                    p.PrintLine($"this.{fieldName} = value;");
                 }
+                p.CloseScope();
+                p.PrintEndLine();
             }
 
             p.PrintEndLine();
