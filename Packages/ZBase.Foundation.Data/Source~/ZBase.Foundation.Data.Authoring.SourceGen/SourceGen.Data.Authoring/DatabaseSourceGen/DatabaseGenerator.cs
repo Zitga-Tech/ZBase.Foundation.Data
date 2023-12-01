@@ -15,7 +15,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
     {
         public const string GENERATOR_NAME = nameof(DatabaseGenerator);
         public const string IDATA = "global::ZBase.Foundation.Data.IData";
-        public const string SERIALIZE_FIELD_ATTRIBUTE = "global::UnityEngine.SerializeField";
         public const string DATABASE_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.DatabaseAttribute";
         public const string LIST_TYPE_T = "global::System.Collections.Generic.List<";
         public const string DICTIONARY_TYPE_T = "global::System.Collections.Generic.Dictionary<";
@@ -276,14 +275,14 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 while (queue.Count > 0)
                 {
                     var type = queue.Dequeue();
-                    
+
                     if (type.InheritsFromInterface(IDATA) == false)
                     {
                         continue;
                     }
 
                     var typeName = type.ToFullName();
-                    
+
                     if (map.ContainsKey(typeName))
                     {
                         continue;
@@ -291,46 +290,57 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                     var dataDeclaration = new DataDeclaration(type);
 
-                    if (dataDeclaration.Fields.Length < 1)
+                    if (dataDeclaration.PropRefs.Length < 1 && dataDeclaration.FieldRefs.Length < 1)
                     {
                         continue;
                     }
 
                     map[typeName] = dataDeclaration;
 
-                    foreach (var fieldRef in dataDeclaration.Fields)
-                    {
-                        if (fieldRef.Type is IArrayTypeSymbol arrayType)
-                        {
-                            queue.Enqueue(arrayType.ElementType);
-                        }
-                        else if (fieldRef.Type is INamedTypeSymbol namedType)
-                        {
-                            var typeFullName = fieldRef.Type.ToFullName();
-
-                            if (typeFullName.StartsWith(LIST_TYPE_T)
-                                || typeFullName.StartsWith(DICTIONARY_TYPE_T)
-                            )
-                            {
-                                foreach (var typeArg in namedType.TypeArguments)
-                                {
-                                    queue.Enqueue(typeArg);
-                                }
-                            }
-                            else
-                            {
-                                queue.Enqueue(namedType);
-                            }
-                        }
-                        else
-                        {
-                            queue.Enqueue(fieldRef.Type);
-                        }
-                    }
+                    Build(queue, dataDeclaration.PropRefs);
+                    Build(queue, dataDeclaration.FieldRefs);
                 }
             }
 
             return map;
+
+            static void Build(Queue<ITypeSymbol> queue, ImmutableArray<DataDeclaration.MemberRef> memberRefs)
+            {
+                foreach (var memberRef in memberRefs)
+                {
+                    if (memberRef.Type is IArrayTypeSymbol arrayType)
+                    {
+                        queue.Enqueue(arrayType.ElementType);
+                        continue;
+                    }
+                    
+                    if (memberRef.Type is INamedTypeSymbol namedType)
+                    {
+                        var typeFullName = memberRef.Type.ToFullName();
+
+                        if (typeFullName.StartsWith(LIST_TYPE_T)
+                            || typeFullName.StartsWith(DICTIONARY_TYPE_T)
+                        )
+                        {
+                            foreach (var typeArg in namedType.TypeArguments)
+                            {
+                                queue.Enqueue(typeArg);
+                            }
+                        }
+                        else
+                        {
+                            queue.Enqueue(namedType);
+                        }
+
+                        continue;
+                    }
+
+                    {
+                        queue.Enqueue(memberRef.Type);
+                    }
+                }
+
+            }
         }
 
         private static Dictionary<string, DataTableAssetRef> BuildDataTableAssetRefMap(
@@ -392,34 +402,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             {
                 var declaration = typeQueue.Dequeue();
 
-                foreach (var field in declaration.Fields)
-                {
-                    switch (field.CollectionKind)
-                    {
-                        case CollectionKind.Array:
-                        case CollectionKind.List:
-                        case CollectionKind.HashSet:
-                        case CollectionKind.Queue:
-                        case CollectionKind.Stack:
-                        {
-                            TryAdd(field.CollectionElementType, dataMap, uniqueTypeNames, typeQueue);
-                            break;
-                        }
-
-                        case CollectionKind.Dictionary:
-                        {
-                            TryAdd(field.CollectionKeyType, dataMap, uniqueTypeNames, typeQueue);
-                            TryAdd(field.CollectionElementType, dataMap, uniqueTypeNames, typeQueue);
-                            break;
-                        }
-
-                        default:
-                        {
-                            TryAdd(field.Type, dataMap, uniqueTypeNames, typeQueue);
-                            break;
-                        }
-                    }
-                }
+                TryAddAll(dataMap, uniqueTypeNames, typeQueue, declaration.PropRefs);
+                TryAddAll(dataMap, uniqueTypeNames, typeQueue, declaration.FieldRefs);
             }
 
             uniqueTypeNames.Remove(idTypeFullName);
@@ -434,6 +418,43 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             else
             {
                 dataTableAssetRef.NestedDataTypeFullNames = ImmutableArray<string>.Empty;
+            }
+
+            static void TryAddAll(
+                  Dictionary<string, DataDeclaration> dataMap
+                , HashSet<string> uniqueTypeNames
+                , Queue<DataDeclaration> typeQueue
+                , ImmutableArray<DataDeclaration.MemberRef> memberRefs
+            )
+            {
+                foreach (var memberRef in memberRefs)
+                {
+                    switch (memberRef.CollectionKind)
+                    {
+                        case CollectionKind.Array:
+                        case CollectionKind.List:
+                        case CollectionKind.HashSet:
+                        case CollectionKind.Queue:
+                        case CollectionKind.Stack:
+                        {
+                            TryAdd(memberRef.CollectionElementType, dataMap, uniqueTypeNames, typeQueue);
+                            break;
+                        }
+
+                        case CollectionKind.Dictionary:
+                        {
+                            TryAdd(memberRef.CollectionKeyType, dataMap, uniqueTypeNames, typeQueue);
+                            TryAdd(memberRef.CollectionElementType, dataMap, uniqueTypeNames, typeQueue);
+                            break;
+                        }
+
+                        default:
+                        {
+                            TryAdd(memberRef.Type, dataMap, uniqueTypeNames, typeQueue);
+                            break;
+                        }
+                    }
+                }
             }
 
             static void TryAdd(

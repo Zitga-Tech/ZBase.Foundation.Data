@@ -110,20 +110,20 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     p.CloseScope();
                     p.PrintEndLine();
 
-                    dataTypeDeclaration.WriteCode(
-                          ref p
-                        , dataMap
-                        , verticalListMap
-                        , dataTableAssetTypeName
-                        , idTypeDeclaration?.Symbol ?? idType
-                    );
-
                     idTypeDeclaration?.WriteCode(
                           ref p
                         , dataMap
                         , verticalListMap
                         , dataTableAssetTypeName
                         , idType: null
+                    );
+
+                    dataTypeDeclaration.WriteCode(
+                          ref p
+                        , dataMap
+                        , verticalListMap
+                        , dataTableAssetTypeName
+                        , idTypeDeclaration?.Symbol ?? idType
                     );
 
                     foreach (var nestedFullName in nestedDataTypeFullNames)

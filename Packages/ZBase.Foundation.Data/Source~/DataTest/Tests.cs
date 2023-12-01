@@ -19,16 +19,16 @@ namespace MyGame
         Enemy,
     }
 
-    public partial struct IdData : IData
+    public partial class IdData : IData
     {
-        [SerializeField]
-        private EntityKind _kind;
+        [DataProperty]
+        public EntityKind Kind => GetValue_Kind();
 
-        [SerializeField]
-        private int _id;
+        [DataProperty]
+        public int Id => GetValue_Id();
     }
 
-    public partial struct StatData : IData
+    public partial class StatData : IData
     {
         [SerializeField]
         private int _hp;
@@ -62,7 +62,7 @@ namespace MyGame.Heroes
     using UnityEngine;
     using System.Collections.Generic;
 
-    public partial struct HeroData : IData
+    public partial class HeroData : IData
     {
         [SerializeField]
         private IdData _id;
@@ -154,7 +154,7 @@ namespace MyGame.Authoring
     }
 
     [Table(typeof(Heroes.HeroDataTableAsset), "Hero", NamingStrategy.SnakeCase)]
-    [VerticalList(typeof(Heroes.HeroData), nameof(Heroes.HeroData.Multipliers), typeof(Heroes.HeroDataTableAsset))]
+    [VerticalList(typeof(Heroes.HeroData), nameof(Heroes.HeroData.Multipliers))]
     partial class Database
     {
         partial class HeroDataTableAsset_HeroDataSheet

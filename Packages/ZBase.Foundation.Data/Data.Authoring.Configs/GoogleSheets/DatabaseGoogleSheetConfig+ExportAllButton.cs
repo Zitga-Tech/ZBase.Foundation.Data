@@ -49,6 +49,9 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 
             EditorCoroutineUtility.StartCoroutine(Export(args), this);
 
+#else
+            UnityEditor.EditorUtility
+                .DisplayDialog("Missing packages", "Requires \"UniTask\" and \"Editor Coroutines\" packages", "OK");
 #endif
         }
     }

@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using Cathei.BakingSheet.Unity;
 using UnityEditor;
 using UnityEngine;
 
@@ -103,8 +101,9 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
             AssetDatabase.Refresh();
 
             args.ResultCallback?.Invoke(true);
-
 #else
+            UnityEditor.EditorUtility
+                .DisplayDialog("Missing packages", "Requires \"UniTask\" and \"Editor Coroutines\" packages", "OK");
             yield break;
 #endif
         }

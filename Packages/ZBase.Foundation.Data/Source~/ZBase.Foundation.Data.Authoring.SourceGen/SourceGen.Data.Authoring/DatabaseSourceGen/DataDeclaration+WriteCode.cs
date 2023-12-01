@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using ZBase.Foundation.SourceGen;
 
@@ -58,10 +59,12 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 p.PrintEndLine();
 
                 WriteConstructor(ref p, dataMap, verticalListMap, typeName, typeFullName, containingTypeFullName);
-                WriteProperties(ref p, dataMap, verticalListMap, typeFullName, containingTypeFullName, idType);
+                WriteProperties(ref p, dataMap, verticalListMap, typeFullName, containingTypeFullName, idType, PropRefs);
+                WriteProperties(ref p, dataMap, verticalListMap, typeFullName, containingTypeFullName, idType, FieldRefs);
                 WriteConvertMethod(ref p, dataMap);
                 WriteCopyFromMethod(ref p, dataMap);
-                WriteToCollectionMethod(ref p, dataMap);
+                WriteToCollectionMethod(ref p, dataMap, PropRefs);
+                WriteToCollectionMethod(ref p, dataMap, FieldRefs);
             }
             p.CloseScope();
             p.PrintEndLine();
@@ -80,11 +83,26 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p.PrintLine($"public __{typeName}()");
             p.OpenScope();
             {
-                foreach (var field in Fields)
+                Write(ref p, dataMap, verticalListMap, PropRefs, targetTypeFullName, containingTypeFullName);
+                Write(ref p, dataMap, verticalListMap, FieldRefs, targetTypeFullName, containingTypeFullName);
+            }
+            p.CloseScope();
+            p.PrintEndLine();
+
+            static void Write(
+                  ref Printer p
+                , Dictionary<string, DataDeclaration> dataMap
+                , Dictionary<string, Dictionary<string, HashSet<string>>> verticalListMap
+                , ImmutableArray<MemberRef> memberRefs
+                , string targetTypeFullName
+                , string containingTypeFullName
+            )
+            {
+                foreach (var memberRef in memberRefs)
                 {
                     string newExpression;
 
-                    switch (field.CollectionKind)
+                    switch (memberRef.CollectionKind)
                     {
                         case CollectionKind.Array:
                         case CollectionKind.List:
@@ -94,7 +112,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         {
                             var collectionTypeName = LIST_TYPE_T;
 
-                            if (field.CollectionKind == CollectionKind.Array
+                            if (memberRef.CollectionKind == CollectionKind.Array
                                 && verticalListMap.TryGetValue(targetTypeFullName, out var innerMap)
                             )
                             {
@@ -102,16 +120,16 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                                     || innerMap.TryGetValue(string.Empty, out propertyNames)
                                 )
                                 {
-                                    if (propertyNames.Contains(field.PropertyName))
+                                    if (propertyNames.Contains(memberRef.PropertyName))
                                     {
                                         collectionTypeName = VERTICAL_LIST_TYPE;
                                     }
                                 }
                             }
 
-                            var elemTypeFullName = field.CollectionElementType.ToFullName();
+                            var elemTypeFullName = memberRef.CollectionElementType.ToFullName();
                             var elemTypeName = dataMap.ContainsKey(elemTypeFullName)
-                            ? $"__{field.CollectionElementType.Name}" : elemTypeFullName;
+                                ? $"__{memberRef.CollectionElementType.Name}" : elemTypeFullName;
 
                             newExpression = $"new {collectionTypeName}{elemTypeName}>()";
                             break;
@@ -119,14 +137,14 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                         case CollectionKind.Dictionary:
                         {
-                            var keyTypeFullName = field.CollectionKeyType.ToFullName();
-                            var elemTypeFullName = field.CollectionElementType.ToFullName();
+                            var keyTypeFullName = memberRef.CollectionKeyType.ToFullName();
+                            var elemTypeFullName = memberRef.CollectionElementType.ToFullName();
 
                             var keyTypeName = dataMap.ContainsKey(keyTypeFullName)
-                            ? $"__{field.CollectionKeyType.Name}" : keyTypeFullName;
+                                ? $"__{memberRef.CollectionKeyType.Name}" : keyTypeFullName;
 
                             var elemTypeName = dataMap.ContainsKey(elemTypeFullName)
-                            ? $"__{field.CollectionElementType.Name}" : elemTypeFullName;
+                                ? $"__{memberRef.CollectionElementType.Name}" : elemTypeFullName;
 
                             newExpression = $"new {DICTIONARY_TYPE_T}{keyTypeName}, {elemTypeName}>()";
                             break;
@@ -134,13 +152,13 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                         default:
                         {
-                            var fieldTypeFullName = field.Type.ToFullName();
+                            var fieldTypeFullName = memberRef.Type.ToFullName();
 
                             if (dataMap.ContainsKey(fieldTypeFullName))
                             {
-                                newExpression = $"new __{field.Type.Name}()";
+                                newExpression = $"new __{memberRef.Type.Name}()";
                             }
-                            else if (field.Type.IsValueType)
+                            else if (memberRef.Type.IsValueType)
                             {
                                 newExpression = "default";
                             }
@@ -148,7 +166,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                             {
                                 newExpression = "string.Empty";
                             }
-                            else if (field.TypeHasParameterlessConstructor)
+                            else if (memberRef.TypeHasParameterlessConstructor)
                             {
                                 newExpression = $"new {fieldTypeFullName}()";
                             }
@@ -161,32 +179,31 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         }
                     }
 
-                    p.PrintLine($"this.{field.PropertyName} = {newExpression};");
+                    p.PrintLine($"this.{memberRef.PropertyName} = {newExpression};");
                 }
             }
-            p.CloseScope();
-            p.PrintEndLine();
         }
 
-        private void WriteProperties(
+        private static void WriteProperties(
               ref Printer p
             , Dictionary<string, DataDeclaration> dataMap
             , Dictionary<string, Dictionary<string, HashSet<string>>> verticalListMap
             , string targetTypeFullName
             , string containingTypeFullName
             , ITypeSymbol idType
+            , ImmutableArray<MemberRef> memberRefs
         )
         {
-            foreach (var field in Fields)
+            foreach (var memberRef in memberRefs)
             {
-                if (idType != null && field.PropertyName == "Id")
+                if (idType != null && memberRef.PropertyName == "Id")
                 {
                     continue;
                 }
 
                 string propTypeName;
 
-                switch (field.CollectionKind)
+                switch (memberRef.CollectionKind)
                 {
                     case CollectionKind.Array:
                     case CollectionKind.List:
@@ -196,7 +213,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     {
                         var collectionTypeName = LIST_TYPE_T;
 
-                        if (field.CollectionKind == CollectionKind.Array
+                        if (memberRef.CollectionKind == CollectionKind.Array
                             && verticalListMap.TryGetValue(targetTypeFullName, out var innerMap)
                         )
                         {
@@ -204,16 +221,16 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                                 || innerMap.TryGetValue(string.Empty, out propertyNames)
                             )
                             {
-                                if (propertyNames.Contains(field.PropertyName))
+                                if (propertyNames.Contains(memberRef.PropertyName))
                                 {
                                     collectionTypeName = VERTICAL_LIST_TYPE;
                                 }
                             }
                         }
 
-                        var elemTypeFullName = field.CollectionElementType.ToFullName();
+                        var elemTypeFullName = memberRef.CollectionElementType.ToFullName();
                         var elemTypeName = dataMap.ContainsKey(elemTypeFullName)
-                            ? $"__{field.CollectionElementType.Name}" : elemTypeFullName;
+                            ? $"__{memberRef.CollectionElementType.Name}" : elemTypeFullName;
 
                         propTypeName = $"{collectionTypeName}{elemTypeName}>";
                         break;
@@ -221,14 +238,14 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                     case CollectionKind.Dictionary:
                     {
-                        var keyTypeFullName = field.CollectionKeyType.ToFullName();
-                        var elemTypeFullName = field.CollectionElementType.ToFullName();
+                        var keyTypeFullName = memberRef.CollectionKeyType.ToFullName();
+                        var elemTypeFullName = memberRef.CollectionElementType.ToFullName();
 
                         var keyTypeName = dataMap.ContainsKey(keyTypeFullName)
-                            ? $"__{field.CollectionKeyType.Name}" : keyTypeFullName;
+                            ? $"__{memberRef.CollectionKeyType.Name}" : keyTypeFullName;
 
                         var elemTypeName = dataMap.ContainsKey(elemTypeFullName)
-                            ? $"__{field.CollectionElementType.Name}" : elemTypeFullName;
+                            ? $"__{memberRef.CollectionElementType.Name}" : elemTypeFullName;
 
                         propTypeName = $"{DICTIONARY_TYPE_T}{keyTypeName}, {elemTypeName}>";
                         break;
@@ -236,16 +253,16 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                     default:
                     {
-                        var fieldTypeFullName = field.Type.ToFullName();
+                        var fieldTypeFullName = memberRef.Type.ToFullName();
                         propTypeName = dataMap.ContainsKey(fieldTypeFullName)
-                            ? $"__{field.Type.Name}" : fieldTypeFullName;
+                            ? $"__{memberRef.Type.Name}" : fieldTypeFullName;
 
                         break;
                     }
                 }
 
                 p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-                p.PrintLine($"public {propTypeName} {field.PropertyName} {{ get; private set; }}");
+                p.PrintLine($"public {propTypeName} {memberRef.PropertyName} {{ get; private set; }}");
                 p.PrintEndLine();
             }
         }
@@ -270,132 +287,22 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     var first = true;
 
-                    foreach (var field in Fields)
+                    foreach (var memberRef in PropRefs)
                     {
                         var comma = first ? " " : ",";
 
                         first = false;
 
-                        switch (field.CollectionKind)
-                        {
-                            case CollectionKind.Array:
-                            {
-                                var elemTypeFullName = field.CollectionElementType.ToFullName();
+                        Write(ref p, dataMap, memberRef, comma);
+                    }
 
-                                if (dataMap.ContainsKey(elemTypeFullName))
-                                {
-                                    var methodName = GetToCollectionMethodName(field, "Array");
-                                    p.PrintLine($"{comma} this.{methodName}()");
-                                }
-                                else
-                                {
-                                    p.PrintLine($"{comma} this.{field.PropertyName}?.ToArray() ?? global::System.Array.Empty<{elemTypeFullName}>()");
-                                }
-                                break;
-                            }
+                    foreach (var memberRef in FieldRefs)
+                    {
+                        var comma = first ? " " : ",";
 
-                            case CollectionKind.List:
-                            {
-                                var elemTypeFullName = field.CollectionElementType.ToFullName();
+                        first = false;
 
-                                if (dataMap.ContainsKey(elemTypeFullName))
-                                {
-                                    var methodName = GetToCollectionMethodName(field, "List");
-                                    p.PrintLine($"{comma} this.{methodName}()");
-                                }
-                                else
-                                {
-                                    p.PrintLine($"{comma} this.{field.PropertyName} ?? new {LIST_TYPE_T}{elemTypeFullName}>()");
-                                }
-                                break;
-                            }
-
-                            case CollectionKind.Dictionary:
-                            {
-                                var keyTypeFullName = field.CollectionKeyType.ToFullName();
-                                var elemTypeFullName = field.CollectionElementType.ToFullName();
-
-                                if (dataMap.ContainsKey(keyTypeFullName) == false
-                                    && dataMap.ContainsKey(elemTypeFullName) == false
-                                )
-                                {
-                                    p.PrintLine($"{comma} this.{field.PropertyName} ?? new {DICTIONARY_TYPE_T}{keyTypeFullName}, {elemTypeFullName}>()");
-                                }
-                                else
-                                {
-                                    var methodName = GetToCollectionMethodName(field, "Dictionary");
-                                    p.PrintLine($"{comma} this.{methodName}()");
-                                }
-                                break;
-                            }
-
-                            case CollectionKind.HashSet:
-                            {
-                                var elemTypeFullName = field.CollectionElementType.ToFullName();
-
-                                if (dataMap.ContainsKey(elemTypeFullName))
-                                {
-                                    var methodName = GetToCollectionMethodName(field, "HashSet");
-                                    p.PrintLine($"{comma} this.{methodName}()");
-                                }
-                                else
-                                {
-                                    p.PrintLine($"{comma} this.{field.PropertyName} == null ? new {HASH_SET_TYPE_T}{elemTypeFullName}>() : new {HASH_SET_TYPE_T}{elemTypeFullName}>(this.{field.PropertyName})");
-                                }
-                                break;
-                            }
-                            
-                            case CollectionKind.Queue:
-                            {
-                                var elemTypeFullName = field.CollectionElementType.ToFullName();
-
-                                if (dataMap.ContainsKey(elemTypeFullName))
-                                {
-                                    var methodName = GetToCollectionMethodName(field, "Queue");
-                                    p.PrintLine($"{comma} this.{methodName}()");
-                                }
-                                else
-                                {
-                                    p.PrintLine($"{comma} this.{field.PropertyName} == null ? new {QUEUE_TYPE_T}{elemTypeFullName}>() : new {QUEUE_TYPE_T}{elemTypeFullName}>(this.{field.PropertyName})");
-                                }
-                                break;
-                            }
-                            
-                            case CollectionKind.Stack:
-                            {
-                                var elemTypeFullName = field.CollectionElementType.ToFullName();
-
-                                if (dataMap.ContainsKey(elemTypeFullName))
-                                {
-                                    var methodName = GetToCollectionMethodName(field, "Stack");
-                                    p.PrintLine($"{comma} this.{methodName}()");
-                                }
-                                else
-                                {
-                                    p.PrintLine($"{comma} this.{field.PropertyName} == null ? new {STACK_TYPE_T}{elemTypeFullName}>() : new {STACK_TYPE_T}{elemTypeFullName}>(this.{field.PropertyName})");
-                                }
-                                break;
-                            }
-
-                            default:
-                            {
-                                var fieldTypeFullName = field.Type.ToFullName();
-
-                                if (dataMap.ContainsKey(fieldTypeFullName))
-                                {
-                                    p.PrintLine($"{comma} (this.{field.PropertyName} ?? __{field.Type.Name}.Default).To{field.Type.Name}()");
-                                }
-                                else
-                                {
-                                    var newExpression = field.Type.IsValueType
-                                    ? "" : field.TypeHasParameterlessConstructor
-                                    ? $" ?? new {fieldTypeFullName}()" : " ?? default";
-
-                                    p.PrintLine($"{comma} this.{field.PropertyName}{newExpression}");
-                                }
-                                break;
-                            }
-                        }
+                        Write(ref p, dataMap, memberRef, comma);
                     }
                 }
                 p = p.DecreasedIndent();
@@ -406,6 +313,135 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
             p.CloseScope();
             p.PrintEndLine();
+
+            static void Write(
+                ref Printer p
+                , Dictionary<string, DataDeclaration> dataMap
+                , MemberRef memberRef
+                , string comma
+            )
+            {
+                switch (memberRef.CollectionKind)
+                {
+                    case CollectionKind.Array:
+                    {
+                        var elemTypeFullName = memberRef.CollectionElementType.ToFullName();
+
+                        if (dataMap.ContainsKey(elemTypeFullName))
+                        {
+                            var methodName = GetToCollectionMethodName(memberRef, "Array");
+                            p.PrintLine($"{comma} this.{methodName}()");
+                        }
+                        else
+                        {
+                            p.PrintLine($"{comma} this.{memberRef.PropertyName}?.ToArray() ?? global::System.Array.Empty<{elemTypeFullName}>()");
+                        }
+                        break;
+                    }
+
+                    case CollectionKind.List:
+                    {
+                        var elemTypeFullName = memberRef.CollectionElementType.ToFullName();
+
+                        if (dataMap.ContainsKey(elemTypeFullName))
+                        {
+                            var methodName = GetToCollectionMethodName(memberRef, "List");
+                            p.PrintLine($"{comma} this.{methodName}()");
+                        }
+                        else
+                        {
+                            p.PrintLine($"{comma} this.{memberRef.PropertyName} ?? new {LIST_TYPE_T}{elemTypeFullName}>()");
+                        }
+                        break;
+                    }
+
+                    case CollectionKind.Dictionary:
+                    {
+                        var keyTypeFullName = memberRef.CollectionKeyType.ToFullName();
+                        var elemTypeFullName = memberRef.CollectionElementType.ToFullName();
+
+                        if (dataMap.ContainsKey(keyTypeFullName) == false
+                            && dataMap.ContainsKey(elemTypeFullName) == false
+                        )
+                        {
+                            p.PrintLine($"{comma} this.{memberRef.PropertyName} ?? new {DICTIONARY_TYPE_T}{keyTypeFullName}, {elemTypeFullName}>()");
+                        }
+                        else
+                        {
+                            var methodName = GetToCollectionMethodName(memberRef, "Dictionary");
+                            p.PrintLine($"{comma} this.{methodName}()");
+                        }
+                        break;
+                    }
+
+                    case CollectionKind.HashSet:
+                    {
+                        var elemTypeFullName = memberRef.CollectionElementType.ToFullName();
+
+                        if (dataMap.ContainsKey(elemTypeFullName))
+                        {
+                            var methodName = GetToCollectionMethodName(memberRef, "HashSet");
+                            p.PrintLine($"{comma} this.{methodName}()");
+                        }
+                        else
+                        {
+                            p.PrintLine($"{comma} this.{memberRef.PropertyName} == null ? new {HASH_SET_TYPE_T}{elemTypeFullName}>() : new {HASH_SET_TYPE_T}{elemTypeFullName}>(this.{memberRef.PropertyName})");
+                        }
+                        break;
+                    }
+
+                    case CollectionKind.Queue:
+                    {
+                        var elemTypeFullName = memberRef.CollectionElementType.ToFullName();
+
+                        if (dataMap.ContainsKey(elemTypeFullName))
+                        {
+                            var methodName = GetToCollectionMethodName(memberRef, "Queue");
+                            p.PrintLine($"{comma} this.{methodName}()");
+                        }
+                        else
+                        {
+                            p.PrintLine($"{comma} this.{memberRef.PropertyName} == null ? new {QUEUE_TYPE_T}{elemTypeFullName}>() : new {QUEUE_TYPE_T}{elemTypeFullName}>(this.{memberRef.PropertyName})");
+                        }
+                        break;
+                    }
+
+                    case CollectionKind.Stack:
+                    {
+                        var elemTypeFullName = memberRef.CollectionElementType.ToFullName();
+
+                        if (dataMap.ContainsKey(elemTypeFullName))
+                        {
+                            var methodName = GetToCollectionMethodName(memberRef, "Stack");
+                            p.PrintLine($"{comma} this.{methodName}()");
+                        }
+                        else
+                        {
+                            p.PrintLine($"{comma} this.{memberRef.PropertyName} == null ? new {STACK_TYPE_T}{elemTypeFullName}>() : new {STACK_TYPE_T}{elemTypeFullName}>(this.{memberRef.PropertyName})");
+                        }
+                        break;
+                    }
+
+                    default:
+                    {
+                        var fieldTypeFullName = memberRef.Type.ToFullName();
+
+                        if (dataMap.ContainsKey(fieldTypeFullName))
+                        {
+                            p.PrintLine($"{comma} (this.{memberRef.PropertyName} ?? __{memberRef.Type.Name}.Default).To{memberRef.Type.Name}()");
+                        }
+                        else
+                        {
+                            var newExpression = memberRef.Type.IsValueType
+                                    ? "" : memberRef.TypeHasParameterlessConstructor
+                                    ? $" ?? new {fieldTypeFullName}()" : " ?? default";
+
+                            p.PrintLine($"{comma} this.{memberRef.PropertyName}{newExpression}");
+                        }
+                        break;
+                    }
+                }
+            }
         }
 
         private void WriteCopyFromMethod(
@@ -417,171 +453,189 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p.PrintLine($"public void CopyFrom({Symbol.ToFullName()} data)");
             p.OpenScope();
             {
-                foreach (var field in Fields)
+                foreach (var memberRef in PropRefs)
                 {
-                    switch (field.CollectionKind)
-                    {
-                        case CollectionKind.Array:
-                        {
-                            var elemTypeFullName = field.CollectionElementType.ToFullName();
+                    Write(ref p, dataMap, memberRef);
+                }
 
-                            if (dataMap.ContainsKey(elemTypeFullName))
-                            {
-                                p.PrintLine($"foreach (var item in data.{field.PropertyName}.ToArray())");
-                                p.OpenScope();
-                                {
-                                    p.PrintLine($"var elem = new __{field.CollectionElementType.Name}();");
-                                    p.PrintLine("elem.CopyFrom(item);");
-                                    p.PrintLine($"this.{field.PropertyName}.Add(elem);");
-                                }
-                                p.CloseScope();
-                            }
-                            else
-                            {
-                                p.PrintLine($"this.{field.PropertyName}.AddRange(data.{field.PropertyName}.Span.ToArray());");
-                            }
-                            break;
-                        }
-
-                        case CollectionKind.List:
-                        case CollectionKind.HashSet:
-                        case CollectionKind.Queue:
-                        case CollectionKind.Stack:
-                        {
-                            var elemTypeFullName = field.CollectionElementType.ToFullName();
-
-                            if (dataMap.ContainsKey(elemTypeFullName))
-                            {
-                                p.PrintLine($"foreach (var item in data.{field.PropertyName})");
-                                p.OpenScope();
-                                {
-                                    p.PrintLine($"var elem = new __{field.CollectionElementType.Name}();");
-                                    p.PrintLine("elem.CopyFrom(item);");
-                                    p.PrintLine($"this.{field.PropertyName}.Add(elem);");
-                                }
-                                p.CloseScope();
-                            }
-                            else
-                            {
-                                p.PrintLine($"this.{field.PropertyName}.AddRange(data.{field.PropertyName});");
-                            }
-                            break;
-                        }
-
-                        case CollectionKind.Dictionary:
-                        {
-                            var keyTypeFullName = field.CollectionKeyType.ToFullName();
-                            var elemTypeFullName = field.CollectionElementType.ToFullName();
-                            var keyIsData = dataMap.ContainsKey(keyTypeFullName);
-                            var elemIsData = dataMap.ContainsKey(elemTypeFullName);
-
-                            p.PrintLine($"foreach (var kv in data.{field.PropertyName})");
-                            p.OpenScope();
-                            {
-                                if (keyIsData == false && elemIsData == false)
-                                {
-                                    p.PrintLine($"this.{field.PropertyName}[kv.Key] = kv.Value;");
-                                }
-                                else
-                                {
-                                    if (keyIsData)
-                                    {
-                                        p.PrintEndLine();
-                                        p.PrintLine($"var key = new __{field.CollectionKeyType.Name}();");
-                                        p.PrintLine("key.CopyFrom(kv.Key);");
-                                    }
-                                    else
-                                    {
-                                        p.PrintLine($"var key = kv.Key;");
-                                    }
-
-                                    if (elemIsData)
-                                    {
-                                        p.PrintEndLine();
-                                        p.PrintLine($"var elem = new __{field.CollectionElementType.Name}();");
-                                        p.PrintLine("elem.CopyFrom(kv.Value);");
-                                    }
-                                    else
-                                    {
-                                        p.PrintLine($"var elem = kv.Value;");
-                                    }
-
-                                    p.PrintLine($"this.{field.PropertyName}[key] = elem;");
-                                }
-                            }
-                            p.CloseScope();
-                            break;
-                        }
-
-                        default:
-                        {
-                            var fieldTypeFullName = field.Type.ToFullName();
-
-                            if (dataMap.ContainsKey(fieldTypeFullName))
-                            {
-                                p.PrintLine($"this.{field.PropertyName}.CopyFrom(data.{field.PropertyName});");
-                            }
-                            else
-                            {
-                                p.PrintLine($"this.{field.PropertyName} = data.{field.PropertyName};");
-                            }
-                            break;
-                        }
-                    }
-
-                    p.PrintEndLine();
+                foreach (var memberRef in FieldRefs)
+                {
+                    Write(ref p, dataMap, memberRef);
                 }
             }
             p.CloseScope();
             p.PrintEndLine();
-        }
 
-        private void WriteToCollectionMethod(ref Printer p, Dictionary<string, DataDeclaration> dataMap)
-        {
-            foreach (var field in Fields)
+            static void Write(
+                  ref Printer p
+                , Dictionary<string, DataDeclaration> dataMap
+                , MemberRef memberRef
+            )
             {
-                switch (field.CollectionKind)
+                switch (memberRef.CollectionKind)
                 {
                     case CollectionKind.Array:
                     {
-                        WriteToArrayMethod(ref p, field, dataMap);
+                        var elemTypeFullName = memberRef.CollectionElementType.ToFullName();
+
+                        if (dataMap.ContainsKey(elemTypeFullName))
+                        {
+                            p.PrintLine($"foreach (var item in data.{memberRef.PropertyName}.ToArray())");
+                            p.OpenScope();
+                            {
+                                p.PrintLine($"var elem = new __{memberRef.CollectionElementType.Name}();");
+                                p.PrintLine("elem.CopyFrom(item);");
+                                p.PrintLine($"this.{memberRef.PropertyName}.Add(elem);");
+                            }
+                            p.CloseScope();
+                        }
+                        else
+                        {
+                            p.PrintLine($"this.{memberRef.PropertyName}.AddRange(data.{memberRef.PropertyName}.Span.ToArray());");
+                        }
                         break;
                     }
 
                     case CollectionKind.List:
+                    case CollectionKind.HashSet:
+                    case CollectionKind.Queue:
+                    case CollectionKind.Stack:
                     {
-                        WriteToListMethod(ref p, field, dataMap);
+                        var elemTypeFullName = memberRef.CollectionElementType.ToFullName();
+
+                        if (dataMap.ContainsKey(elemTypeFullName))
+                        {
+                            p.PrintLine($"foreach (var item in data.{memberRef.PropertyName})");
+                            p.OpenScope();
+                            {
+                                p.PrintLine($"var elem = new __{memberRef.CollectionElementType.Name}();");
+                                p.PrintLine("elem.CopyFrom(item);");
+                                p.PrintLine($"this.{memberRef.PropertyName}.Add(elem);");
+                            }
+                            p.CloseScope();
+                        }
+                        else
+                        {
+                            p.PrintLine($"this.{memberRef.PropertyName}.AddRange(data.{memberRef.PropertyName});");
+                        }
                         break;
                     }
 
                     case CollectionKind.Dictionary:
                     {
-                        WriteToDictionaryMethod(ref p, field, dataMap);
+                        var keyTypeFullName = memberRef.CollectionKeyType.ToFullName();
+                        var elemTypeFullName = memberRef.CollectionElementType.ToFullName();
+                        var keyIsData = dataMap.ContainsKey(keyTypeFullName);
+                        var elemIsData = dataMap.ContainsKey(elemTypeFullName);
+
+                        p.PrintLine($"foreach (var kv in data.{memberRef.PropertyName})");
+                        p.OpenScope();
+                        {
+                            if (keyIsData == false && elemIsData == false)
+                            {
+                                p.PrintLine($"this.{memberRef.PropertyName}[kv.Key] = kv.Value;");
+                            }
+                            else
+                            {
+                                if (keyIsData)
+                                {
+                                    p.PrintEndLine();
+                                    p.PrintLine($"var key = new __{memberRef.CollectionKeyType.Name}();");
+                                    p.PrintLine("key.CopyFrom(kv.Key);");
+                                }
+                                else
+                                {
+                                    p.PrintLine($"var key = kv.Key;");
+                                }
+
+                                if (elemIsData)
+                                {
+                                    p.PrintEndLine();
+                                    p.PrintLine($"var elem = new __{memberRef.CollectionElementType.Name}();");
+                                    p.PrintLine("elem.CopyFrom(kv.Value);");
+                                }
+                                else
+                                {
+                                    p.PrintLine($"var elem = kv.Value;");
+                                }
+
+                                p.PrintLine($"this.{memberRef.PropertyName}[key] = elem;");
+                            }
+                        }
+                        p.CloseScope();
+                        break;
+                    }
+
+                    default:
+                    {
+                        var fieldTypeFullName = memberRef.Type.ToFullName();
+
+                        if (dataMap.ContainsKey(fieldTypeFullName))
+                        {
+                            p.PrintLine($"this.{memberRef.PropertyName}.CopyFrom(data.{memberRef.PropertyName});");
+                        }
+                        else
+                        {
+                            p.PrintLine($"this.{memberRef.PropertyName} = data.{memberRef.PropertyName};");
+                        }
+                        break;
+                    }
+                }
+
+                p.PrintEndLine();
+            }
+        }
+
+        private static void WriteToCollectionMethod(
+              ref Printer p
+            , Dictionary<string, DataDeclaration> dataMap
+            , ImmutableArray<MemberRef> memberRefs
+        )
+        {
+            foreach (var memberRef in memberRefs)
+            {
+                switch (memberRef.CollectionKind)
+                {
+                    case CollectionKind.Array:
+                    {
+                        WriteToArrayMethod(ref p, memberRef, dataMap);
+                        break;
+                    }
+
+                    case CollectionKind.List:
+                    {
+                        WriteToListMethod(ref p, memberRef, dataMap);
+                        break;
+                    }
+
+                    case CollectionKind.Dictionary:
+                    {
+                        WriteToDictionaryMethod(ref p, memberRef, dataMap);
                         break;
                     }
 
                     case CollectionKind.HashSet:
                     {
-                        WriteToHashSetMethod(ref p, field, dataMap);
+                        WriteToHashSetMethod(ref p, memberRef, dataMap);
                         break;
                     }
 
                     case CollectionKind.Queue:
                     {
-                        WriteToQueueMethod(ref p, field, dataMap);
+                        WriteToQueueMethod(ref p, memberRef, dataMap);
                         break;
                     }
 
                     case CollectionKind.Stack:
                     {
-                        WriteToStackMethod(ref p, field, dataMap);
+                        WriteToStackMethod(ref p, memberRef, dataMap);
                         break;
                     }
                 }
             }
         }
 
-        private static void WriteToArrayMethod(ref Printer p, FieldRef field, Dictionary<string, DataDeclaration> dataMap)
+        private static void WriteToArrayMethod(ref Printer p, MemberRef field, Dictionary<string, DataDeclaration> dataMap)
         {
             var elemTypeFullName = field.CollectionElementType.ToFullName();
 
@@ -622,7 +676,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p.PrintEndLine();
         }
 
-        private static void WriteToListMethod(ref Printer p, FieldRef field, Dictionary<string, DataDeclaration> dataMap)
+        private static void WriteToListMethod(ref Printer p, MemberRef field, Dictionary<string, DataDeclaration> dataMap)
         {
             var elemTypeFullName = field.CollectionElementType.ToFullName();
 
@@ -664,7 +718,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p.PrintEndLine();
         }
 
-        private static void WriteToDictionaryMethod(ref Printer p, FieldRef field, Dictionary<string, DataDeclaration> dataMap)
+        private static void WriteToDictionaryMethod(ref Printer p, MemberRef field, Dictionary<string, DataDeclaration> dataMap)
         {
             var keyTypeFullName = field.CollectionKeyType.ToFullName();
             var elemTypeFullName = field.CollectionElementType.ToFullName();
@@ -728,7 +782,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p.PrintEndLine();
         }
 
-        private static void WriteToHashSetMethod(ref Printer p, FieldRef field, Dictionary<string, DataDeclaration> dataMap)
+        private static void WriteToHashSetMethod(ref Printer p, MemberRef field, Dictionary<string, DataDeclaration> dataMap)
         {
             var elemTypeFullName = field.CollectionElementType.ToFullName();
 
@@ -770,7 +824,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p.PrintEndLine();
         }
 
-        private static void WriteToQueueMethod(ref Printer p, FieldRef field, Dictionary<string, DataDeclaration> dataMap)
+        private static void WriteToQueueMethod(ref Printer p, MemberRef field, Dictionary<string, DataDeclaration> dataMap)
         {
             var elemTypeFullName = field.CollectionElementType.ToFullName();
 
@@ -812,7 +866,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p.PrintEndLine();
         }
 
-        private static void WriteToStackMethod(ref Printer p, FieldRef field, Dictionary<string, DataDeclaration> dataMap)
+        private static void WriteToStackMethod(ref Printer p, MemberRef field, Dictionary<string, DataDeclaration> dataMap)
         {
             var elemTypeFullName = field.CollectionElementType.ToFullName();
 
@@ -854,7 +908,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p.PrintEndLine();
         }
 
-        private static string GetToCollectionMethodName(FieldRef field, string collectionName)
+        private static string GetToCollectionMethodName(MemberRef field, string collectionName)
         {
             var elemTypeName = field.CollectionElementType.Name;
             return $"To{elemTypeName}{collectionName}For{field.PropertyName}";

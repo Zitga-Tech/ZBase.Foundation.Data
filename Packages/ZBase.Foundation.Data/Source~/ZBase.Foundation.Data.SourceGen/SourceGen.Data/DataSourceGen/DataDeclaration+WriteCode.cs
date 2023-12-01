@@ -5,6 +5,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
     partial class DataDeclaration
     {
         private const string GENERATED_PROPERTY_FROM_FIELD_ATTRIBUTE = "[global::ZBase.Foundation.Data.SourceGen.GeneratedPropertyFromField(nameof({0}), typeof({1}))]";
+        private const string GENERATED_FIELD_FROM_PROPERTY_ATTRIBUTE = "[global::ZBase.Foundation.Data.SourceGen.GeneratedFieldFromProperty(nameof({0}))]";
 
         public string WriteCode()
         {
@@ -25,6 +26,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 .PrintEndLine();
             p.OpenScope();
             {
+                WriteFields(ref p);
                 WriteProperties(ref p);
                 WriteGetHashCodeMethod(ref p);
                 WriteEqualsMethod(ref p);
@@ -37,9 +39,69 @@ namespace ZBase.Foundation.Data.DataSourceGen
             return p.Result;
         }
 
+        private void WriteFields(ref Printer p)
+        {
+            foreach (var prop in PropRefs)
+            {
+                if (prop.FieldIsImplemented)
+                {
+                    continue;
+                }
+
+                var fieldName = prop.FieldName;
+                var typeName = prop.Type.ToFullName();
+
+                p.PrintLine(string.Format(GENERATED_FIELD_FROM_PROPERTY_ATTRIBUTE, prop.Property.Name));
+                p.PrintLine(GENERATED_CODE);
+
+                var withSerializeField = false;
+
+                foreach (var (fullTypeName, attribute) in prop.ForwardedFieldAttributes)
+                {
+                    if (fullTypeName == SERIALIZE_FIELD_ATTRIBUTE)
+                    {
+                        withSerializeField = true;
+                    }
+
+                    p.PrintLine($"[{attribute.GetSyntax().ToFullString()}]");
+                }
+
+                if (withSerializeField == false && ReferenceUnityEngine)
+                {
+                    p.PrintLine($"[{SERIALIZE_FIELD_ATTRIBUTE}]");
+                }
+
+                p.PrintLine($"private {typeName} {prop.FieldName};");
+                p.PrintEndLine();
+
+                p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
+                p.PrintLine($"private {typeName} GetValue_{prop.Property.Name}()");
+                p.OpenScope();
+                {
+                    p.PrintLine($"return this.{fieldName};");
+                }
+                p.CloseScope();
+                p.PrintEndLine();
+
+                if (IsMutable)
+                {
+                    p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
+                    p.PrintLine($"private void SetValue_{prop.Property.Name}({typeName} value)");
+                    p.OpenScope();
+                    {
+                        p.PrintLine($"this.{fieldName} = value;");
+                    }
+                    p.CloseScope();
+                    p.PrintEndLine();
+                }
+            }
+
+            p.PrintEndLine();
+        }
+
         private void WriteProperties(ref Printer p)
         {
-            foreach (var field in Fields)
+            foreach (var field in FieldRefs)
             {
                 if (field.PropertyIsImplemented)
                 {
@@ -92,6 +154,12 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
                 p.PrintLine(string.Format(GENERATED_PROPERTY_FROM_FIELD_ATTRIBUTE, fieldName, field.Type.ToFullName()));
                 p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
+
+                foreach (var attribute in field.ForwardedPropertyAttributes)
+                {
+                    p.PrintLine($"[{attribute.GetSyntax().ToFullString()}]");
+                }
+
                 p.PrintLine($"public {typeName} {field.PropertyName}");
                 p.OpenScope();
                 {
@@ -136,9 +204,14 @@ namespace ZBase.Foundation.Data.DataSourceGen
             {
                 p.PrintLine("var hash = new global::System.HashCode();");
                 
-                foreach (var field in Fields)
+                foreach (var field in FieldRefs)
                 {
                     p.PrintLine($"hash.Add({field.Field.Name});");
+                }
+
+                foreach (var prop in PropRefs)
+                {
+                    p.PrintLine($"hash.Add({prop.FieldName});");
                 }
 
                 p.PrintLine("return hash.ToHashCode();");
@@ -183,11 +256,25 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 p.PrintLine("return");
                 p = p.IncreasedIndent();
                 {
-                    for (var i = 0; i < Fields.Length; i++)
+                    var previous = false;
+
+                    for (var i = 0; i < FieldRefs.Length; i++)
                     {
-                        var fieldName = Fields[i].Field.Name;
-                        var fieldType = Fields[i].Type.ToFullName();
+                        previous = true;
+                        var fieldRef = FieldRefs[i];
+                        var fieldName = fieldRef.Field.Name;
+                        var fieldType = fieldRef.Type.ToFullName();
                         var and = i == 0 ? "  " : "&&";
+
+                        p.PrintLine($"{and} global::System.Collections.Generic.EqualityComparer<{fieldType}>.Default.Equals(this.{fieldName}, other.{fieldName})");
+                    }
+
+                    for (var i = 0; i < PropRefs.Length; i++)
+                    {
+                        var propRef = PropRefs[i];
+                        var fieldName = propRef.FieldName;
+                        var fieldType = propRef.Type.ToFullName();
+                        var and = i == 0 && previous == false ? "  " : "&&";
 
                         p.PrintLine($"{and} global::System.Collections.Generic.EqualityComparer<{fieldType}>.Default.Equals(this.{fieldName}, other.{fieldName})");
                     }
@@ -206,20 +293,36 @@ namespace ZBase.Foundation.Data.DataSourceGen
             p.PrintLine("internal void SetValues(");
             p = p.IncreasedIndent();
             {
-                for (var i = 0; i < Fields.Length; i++)
+                var previous = false;
+
+                for (var i = 0; i < FieldRefs.Length; i++)
                 {
-                    var field = Fields[i];
+                    previous = true;
+                    var fieldRef = FieldRefs[i];
                     var comma = i == 0 ? " " : ",";
-                    p.PrintLine($"{comma} {field.Type.ToFullName()} {field.Field.Name}");
+                    p.PrintLine($"{comma} {fieldRef.Type.ToFullName()} {fieldRef.Field.Name}");
+                }
+
+                for (var i = 0; i < PropRefs.Length; i++)
+                {
+                    var propRef = PropRefs[i];
+                    var comma = i == 0 && previous == false ? " " : ",";
+                    p.PrintLine($"{comma} {propRef.Type.ToFullName()} {propRef.FieldName}");
                 }
             }
             p = p.DecreasedIndent();
             p.PrintLine(")");
             p.OpenScope();
             {
-                foreach (var field in Fields)
+                foreach (var field in FieldRefs)
                 {
                     var fieldName = field.Field.Name;
+                    p.PrintLine($"this.{fieldName} = {fieldName};");
+                }
+
+                foreach (var prop in PropRefs)
+                {
+                    var fieldName = prop.FieldName;
                     p.PrintLine($"this.{fieldName} = {fieldName};");
                 }
             }

@@ -15,4 +15,15 @@ namespace ZBase.Foundation.Data.SourceGen
             this.FieldType = fieldType;
         }
     }
+
+    [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = false)]
+    public sealed class GeneratedFieldFromPropertyAttribute : Attribute
+    {
+        public string PropertyName { get; }
+
+        public GeneratedFieldFromPropertyAttribute(string propertyName)
+        {
+            this.PropertyName = propertyName;
+        }
+    }
 }

@@ -203,6 +203,8 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
             args.ResultCallback?.Invoke(true);
 
 #else
+            UnityEditor.EditorUtility
+                .DisplayDialog("Missing packages", "Requires \"UniTask\" and \"Editor Coroutines\" packages", "OK");
             yield break;
 #endif
         }
