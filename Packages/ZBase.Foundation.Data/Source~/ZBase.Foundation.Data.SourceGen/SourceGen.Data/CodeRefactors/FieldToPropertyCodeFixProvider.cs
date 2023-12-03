@@ -162,7 +162,7 @@ namespace ZBase.Foundation.Data.CodeRefactors
 
             var arrowExpression = SyntaxFactory.ArrowExpressionClause(
                   arrowToken: SyntaxFactory.Token(SyntaxKind.EqualsGreaterThanToken)
-                , SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName($"GetValue_{propName}"))
+                , SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName($"Get_{propName}"))
             );
 
             propDecl = propDecl.WithExpressionBody(arrowExpression)
@@ -175,7 +175,7 @@ namespace ZBase.Foundation.Data.CodeRefactors
             //    , keyword: SyntaxFactory.Token(SyntaxKind.GetKeyword)
             //    , semicolonToken: SyntaxFactory.Token(SyntaxKind.SemicolonToken)
             //    , expressionBody: SyntaxFactory.ArrowExpressionClause(
-            //        SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName($"GetValue_{propName}"))
+            //        SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName($"Get_{propName}"))
             //    )
             //));
 
@@ -187,7 +187,7 @@ namespace ZBase.Foundation.Data.CodeRefactors
             //    , semicolonToken: SyntaxFactory.Token(SyntaxKind.SemicolonToken)
             //    , expressionBody: SyntaxFactory.ArrowExpressionClause(
             //        SyntaxFactory.InvocationExpression(
-            //                SyntaxFactory.IdentifierName($"SetValue_{propName}")
+            //                SyntaxFactory.IdentifierName($"Set_{propName}")
             //            , SyntaxFactory.ArgumentList(
             //                SyntaxFactory.SingletonSeparatedList(
             //                    SyntaxFactory.Argument(SyntaxFactory.IdentifierName("value"))

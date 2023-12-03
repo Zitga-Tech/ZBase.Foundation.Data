@@ -24,10 +24,10 @@ namespace MyGame
     public partial class IdData : IData
     {
         [DataProperty]
-        public EntityKind Kind => GetValue_Kind();
+        public EntityKind Kind => Get_Kind();
 
         [DataProperty]
-        public int Id => GetValue_Id();
+        public int Id => Get_Id();
     }
 
     public partial class StatData : IData

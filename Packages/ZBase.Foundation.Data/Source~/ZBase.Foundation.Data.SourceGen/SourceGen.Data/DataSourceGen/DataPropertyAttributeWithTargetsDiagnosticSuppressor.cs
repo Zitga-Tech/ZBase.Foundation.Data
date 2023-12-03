@@ -24,7 +24,7 @@ namespace ZBase.Foundation.Data.ObservablePropertySourceGen
     /// {
     ///     [DataProperty]
     ///     [field: JsonPropertyName("Name")]
-    ///     public string Name => GetValue_Name();
+    ///     public string Name => Get_Name();
     /// }
     /// </code>
     /// </para>

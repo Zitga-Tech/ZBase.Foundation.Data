@@ -75,7 +75,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 p.PrintEndLine();
 
                 p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
-                p.PrintLine($"private {typeName} GetValue_{prop.Property.Name}()");
+                p.PrintLine($"private {typeName} Get_{prop.Property.Name}()");
                 p.OpenScope();
                 {
                     p.PrintLine($"return this.{fieldName};");
@@ -84,7 +84,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 p.PrintEndLine();
 
                 p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
-                p.PrintLine($"private void SetValue_{prop.Property.Name}({typeName} value)");
+                p.PrintLine($"private void Set_{prop.Property.Name}({typeName} value)");
                 p.OpenScope();
                 {
                     p.PrintLine($"this.{fieldName} = value;");
