@@ -82,7 +82,7 @@ namespace ZBase.Foundation.Data.CodeRefactors
                 {
                     foreach (var attrib in attributes)
                     {
-                        var (name, _) = GetAttributeInfo(semanticModel, attrib);
+                        var name = attrib.ToString();
 
                         if (fieldAttribCheck.Contains(name) == false)
                         {
@@ -99,9 +99,9 @@ namespace ZBase.Foundation.Data.CodeRefactors
                 {
                     foreach (var attrib in attributes)
                     {
-                        var (name, _) = GetAttributeInfo(semanticModel, attrib);
+                        var name = attrib.ToString();
 
-                        if (name == "DataPropertyAttribute")
+                        if (name == "DataProperty")
                         {
                             continue;
                         }
@@ -118,9 +118,10 @@ namespace ZBase.Foundation.Data.CodeRefactors
 
                 foreach (var attrib in attributes)
                 {
-                    var (name, target) = GetAttributeInfo(semanticModel, attrib);
+                    var (_, target) = GetAttributeInfo(semanticModel, attrib);
+                    var name = attrib.ToString();
 
-                    if (name == "DataPropertyAttribute")
+                    if (name == "DataProperty")
                     {
                         continue;
                     }
