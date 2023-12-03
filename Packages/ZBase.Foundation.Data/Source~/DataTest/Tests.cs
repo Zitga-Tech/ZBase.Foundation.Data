@@ -12,6 +12,8 @@ namespace MyGame
 {
     using ZBase.Foundation.Data;
     using UnityEngine;
+    using Newtonsoft.Json;
+    using System;
 
     public enum EntityKind
     {
@@ -33,7 +35,7 @@ namespace MyGame
         [SerializeField]
         private int _hp;
 
-        [SerializeField]
+        [JsonProperty]
         private int _atk;
     }
 

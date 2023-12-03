@@ -38,7 +38,12 @@ namespace ZBase.Foundation.Data
 
         public static string ToPropertyName(this IFieldSymbol field)
         {
-            var nameSpan = field.Name.AsSpan();
+            return ToPropertyName(field.Name);
+        }
+
+        public static string ToPropertyName(this string fieldName)
+        {
+            var nameSpan = fieldName.AsSpan();
             var prefix = FIELD_PREFIX_UNDERSCORE.AsSpan();
 
             if (nameSpan.StartsWith(prefix))
@@ -59,6 +64,11 @@ namespace ZBase.Foundation.Data
         public static string ToFieldName(this IPropertySymbol property)
         {
             return $"{FIELD_PREFIX_UNDERSCORE}{ToLowerCase(property.Name.AsSpan())}";
+        }
+
+        public static string ToFieldName(this string propertyName)
+        {
+            return $"{FIELD_PREFIX_UNDERSCORE}{ToLowerCase(propertyName.AsSpan())}";
         }
 
         public static string ToTitleCase(in ReadOnlySpan<char> value)

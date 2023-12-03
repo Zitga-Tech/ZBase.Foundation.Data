@@ -21,13 +21,14 @@ namespace ZBase.Foundation.Data
         /// </para>
         /// </summary>
         public static readonly DiagnosticDescriptor InvalidPropertyTargetedAttribute = new DiagnosticDescriptor(
-        id: "DATA0001",
-        title: "Invalid property targeted attribute type",
-        messageFormat: "The field {0} is using attribute \"{1}\" which was not recognized as a valid type (are you missing a using directive?)",
-        category: "DataGenerator",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true,
-        description: "All attributes targeting the generated property for a field must correctly be resolved to valid types.");
+              id: "DATA0001"
+            , title: "Invalid property targeted attribute type"
+            , messageFormat: "The field {0} is using attribute \"{1}\" which was not recognized as a valid type (are you missing a using directive?)"
+            , category: "DataGenerator"
+            , defaultSeverity: DiagnosticSeverity.Error
+            , isEnabledByDefault: true
+            , description: "All attributes targeting the generated property for a field must correctly be resolved to valid types."
+        );
 
         /// <summary>
         /// Gets a <see cref="DiagnosticDescriptor"/> indicating when a property with <c>[ObservableProperty]</c> is using an invalid attribute targeting the property.
@@ -36,12 +37,13 @@ namespace ZBase.Foundation.Data
         /// </para>
         /// </summary>
         public static readonly DiagnosticDescriptor InvalidFieldTargetedAttribute = new DiagnosticDescriptor(
-        id: "DATA0001",
-        title: "Invalid field targeted attribute type",
-        messageFormat: "The property is using attribute \"{1}\" which was not recognized as a valid type (are you missing a using directive?)",
-        category: "DataGenerator",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true,
-        description: "All attributes targeting the generated field for a property must correctly be resolved to valid types.");
+              id: "DATA0002"
+            , title: "Invalid field targeted attribute type"
+            , messageFormat: "The property is using attribute \"{1}\" which was not recognized as a valid type (are you missing a using directive?)"
+            , category: "DataGenerator"
+            , defaultSeverity: DiagnosticSeverity.Error
+            , isEnabledByDefault: true
+            , description: "All attributes targeting the generated field for a property must correctly be resolved to valid types."
+        );
     }
 }
