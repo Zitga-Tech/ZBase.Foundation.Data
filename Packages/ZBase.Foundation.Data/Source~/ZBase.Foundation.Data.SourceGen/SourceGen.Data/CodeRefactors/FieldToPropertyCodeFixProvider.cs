@@ -160,6 +160,7 @@ namespace ZBase.Foundation.Data.CodeRefactors
             var propDecl = SyntaxFactory.PropertyDeclaration(fieldDecl.Declaration.Type, propName)
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
                 .WithAdditionalAnnotations(Formatter.Annotation)
+                .WithTrailingTrivia(fieldDecl.GetTrailingTrivia())
                 ;
 
             var arrowExpression = SyntaxFactory.ArrowExpressionClause(
@@ -170,37 +171,11 @@ namespace ZBase.Foundation.Data.CodeRefactors
             propDecl = propDecl.WithExpressionBody(arrowExpression)
                 .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
 
-            //propDecl = propDecl.AddAccessorListAccessors(SyntaxFactory.AccessorDeclaration(
-            //      kind: SyntaxKind.GetAccessorDeclaration
-            //    , attributeLists: new SyntaxList<AttributeListSyntax>()
-            //    , modifiers: SyntaxFactory.TokenList()
-            //    , keyword: SyntaxFactory.Token(SyntaxKind.GetKeyword)
-            //    , semicolonToken: SyntaxFactory.Token(SyntaxKind.SemicolonToken)
-            //    , expressionBody: SyntaxFactory.ArrowExpressionClause(
-            //        SyntaxFactory.InvocationExpression(SyntaxFactory.IdentifierName($"Get_{propName}"))
-            //    )
-            //));
+            var withAttribListTrivia = false;
 
-            //propDecl = propDecl.AddAccessorListAccessors(SyntaxFactory.AccessorDeclaration(
-            //      kind: SyntaxKind.SetAccessorDeclaration
-            //    , attributeLists: new SyntaxList<AttributeListSyntax>()
-            //    , modifiers: SyntaxFactory.TokenList()
-            //    , keyword: SyntaxFactory.Token(SyntaxKind.SetKeyword)
-            //    , semicolonToken: SyntaxFactory.Token(SyntaxKind.SemicolonToken)
-            //    , expressionBody: SyntaxFactory.ArrowExpressionClause(
-            //        SyntaxFactory.InvocationExpression(
-            //                SyntaxFactory.IdentifierName($"Set_{propName}")
-            //            , SyntaxFactory.ArgumentList(
-            //                SyntaxFactory.SingletonSeparatedList(
-            //                    SyntaxFactory.Argument(SyntaxFactory.IdentifierName("value"))
-            //                )
-            //            )
-            //        )
-            //    )
-            //));
-
-            foreach (var list in propAttribListList)
+            for (var i = 0; i < propAttribListList.Count; i++)
             {
+                var list = propAttribListList[i];
                 var propAttribList = SyntaxFactory.AttributeList(
                       openBracketToken: SyntaxFactory.Token(SyntaxKind.OpenBracketToken)
                     , target: null
@@ -208,19 +183,32 @@ namespace ZBase.Foundation.Data.CodeRefactors
                     , closeBracketToken: SyntaxFactory.Token(SyntaxKind.CloseBracketToken)
                 );
 
+                if (i == 0)
+                {
+                    withAttribListTrivia = true;
+                    propAttribList = propAttribList.WithTriviaFrom(fieldDecl.AttributeLists[0]);
+                }
+
                 propDecl = propDecl.AddAttributeLists(propAttribList);
             }
 
-            foreach (var list in fieldAttribListList)
+            for (var i = 0; i < fieldAttribListList.Count; i++)
             {
-                var propAttribList = SyntaxFactory.AttributeList(
+                var list = fieldAttribListList[i];
+                var fieldAttribList = SyntaxFactory.AttributeList(
                       openBracketToken: SyntaxFactory.Token(SyntaxKind.OpenBracketToken)
                     , target: SyntaxFactory.AttributeTargetSpecifier(SyntaxFactory.Token(SyntaxKind.FieldKeyword))
                     , attributes: SyntaxFactory.SeparatedList(list)
                     , closeBracketToken: SyntaxFactory.Token(SyntaxKind.CloseBracketToken)
                 );
 
-                propDecl = propDecl.AddAttributeLists(propAttribList);
+                if (i == 0 && withAttribListTrivia == false)
+                {
+                    withAttribListTrivia = true;
+                    fieldAttribList = fieldAttribList.WithTriviaFrom(fieldDecl.AttributeLists[0]);
+                }
+
+                propDecl = propDecl.AddAttributeLists(fieldAttribList);
             }
 
             var newRoot = root.ReplaceNode(fieldDecl, propDecl);

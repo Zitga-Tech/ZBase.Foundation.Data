@@ -155,17 +155,36 @@ namespace ZBase.Foundation.Data.CodeRefactors
                 }
             }
 
-            if (fieldAttribCheck.Contains("SerializeField") == false)
+            if (fieldAttribCheck.Contains("SerializeField") == false
+                && fieldAttribCheck.Contains("JsonProperty") == false
+                && fieldAttribCheck.Contains("JsonInclude") == false
+            )
             {
                 var referenceUnityEngine = false;
+                var referenceNewtonsoft = false;
+                var referenceSystemTextJson = false;
                 var propertySymbol = semanticModel.GetDeclaredSymbol(propertyDecl, cancellationToken);
 
                 foreach (var assembly in propertySymbol.ContainingModule.ReferencedAssemblySymbols)
                 {
-                    if (assembly.ToDisplayString().StartsWith("UnityEngine,"))
+                    var assemblyName = assembly.ToDisplayString();
+
+                    if (assemblyName.StartsWith("UnityEngine,"))
                     {
                         referenceUnityEngine = true;
-                        break;
+                        continue;
+                    }
+
+                    if (assemblyName.StartsWith("Newtonsoft.Json,"))
+                    {
+                        referenceNewtonsoft = true;
+                        continue;
+                    }
+
+                    if (assemblyName.StartsWith("System.Text.Json,"))
+                    {
+                        referenceSystemTextJson = true;
+                        continue;
                     }
                 }
 
@@ -173,6 +192,18 @@ namespace ZBase.Foundation.Data.CodeRefactors
                 {
                     fieldAttribListList.Add(new List<AttributeSyntax> {
                         SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("SerializeField"))
+                    });
+                }
+                else if (referenceNewtonsoft)
+                {
+                    fieldAttribListList.Add(new List<AttributeSyntax> {
+                        SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("JsonProperty"))
+                    });
+                }
+                else if (referenceSystemTextJson)
+                {
+                    fieldAttribListList.Add(new List<AttributeSyntax> {
+                        SyntaxFactory.Attribute(SyntaxFactory.IdentifierName("JsonInclude"))
                     });
                 }
             }
@@ -184,22 +215,33 @@ namespace ZBase.Foundation.Data.CodeRefactors
             var fieldDecl = SyntaxFactory.FieldDeclaration(varDecl)
                 .AddModifiers(SyntaxFactory.Token(SyntaxKind.PrivateKeyword))
                 .WithAdditionalAnnotations(Formatter.Annotation)
+                .WithTrailingTrivia(propertyDecl.GetTrailingTrivia())
                 ;
 
-            foreach (var list in fieldAttribListList)
+            var withAttribListTrivia = false;
+
+            for (var i = 0; i < fieldAttribListList.Count; i++)
             {
-                var propAttribList = SyntaxFactory.AttributeList(
+                var list = fieldAttribListList[i];
+                var fieldAttribList = SyntaxFactory.AttributeList(
                       openBracketToken: SyntaxFactory.Token(SyntaxKind.OpenBracketToken)
                     , target: null
                     , attributes: SyntaxFactory.SeparatedList(list)
                     , closeBracketToken: SyntaxFactory.Token(SyntaxKind.CloseBracketToken)
                 );
 
-                fieldDecl = fieldDecl.AddAttributeLists(propAttribList);
+                if (i == 0)
+                {
+                    withAttribListTrivia = true;
+                    fieldAttribList = fieldAttribList.WithTriviaFrom(propertyDecl.AttributeLists[0]);
+                }
+
+                fieldDecl = fieldDecl.AddAttributeLists(fieldAttribList);
             }
 
-            foreach (var list in propAttribListList)
+            for (var i = 0; i < propAttribListList.Count; i++)
             {
+                var list = propAttribListList[i];
                 var propAttribList = SyntaxFactory.AttributeList(
                       openBracketToken: SyntaxFactory.Token(SyntaxKind.OpenBracketToken)
                     , target: SyntaxFactory.AttributeTargetSpecifier(SyntaxFactory.Token(SyntaxKind.PropertyKeyword))
@@ -207,10 +249,14 @@ namespace ZBase.Foundation.Data.CodeRefactors
                     , closeBracketToken: SyntaxFactory.Token(SyntaxKind.CloseBracketToken)
                 );
 
+                if (i == 0 && withAttribListTrivia == false)
+                {
+                    withAttribListTrivia = true;
+                    propAttribList = propAttribList.WithTriviaFrom(propertyDecl.AttributeLists[0]);
+                }
+
                 fieldDecl = fieldDecl.AddAttributeLists(propAttribList);
             }
-
-            fieldDecl = fieldDecl.WithTrailingTrivia(SyntaxFactory.LineFeed);
 
             var newRoot = root.ReplaceNode(propertyDecl, fieldDecl);
             return document.WithSyntaxRoot(newRoot).Project.Solution;

@@ -21,12 +21,12 @@ namespace ZBase.Foundation.Data
         );
 
         /// <summary>
-        /// Gets a <see cref="SuppressionDescriptor"/> for a field using [DataProperty] with an attribute list targeting a property.
+        /// Gets a <see cref="SuppressionDescriptor"/> for a property using [DataProperty] with an attribute list targeting a field.
         /// </summary>
         public static readonly SuppressionDescriptor FieldAttributeListForDataProperty = new(
-              id: "DATASPR0001"
+              id: "DATASPR0002"
             , suppressedDiagnosticId: "CS0657"
-            , justification: "Properties using [DataProperty] can use [field:] attribute lists to forward attributes to the generated properties"
+            , justification: "Properties using [DataProperty] can use [field:] attribute lists to forward attributes to the generated fields"
         );
     }
 }

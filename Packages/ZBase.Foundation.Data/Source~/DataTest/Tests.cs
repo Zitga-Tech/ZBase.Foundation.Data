@@ -10,10 +10,10 @@
 
 namespace MyGame
 {
-    using ZBase.Foundation.Data;
-    using UnityEngine;
-    using Newtonsoft.Json;
     using System;
+    using Newtonsoft.Json;
+    using UnityEngine;
+    using ZBase.Foundation.Data;
 
     public enum EntityKind
     {
