@@ -21,9 +21,13 @@ namespace MyGame
         Enemy,
     }
 
+    [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
+    public class FieldAttribute : Attribute { }
+
     public partial class IdData : IData
     {
         [DataProperty]
+        [field: Field]
         public EntityKind Kind => Get_Kind();
 
         [DataProperty]

@@ -47,7 +47,7 @@ namespace ZBase.Foundation.Data.ObservablePropertySourceGen
                 // Check that the target is effectively [field:] over a property declaration with at least one variable, which is the only case we are interested in
                 if (syntaxNode is not AttributeTargetSpecifierSyntax attributeTarget
                     || attributeTarget.Parent.Parent is not PropertyDeclarationSyntax propertyDeclaration
-                    || attributeTarget.Identifier.Kind() is not SyntaxKind.FieldDeclaration
+                    || attributeTarget.Identifier.Kind() is not SyntaxKind.FieldKeyword
                 )
                 {
                     continue;

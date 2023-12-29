@@ -496,7 +496,7 @@ namespace ZBase.Foundation.SourceGen
 
                 var syntax = syntaxReference.GetSyntax(token);
 
-                if (syntax.Parent?.Parent is not PropertyDeclarationSyntax propDeclaration)
+                if (syntax is not PropertyDeclarationSyntax propDeclaration)
                 {
                     return;
                 }
