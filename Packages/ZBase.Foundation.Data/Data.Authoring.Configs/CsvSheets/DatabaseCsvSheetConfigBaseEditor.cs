@@ -8,9 +8,11 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
     internal class DatabaseCsvSheetConfigBaseEditor : UnityEditor.Editor
     {
         private SerializedProperty _relativeCsvFolderPath;
+        private SerializedProperty _includeSubFolders;
         private SerializedProperty _relativeOutputFolderPath;
 
         private GUIContent _labelCsvFolderPath;
+        private GUIContent _labelIncludeSubFolders;
         private GUIContent _labelOutputFolderPath;
 
         private void OnEnable()
@@ -18,11 +20,17 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
             var so = this.serializedObject;
             
             _relativeCsvFolderPath = so.FindProperty(nameof(DatabaseCsvSheetConfigBase._relativeCsvFolderPath));
+            _includeSubFolders = so.FindProperty(nameof(DatabaseCsvSheetConfigBase._includeSubFolders));
             _relativeOutputFolderPath = so.FindProperty(nameof(DatabaseCsvSheetConfigBase._relativeOutputFolderPath));
 
             _labelCsvFolderPath = new GUIContent(
                   "Csv Folder Path"
                 , "Path to the folder contains CSV files to export. The folder path is relative to the Assets folder."
+            );
+
+            _labelIncludeSubFolders = new GUIContent(
+                  "Include Sub-Folders"
+                , "Include all CSV files in all sub-folders."
             );
 
             _labelOutputFolderPath = new GUIContent(
@@ -42,9 +50,8 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
             EditorGUILayout.LabelField("CSV Sheets", EditorStyles.boldLabel);
             {
                 EditorGUILayout.Space();
+                EditorGUILayout.BeginVertical();
                 {
-                    EditorGUILayout.BeginVertical();
-
                     if (config.CsvFolderPathExist)
                     {
                         EditorGUILayout.HelpBox(config.FullCsvFolderPath, MessageType.Info);
@@ -55,7 +62,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
                     }
 
                     EditorGUILayout.BeginHorizontal();
-                    DrawRelativePath(config, _relativeCsvFolderPath, _labelCsvFolderPath);
+                    DrawProperty(config, _relativeCsvFolderPath, _labelCsvFolderPath);
 
                     var openFilePanel = false;
 
@@ -68,18 +75,19 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
                     if (openFilePanel == false)
                     {
                         EditorGUILayout.EndHorizontal();
-                        EditorGUILayout.EndVertical();
+
+                        DrawProperty(config, _includeSubFolders, _labelIncludeSubFolders);
                     }
                 }
+                EditorGUILayout.EndVertical();
             }
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Assets", EditorStyles.boldLabel);
             {
                 EditorGUILayout.Space();
+                EditorGUILayout.BeginVertical();
                 {
-                    EditorGUILayout.BeginVertical();
-
                     if (config.OutputFolderExist)
                     {
                         EditorGUILayout.HelpBox(config.FullOutputFolderPath, MessageType.Info);
@@ -90,7 +98,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
                     }
 
                     EditorGUILayout.BeginHorizontal();
-                    DrawRelativePath(config, _relativeOutputFolderPath, _labelOutputFolderPath);
+                    DrawProperty(config, _relativeOutputFolderPath, _labelOutputFolderPath);
 
                     var openFolderPanel = false;
 
@@ -103,30 +111,31 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
                     if (openFolderPanel == false)
                     {
                         EditorGUILayout.EndHorizontal();
-                        EditorGUILayout.EndVertical();
                     }
                 }
-            }
+                EditorGUILayout.EndVertical();
 
-            EditorGUILayout.Space();
-            {
-                var color = GUI.color;
-                GUI.color = Color.green;
-
-                if (GUILayout.Button("Export All Assets", GUILayout.Height(30)))
+                EditorGUILayout.Space();
+                EditorGUILayout.BeginHorizontal();
                 {
-                    config.ExportAllAssets();
+                    var color = GUI.color;
+                    GUI.color = Color.green;
+
+                    if (GUILayout.Button("Export All Assets", GUILayout.Height(25)))
+                    {
+                        config.ExportDataTableAssets();
+                    }
+
+                    GUI.color = color;
                 }
 
-                GUI.color = color;
-            }
-
-            EditorGUILayout.Space();
-            {
-                if (GUILayout.Button("Locate Database Asset", GUILayout.Height(30)))
                 {
-                    config.LocateDatabaseAsset();
+                    if (GUILayout.Button("Locate Database Asset", GUILayout.Height(25)))
+                    {
+                        config.LocateDatabaseAsset();
+                    }
                 }
+                EditorGUILayout.EndHorizontal();
             }
 
             serializedObject.ApplyModifiedProperties();
@@ -145,7 +154,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
             }
         }
 
-        private void DrawRelativePath(Object obj, SerializedProperty property, GUIContent label)
+        private void DrawProperty(Object obj, SerializedProperty property, GUIContent label)
         {
             EditorGUI.BeginChangeCheck();
             EditorGUILayout.PropertyField(property, label);

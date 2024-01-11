@@ -14,24 +14,27 @@ namespace ZBase.Foundation.Data.Authoring
     public class DatabaseCsvSheetConverter : DatabaseRawSheetConverter
     {
         private readonly Dictionary<string, List<Page>> _pages = new();
-        private readonly IFileSystem _fileSystem;
+        private readonly IExtendedFileSystem _fileSystem;
         private readonly string _loadPath;
         private readonly string _extension;
+        private readonly bool _includeSubFolders;
 
         public DatabaseCsvSheetConverter(
               string loadPath
             , TimeZoneInfo timeZoneInfo = null
             , string extension = "csv"
-            , IFileSystem fileSystem = null
+            , IExtendedFileSystem fileSystem = null
             , bool splitHeader = false
             , IFormatProvider formatProvider = null
             , int emptyRowStreakThreshold = 5
+            , bool includeSubFolders = true
         )
             : base(timeZoneInfo, formatProvider, splitHeader, emptyRowStreakThreshold)
         {
             _loadPath = loadPath;
             _extension = extension;
-            _fileSystem = fileSystem ?? new FileSystem();
+            _fileSystem = fileSystem ?? new DatabaseFileSystem();
+            _includeSubFolders = includeSubFolders;
         }
 
         private class CsvTable : List<List<string>>
@@ -67,15 +70,16 @@ namespace ZBase.Foundation.Data.Authoring
 
         protected override Task<bool> LoadData()
         {
-            var files = _fileSystem.GetFiles(_loadPath, _extension);
+            UnityEngine.Debug.Log($"{_loadPath} :: {_extension} :: {_includeSubFolders}");
+            var files = _fileSystem.GetFiles(_loadPath, _extension, _includeSubFolders);
 
             _pages.Clear();
 
             foreach (var file in files)
             {
                 var fileName = Path.GetFileNameWithoutExtension(file);
-
-                if (fileName.StartsWith(Config.Comment))
+                UnityEngine.Debug.Log($"{fileName} :: {file}");
+                if (SheetUtility.ValidateSheetName(fileName) == false)
                 {
                     continue;
                 }

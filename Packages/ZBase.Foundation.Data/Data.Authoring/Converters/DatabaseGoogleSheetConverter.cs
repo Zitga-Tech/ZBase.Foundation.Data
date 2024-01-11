@@ -87,7 +87,7 @@ namespace ZBase.Foundation.Data.Authoring
 
             foreach (var gSheet in _spreadsheet.Sheets)
             {
-                if (gSheet.Properties.Title.StartsWith(Config.Comment))
+                if (SheetUtility.ValidateSheetName(gSheet.Properties.Title) == false)
                 {
                     continue;
                 }

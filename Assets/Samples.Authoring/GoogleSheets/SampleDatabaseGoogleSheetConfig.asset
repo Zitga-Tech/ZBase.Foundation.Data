@@ -13,5 +13,9 @@ MonoBehaviour:
   m_Name: SampleDatabaseGoogleSheetConfig
   m_EditorClassIdentifier: 
   _relativeServiceAccountFilePath: ../Credentials/google-service-account.json
-  _relativeSpreadSheetIdFilePath: ../Credentials/spreadsheet-id.txt
-  _relativeOutputFolderPath: Samples.Assets/FromGoogleSheets
+  _relativeSpreadsheetIdFilePath: ../Credentials/spreadsheet-id.txt
+  _listOfSpreadsheets: 1
+  _relativeAssetOutputFolderPath: Samples.Assets/FromGoogleSheets
+  _relativeCsvOutputFolderPath: Samples.Authoring/CsvSheets/sample-csv
+  _csvFolderPerSpreadsheet: 1
+  _cleanCsvOutputFolder: 1

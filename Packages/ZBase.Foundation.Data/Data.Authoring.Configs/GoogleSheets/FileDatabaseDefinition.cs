@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 {
     [Database]
@@ -10,28 +8,12 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 
     public sealed partial class FileData : IData
     {
-        [SerializeField]
-        private int _id;
+        [DataProperty] public int Id => Get_Id();
 
-        [SerializeField]
-        private string _fileName;
+        [DataProperty] public string FileName => Get_FileName();
 
-        [SerializeField]
-        private string _fileId;
+        [DataProperty] public string FileId => Get_FileId();
 
-        [SerializeField]
-        private string _folderName;
-
-        [SerializeField]
-        private string _folderId;
-
-        [SerializeField]
-        private string _url;
-
-        [SerializeField]
-        private uint _size;
-
-        [SerializeField]
-        private string _type;
+        [DataProperty] public string Type => Get_Type();
     }
 }

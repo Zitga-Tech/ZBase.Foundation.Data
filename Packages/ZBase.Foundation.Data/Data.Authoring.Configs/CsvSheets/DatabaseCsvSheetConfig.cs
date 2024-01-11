@@ -25,43 +25,6 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
     {
         protected abstract TSheetContainer CreateSheetContainer();
 
-        public override void ExportDataTableAssets(Action<bool> resultCallback)
-        {
-            if (CsvFolderPathExist == false)
-            {
-                Debug.LogError($"CSV folder does not exists");
-                resultCallback?.Invoke(false);
-                return;
-            }
-
-            if (OutputFolderExist == false)
-            {
-                Debug.LogError($"Output folder does not exists");
-                resultCallback?.Invoke(false);
-                return;
-            }
-
-            var databaseAssetName = GetDatabaseAssetName();
-
-            if (string.IsNullOrWhiteSpace(databaseAssetName))
-            {
-                Debug.LogError($"The name of Master Database Asset must not be empty or contain only white spaces.");
-                resultCallback?.Invoke(false);
-                return;
-            }
-
-            var args = new ExportArgs {
-                SheetContainer = CreateSheetContainer(),
-                DatabaseAssetName = databaseAssetName,
-                CsvFolderPath = FullCsvFolderPath,
-                AssetOutputFolderPath = AssetOutputFolderPath,
-                ShowProgress = false,
-                ResultCallback = resultCallback,
-            };
-
-            EditorCoroutineUtility.StartCoroutine(Export(args), this);
-        }
-
         protected virtual IEnumerator Export(ExportArgs args)
         {
 #if USE_CYSHARP_UNITASK && USE_UNITY_EDITORCOROUTINES
@@ -69,6 +32,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
             var converter = new DatabaseCsvSheetConverter(
                   args.CsvFolderPath
                 , TimeZoneInfo.Utc
+                , includeSubFolders: args.IncludeSubFolders
             );
 
             ShowProgress(args, "Importing all CSV files...");
@@ -132,6 +96,8 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
 
             public string CsvFolderPath { get; set; }
 
+            public bool IncludeSubFolders { get; set; }
+
             public string AssetOutputFolderPath { get; set; }
 
             public bool ShowProgress { get; set; }
@@ -146,6 +112,9 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
         internal string _relativeCsvFolderPath;
 
         [SerializeField]
+        internal bool _includeSubFolders = true;
+
+        [SerializeField]
         internal string _relativeOutputFolderPath;
 
         public string FullCsvFolderPath
@@ -153,6 +122,9 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
 
         public bool CsvFolderPathExist
             => Directory.Exists(FullCsvFolderPath);
+
+        public bool IncludeSubFolders
+            => _includeSubFolders;
 
         public string FullOutputFolderPath
             => Path.GetFullPath(Path.Combine(Application.dataPath, _relativeOutputFolderPath ?? ""));
@@ -180,7 +152,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
 
         public abstract void ExportDataTableAssets(Action<bool> resultCallback);
 
-        public abstract void ExportAllAssets();
+        public abstract void ExportDataTableAssets();
 
         public abstract void LocateDatabaseAsset();
     }

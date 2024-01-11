@@ -13,4 +13,5 @@ MonoBehaviour:
   m_Name: SampleDatabaseCsvSheetConfig
   m_EditorClassIdentifier: 
   _relativeCsvFolderPath: Samples.Authoring/CsvSheets/sample-csv
+  _includeSubFolders: 1
   _relativeOutputFolderPath: Samples.Assets/FromCsvSheets
