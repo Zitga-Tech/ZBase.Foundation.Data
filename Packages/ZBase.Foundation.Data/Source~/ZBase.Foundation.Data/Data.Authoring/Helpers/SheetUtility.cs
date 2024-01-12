@@ -7,6 +7,8 @@
             if (string.IsNullOrWhiteSpace(name))
                 return false;
 
+            name = name.Trim();
+
             return name.StartsWith('$') == false
                 && name.StartsWith('<') == false
                 && name.EndsWith('>') == false
@@ -17,6 +19,8 @@
         {
             if (string.IsNullOrWhiteSpace(name))
                 return string.Empty;
+
+            name = name.Trim();
 
             if (name.StartsWith('<') || name.EndsWith('>'))
             {
@@ -30,6 +34,8 @@
         {
             if (string.IsNullOrWhiteSpace(name))
                 return $"${index}";
+
+            name = name.Trim();
 
             if (name.StartsWith('<') || name.EndsWith('>'))
             {
