@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -33,6 +34,21 @@ namespace ZBase.Foundation.Data.Authoring
                 .CreateScoped(new[] { DriveService.Scope.DriveReadonly });
 
             _fileSystem = fileSystem ?? new DatabaseFileSystem();
+        }
+
+        public async Task<DateTime> FetchModifiedTime()
+        {
+            using (var service = new DriveService(new BaseClientService.Initializer() {
+                HttpClientInitializer = _credential
+            }))
+            {
+                var fileReq = service.Files.Get(_gsheetAddress);
+                fileReq.SupportsTeamDrives = true;
+                fileReq.Fields = "modifiedTime";
+
+                var file = await fileReq.ExecuteAsync();
+                return file.ModifiedTime ?? default;
+            }
         }
 
         public async Task Export(
