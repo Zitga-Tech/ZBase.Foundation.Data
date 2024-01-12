@@ -77,9 +77,10 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
                         EditorGUILayout.EndHorizontal();
 
                         DrawProperty(config, _includeSubFolders, _labelIncludeSubFolders);
+
+                        EditorGUILayout.EndVertical();
                     }
                 }
-                EditorGUILayout.EndVertical();
             }
 
             EditorGUILayout.Space();
@@ -111,9 +112,9 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
                     if (openFolderPanel == false)
                     {
                         EditorGUILayout.EndHorizontal();
+                        EditorGUILayout.EndVertical();
                     }
                 }
-                EditorGUILayout.EndVertical();
 
                 EditorGUILayout.Space();
                 EditorGUILayout.BeginHorizontal();
@@ -121,19 +122,31 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
                     var color = GUI.color;
                     GUI.color = Color.green;
 
+                    var enabled = GUI.enabled;
+                    GUI.enabled = enabled
+                        && config.CsvFolderPathExist
+                        && config.OutputFolderExist
+                        ;
+
                     if (GUILayout.Button("Export All Assets", GUILayout.Height(25)))
                     {
                         config.ExportDataTableAssets();
                     }
 
+                    GUI.enabled = enabled;
                     GUI.color = color;
                 }
 
                 {
+                    var enabled = GUI.enabled;
+                    GUI.enabled = enabled && config.DatabaseFileExist;
+
                     if (GUILayout.Button("Locate Database Asset", GUILayout.Height(25)))
                     {
                         config.LocateDatabaseAsset();
                     }
+
+                    GUI.enabled = enabled;
                 }
                 EditorGUILayout.EndHorizontal();
             }

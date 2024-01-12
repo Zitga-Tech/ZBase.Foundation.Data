@@ -10,10 +10,6 @@ using UnityEngine;
 using Cysharp.Threading.Tasks;
 #endif
 
-#if USE_UNITY_EDITORCOROUTINES
-using Unity.EditorCoroutines.Editor;
-#endif
-
 namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 {
     public abstract partial class DatabaseGoogleSheetConfig<TSheetContainer>
