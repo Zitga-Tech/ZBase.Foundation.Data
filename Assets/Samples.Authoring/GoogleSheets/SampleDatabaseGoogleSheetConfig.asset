@@ -19,3 +19,4 @@ MonoBehaviour:
   _relativeCsvOutputFolderPath: Samples.Authoring/CsvSheets/sample-csv
   _csvFolderPerSpreadsheet: 1
   _cleanCsvOutputFolder: 1
+  _commentOutFileNameIfPossible: 1

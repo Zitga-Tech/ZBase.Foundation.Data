@@ -8,7 +8,9 @@ namespace ZBase.Foundation.Data.Authoring
     {
         IEnumerable<string> GetFiles(string path, string extension, bool includeSubFolders);
 
-        void Delete(string path, bool recursive = false);
+        void DeleteDirectory(string path, bool recursive = true);
+
+        bool DirectoryExists(string path);
     }
 
     public class DatabaseFileSystem : FileSystem, IExtendedFileSystem
@@ -19,9 +21,14 @@ namespace ZBase.Foundation.Data.Authoring
             return Directory.GetFiles(path, "*." + extension, option);
         }
 
-        public virtual void Delete(string path, bool recursive = false)
+        public virtual void DeleteDirectory(string path, bool recursive = true)
         {
             Directory.Delete(path, recursive);
+        }
+
+        public virtual bool DirectoryExists(string path)
+        {
+            return Directory.Exists(path);
         }
     }
 }

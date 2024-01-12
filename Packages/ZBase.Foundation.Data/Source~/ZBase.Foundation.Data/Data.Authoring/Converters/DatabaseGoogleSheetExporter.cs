@@ -39,6 +39,7 @@ namespace ZBase.Foundation.Data.Authoring
               string savePath
             , bool spreadsheetAsFolder = true
             , bool cleanOutputFolder = true
+            , ITransformFileName fileNameTransformer = null
         )
         {
             if (_isLoaded == false)
@@ -55,17 +56,18 @@ namespace ZBase.Foundation.Data.Authoring
                 _isLoaded = true;
             }
 
+            var spreadsheetName = SheetUtility.ToFileName(_spreadsheet.Properties.Title);
             var outputPath = spreadsheetAsFolder
-                ? Path.Combine(savePath, SheetUtility.ToFileName(_spreadsheet.Properties.Title))
+                ? Path.Combine(savePath, spreadsheetName)
                 : savePath;
 
             var fileSystem = _fileSystem;
-            
-            if (cleanOutputFolder && fileSystem.Exists(outputPath))
+
+            if (cleanOutputFolder && fileSystem.DirectoryExists(outputPath))
             {
-                fileSystem.Delete(outputPath);
+                fileSystem.DeleteDirectory(outputPath, true);
             }
-            
+
             fileSystem.CreateDirectory(outputPath);
 
             var sheets = _spreadsheet.Sheets;
@@ -81,7 +83,21 @@ namespace ZBase.Foundation.Data.Authoring
                     continue;
                 }
 
-                var fileName = SheetUtility.ToFileName(gSheet.Properties.Title, i);
+                var sheetName = SheetUtility.ToFileName(gSheet.Properties.Title, i);
+                string fileName;
+
+                if (fileNameTransformer != null)
+                {
+                    fileName = fileNameTransformer.Transform(new ITransformFileName.Args {
+                        spreadsheetName = spreadsheetName,
+                        sheetName = sheetName,
+                    });
+                }
+                else
+                {
+                    fileName = sheetName;
+                }
+
                 var file = Path.Combine(outputPath, $"{fileName}.csv");
 
                 using (var stream = fileSystem.OpenWrite(file))
@@ -144,6 +160,17 @@ namespace ZBase.Foundation.Data.Authoring
             }
 
             return result;
+        }
+
+        public interface ITransformFileName
+        {
+            string Transform(Args args);
+
+            public struct Args
+            {
+                public string spreadsheetName;
+                public string sheetName;
+            }
         }
     }
 }

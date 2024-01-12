@@ -14,6 +14,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
         private SerializedProperty _relativeCsvOutputFolderPath;
         private SerializedProperty _csvFolderPerSpreadsheet;
         private SerializedProperty _cleanCsvOutputFolder;
+        private SerializedProperty _commentOutFileNameIfPossible;
 
         private GUIContent _labelServiceAccountFilePath;
         private GUIContent _labelSpreadsheetIdFilePath;
@@ -21,6 +22,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
         private GUIContent _labelOutputFolderPath;
         private GUIContent _labelCsvFolderPerSpreadsheet;
         private GUIContent _labelCleanCsvOutputFolder;
+        private GUIContent _labelCommentOutFileNameIfPossible;
 
         private void OnEnable()
         {
@@ -33,6 +35,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
             _relativeCsvOutputFolderPath = so.FindProperty(nameof(DatabaseGoogleSheetConfigBase._relativeCsvOutputFolderPath));
             _csvFolderPerSpreadsheet = so.FindProperty(nameof(DatabaseGoogleSheetConfigBase._csvFolderPerSpreadsheet));
             _cleanCsvOutputFolder = so.FindProperty(nameof(DatabaseGoogleSheetConfigBase._cleanCsvOutputFolder));
+            _commentOutFileNameIfPossible = so.FindProperty(nameof(DatabaseGoogleSheetConfigBase._commentOutFileNameIfPossible));
 
             _labelServiceAccountFilePath = new GUIContent(
                   "Service Account File Path"
@@ -62,6 +65,11 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
             _labelCleanCsvOutputFolder = new GUIContent(
                   "Clean Output Folder"
                 , "Delete the output folder before exporting."
+            );
+
+            _labelCommentOutFileNameIfPossible = new GUIContent(
+                  "Comment Out File Name If Possible"
+                , "If the name of a Spreadsheet is commented out, all CSV files exported from it would be commented out too."
             );
         }
 
@@ -101,9 +109,9 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
                     if (openFilePanel == false)
                     {
                         EditorGUILayout.EndHorizontal();
+                        EditorGUILayout.EndVertical();
                     }
                 }
-                EditorGUILayout.EndVertical();
 
                 EditorGUILayout.Space();
                 EditorGUILayout.BeginVertical();
@@ -134,7 +142,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 
                         DrawProperty(config, _listOfSpreadsheets, _labelListOfSpreadsheets);
 
-                        if (_listOfSpreadsheets.boolValue)
+                        if (config.ListOfSpreadsheets)
                         {
                             EditorGUILayout.HelpBox(
                                   "The sheet must be named `files` and must contain these columns:\n"
@@ -145,9 +153,10 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
                                 , MessageType.Info
                             );
                         }
+
+                        EditorGUILayout.EndVertical();
                     }
                 }
-                EditorGUILayout.EndVertical();
             }
 
             EditorGUILayout.Space();
@@ -179,9 +188,9 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
                     if (openFolderPanel == false)
                     {
                         EditorGUILayout.EndHorizontal();
+                        EditorGUILayout.EndVertical();
                     }
                 }
-                EditorGUILayout.EndVertical();
 
                 EditorGUILayout.Space();
                 EditorGUILayout.BeginHorizontal();
@@ -189,19 +198,32 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
                     var color = GUI.color;
                     GUI.color = Color.green;
 
+                    var enabled = GUI.enabled;
+                    GUI.enabled = enabled
+                        && config.ServiceAccountFileExist
+                        && config.SpreadsheetIdFilePathExist
+                        && config.AssetOutputFolderExist
+                        ;
+
                     if (GUILayout.Button("Export All Assets", GUILayout.Height(25)))
                     {
                         config.ExportDataTableAssets();
                     }
 
+                    GUI.enabled = enabled;
                     GUI.color = color;
                 }
 
                 {
+                    var enabled = GUI.enabled;
+                    GUI.enabled = enabled && config.DatabaseFileExist;
+
                     if (GUILayout.Button("Locate Database Asset", GUILayout.Height(25)))
                     {
                         config.LocateDatabaseAsset();
                     }
+
+                    GUI.enabled = enabled;
                 }
                 EditorGUILayout.EndHorizontal();
             }
@@ -238,17 +260,28 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 
                         DrawProperty(config, _csvFolderPerSpreadsheet, _labelCsvFolderPerSpreadsheet);
                         DrawProperty(config, _cleanCsvOutputFolder, _labelCleanCsvOutputFolder);
+                        DrawProperty(config, _commentOutFileNameIfPossible, _labelCommentOutFileNameIfPossible);
+
+                        EditorGUILayout.EndVertical();
                     }
                 }
-                EditorGUILayout.EndVertical();
 
                 EditorGUILayout.Space();
                 EditorGUILayout.BeginHorizontal();
                 {
+                    var enabled = GUI.enabled;
+                    GUI.enabled = enabled
+                        && config.ServiceAccountFileExist
+                        && config.SpreadsheetIdFilePathExist
+                        && config.CsvOutputFolderExist
+                        ;
+
                     if (GUILayout.Button("Export To CSV Files", GUILayout.Height(25)))
                     {
                         config.ExportCsvFiles();
                     }
+
+                    GUI.enabled = enabled;
                 }
                 EditorGUILayout.EndHorizontal();
             }

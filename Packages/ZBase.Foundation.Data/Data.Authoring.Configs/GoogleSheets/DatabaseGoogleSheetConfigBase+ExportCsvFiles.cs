@@ -7,9 +7,9 @@ using Unity.EditorCoroutines.Editor;
 
 namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 {
-    partial class DatabaseGoogleSheetConfig<TDatabaseAsset, TSheetContainer>
+    partial class DatabaseGoogleSheetConfigBase
     {
-        public override void ExportCsvFiles(Action<bool> resultCallback)
+        public virtual void ExportCsvFiles(Action<bool> resultCallback)
         {
             if (ServiceAccountFileExist == false)
             {
@@ -39,6 +39,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
                 OutputFolderPath = CsvOutputFolderPath,
                 FolderPerSpreadsheet = CsvFolderPerSpreadsheet,
                 CleanOutputFolder = CleanCsvOutputFolder,
+                CommentOutFileNameIfPossible = CommentOutFileNameIfPossible,
                 ShowProgress = false,
                 ResultCallback = resultCallback,
             };
@@ -46,7 +47,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
             EditorCoroutineUtility.StartCoroutine(Export(args), this);
         }
 
-        public override void ExportCsvFiles()
+        public virtual void ExportCsvFiles()
         {
 #if USE_CYSHARP_UNITASK && USE_UNITY_EDITORCOROUTINES
 
@@ -75,6 +76,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
                 OutputFolderPath = CsvOutputFolderPath,
                 FolderPerSpreadsheet = CsvFolderPerSpreadsheet,
                 CleanOutputFolder = CleanCsvOutputFolder,
+                CommentOutFileNameIfPossible = CommentOutFileNameIfPossible,
                 ShowProgress = true,
             };
 
