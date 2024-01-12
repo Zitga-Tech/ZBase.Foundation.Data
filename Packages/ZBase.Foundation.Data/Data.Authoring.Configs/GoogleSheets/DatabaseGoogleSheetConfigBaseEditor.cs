@@ -269,7 +269,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
                         DrawProperty(config, _csvFolderPerSpreadsheet, _labelCsvFolderPerSpreadsheet);
                         DrawProperty(config, _cleanCsvOutputFolder, _labelCleanCsvOutputFolder);
 
-                        if (config.CsvFolderPerSpreadsheet)
+                        if (config.CsvFolderPerSpreadsheet && config.CleanCsvOutputFolder == false)
                         {
                             DrawProperty(config, _cleanCsvOutputSubFolders, _labelCleanCsvOutputSubFolders);
                         }
