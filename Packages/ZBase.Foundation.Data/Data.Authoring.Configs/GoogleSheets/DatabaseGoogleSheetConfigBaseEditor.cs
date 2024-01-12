@@ -14,6 +14,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
         private SerializedProperty _relativeCsvOutputFolderPath;
         private SerializedProperty _csvFolderPerSpreadsheet;
         private SerializedProperty _cleanCsvOutputFolder;
+        private SerializedProperty _cleanCsvOutputSubFolders;
         private SerializedProperty _commentOutFileNameIfPossible;
 
         private GUIContent _labelServiceAccountFilePath;
@@ -22,6 +23,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
         private GUIContent _labelOutputFolderPath;
         private GUIContent _labelCsvFolderPerSpreadsheet;
         private GUIContent _labelCleanCsvOutputFolder;
+        private GUIContent _labelCleanCsvOutputSubFolders;
         private GUIContent _labelCommentOutFileNameIfPossible;
 
         private void OnEnable()
@@ -35,6 +37,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
             _relativeCsvOutputFolderPath = so.FindProperty(nameof(DatabaseGoogleSheetConfigBase._relativeCsvOutputFolderPath));
             _csvFolderPerSpreadsheet = so.FindProperty(nameof(DatabaseGoogleSheetConfigBase._csvFolderPerSpreadsheet));
             _cleanCsvOutputFolder = so.FindProperty(nameof(DatabaseGoogleSheetConfigBase._cleanCsvOutputFolder));
+            _cleanCsvOutputSubFolders = so.FindProperty(nameof(DatabaseGoogleSheetConfigBase._cleanCsvOutputSubFolders));
             _commentOutFileNameIfPossible = so.FindProperty(nameof(DatabaseGoogleSheetConfigBase._commentOutFileNameIfPossible));
 
             _labelServiceAccountFilePath = new GUIContent(
@@ -65,6 +68,11 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
             _labelCleanCsvOutputFolder = new GUIContent(
                   "Clean Output Folder"
                 , "Delete the output folder before exporting."
+            );
+            
+            _labelCleanCsvOutputSubFolders = new GUIContent(
+                  "Clean Output Sub-folders"
+                , "Delete the output sub-folder before exporting."
             );
 
             _labelCommentOutFileNameIfPossible = new GUIContent(
@@ -260,6 +268,12 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 
                         DrawProperty(config, _csvFolderPerSpreadsheet, _labelCsvFolderPerSpreadsheet);
                         DrawProperty(config, _cleanCsvOutputFolder, _labelCleanCsvOutputFolder);
+
+                        if (config.CsvFolderPerSpreadsheet)
+                        {
+                            DrawProperty(config, _cleanCsvOutputSubFolders, _labelCleanCsvOutputSubFolders);
+                        }
+
                         DrawProperty(config, _commentOutFileNameIfPossible, _labelCommentOutFileNameIfPossible);
 
                         EditorGUILayout.EndVertical();

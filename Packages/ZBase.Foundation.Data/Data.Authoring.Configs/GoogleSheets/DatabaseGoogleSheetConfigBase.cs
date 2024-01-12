@@ -36,6 +36,9 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
         internal bool _cleanCsvOutputFolder = true;
 
         [SerializeField]
+        internal bool _cleanCsvOutputSubFolders = true;
+
+        [SerializeField]
         internal bool _commentOutFileNameIfPossible = true;
 
         public string ServiceAccountFilePath
@@ -89,6 +92,9 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 
         public bool CleanCsvOutputFolder
             => _cleanCsvOutputFolder;
+
+        public bool CleanCsvOutputSubFolders
+            => _cleanCsvOutputSubFolders;
 
         public bool CommentOutFileNameIfPossible
             => _commentOutFileNameIfPossible;
@@ -229,7 +235,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
                     await exporter.Export(
                           args.OutputFolderPath
                         , args.FolderPerSpreadsheet
-                        , args.CleanOutputFolder
+                        , args.CleanOutputSubFolders
                         , transformer
                     );
                 }
@@ -286,6 +292,8 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
             public bool FolderPerSpreadsheet { get; set; }
 
             public bool CleanOutputFolder { get; set; }
+
+            public bool CleanOutputSubFolders { get; set; }
 
             public bool CommentOutFileNameIfPossible { get; set; }
         }

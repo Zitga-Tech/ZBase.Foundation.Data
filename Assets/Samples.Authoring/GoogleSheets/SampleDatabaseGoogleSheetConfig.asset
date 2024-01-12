@@ -18,5 +18,6 @@ MonoBehaviour:
   _relativeAssetOutputFolderPath: Samples.Assets/FromGoogleSheets
   _relativeCsvOutputFolderPath: Samples.Authoring/CsvSheets/sample-csv
   _csvFolderPerSpreadsheet: 1
-  _cleanCsvOutputFolder: 1
+  _cleanCsvOutputFolder: 0
+  _cleanCsvOutputSubFolders: 1
   _commentOutFileNameIfPossible: 1

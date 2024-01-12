@@ -39,6 +39,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
                 OutputFolderPath = CsvOutputFolderPath,
                 FolderPerSpreadsheet = CsvFolderPerSpreadsheet,
                 CleanOutputFolder = CleanCsvOutputFolder,
+                CleanOutputSubFolders = CleanCsvOutputSubFolders,
                 CommentOutFileNameIfPossible = CommentOutFileNameIfPossible,
                 ShowProgress = false,
                 ResultCallback = resultCallback,
@@ -76,6 +77,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
                 OutputFolderPath = CsvOutputFolderPath,
                 FolderPerSpreadsheet = CsvFolderPerSpreadsheet,
                 CleanOutputFolder = CleanCsvOutputFolder,
+                CleanOutputSubFolders = CleanCsvOutputSubFolders,
                 CommentOutFileNameIfPossible = CommentOutFileNameIfPossible,
                 ShowProgress = true,
             };
