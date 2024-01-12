@@ -70,7 +70,6 @@ namespace ZBase.Foundation.Data.Authoring
 
         protected override Task<bool> LoadData()
         {
-            UnityEngine.Debug.Log($"{_loadPath} :: {_extension} :: {_includeSubFolders}");
             var files = _fileSystem.GetFiles(_loadPath, _extension, _includeSubFolders);
 
             _pages.Clear();
@@ -78,7 +77,7 @@ namespace ZBase.Foundation.Data.Authoring
             foreach (var file in files)
             {
                 var fileName = Path.GetFileNameWithoutExtension(file);
-                UnityEngine.Debug.Log($"{fileName} :: {file}");
+                
                 if (SheetUtility.ValidateSheetName(fileName) == false)
                 {
                     continue;
