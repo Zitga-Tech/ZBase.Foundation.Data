@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Text;
 using System.Threading;
 using ZBase.Foundation.SourceGen;
 
@@ -28,6 +29,8 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
         public INamedTypeSymbol Symbol { get; }
 
+        public string ClassName { get; }
+
         public bool IsMutable { get; }
 
         public bool ReferenceUnityEngine { get; }
@@ -51,6 +54,32 @@ namespace ZBase.Foundation.Data.DataSourceGen
             Syntax = candidate;
             Symbol = semanticModel.GetDeclaredSymbol(candidate, token);
             IsMutable = Symbol.HasAttribute(DATA_MUTABLE_ATTRIBUTE);
+
+            var classNameSb = new StringBuilder(Syntax.Identifier.Text);
+
+            if (candidate.TypeParameterList is TypeParameterListSyntax typeParamList
+                && typeParamList.Parameters.Count > 0
+            )
+            {
+                classNameSb.Append("<");
+
+                var typeParams = typeParamList.Parameters;
+                var last = typeParams.Count - 1;
+
+                for (var i = 0; i <= last; i++)
+                {
+                    classNameSb.Append(typeParams[i].Identifier.Text);
+
+                    if (i < last)
+                    {
+                        classNameSb.Append(", ");
+                    }
+                }
+
+                classNameSb.Append(">");
+            }
+
+            ClassName = classNameSb.ToString();
 
             foreach (var assembly in Symbol.ContainingModule.ReferencedAssemblySymbols)
             {

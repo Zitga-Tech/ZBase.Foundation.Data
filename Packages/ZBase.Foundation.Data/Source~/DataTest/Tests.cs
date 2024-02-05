@@ -43,6 +43,12 @@ namespace MyGame
         private int _atk;
     }
 
+    public partial class GenericData<T> : IData
+    {
+        [DataProperty]
+        public int Id => Get_Id();
+    }
+
     public partial struct StatMultiplierData : IData
     {
         [SerializeField]
@@ -144,6 +150,12 @@ namespace MyGame.Enemies
     public partial class NewEnemyDataTableAsset : EnemyDataTableAsset<EnemyData>
     {
     }
+
+    public abstract class GenericDataTableAsset<T> : DataTableAsset<int, GenericData<T>>
+    {
+    }
+
+    public partial class GenericDataTableAsset : GenericDataTableAsset<int> { }
 }
 
 #if UNITY_EDITOR

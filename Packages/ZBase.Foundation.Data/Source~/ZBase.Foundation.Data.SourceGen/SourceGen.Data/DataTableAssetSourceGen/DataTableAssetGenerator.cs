@@ -50,6 +50,13 @@ namespace ZBase.Foundation.Data.DataTableAssetSourceGen
                 return null;
             }
 
+            if (classSyntax.TypeParameterList is TypeParameterListSyntax typeParamList
+                && typeParamList.Parameters.Count > 0
+            )
+            {
+                return null;
+            }
+
             var semanticModel = context.SemanticModel;
             var symbol = semanticModel.GetDeclaredSymbol(classSyntax, token);
 

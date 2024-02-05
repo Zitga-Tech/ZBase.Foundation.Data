@@ -21,8 +21,8 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
             p.PrintLine("[global::System.Serializable]");
             p.PrintBeginLine()
-                .Print($"partial {keyword} ").Print(Syntax.Identifier.Text)
-                .Print($" : global::System.IEquatable<{Syntax.Identifier.Text}>")
+                .Print($"partial {keyword} ").Print(ClassName)
+                .Print($" : global::System.IEquatable<{ClassName}>")
                 .PrintEndLine();
             p.OpenScope();
             {
@@ -227,7 +227,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
             p.PrintLine("public override bool Equals(object obj)");
             p.OpenScope();
             {
-                p.PrintLine($"return obj is {Syntax.Identifier.Text} other && Equals(other);");
+                p.PrintLine($"return obj is {ClassName} other && Equals(other);");
             }
             p.CloseScope();
             p.PrintEndLine();
@@ -240,7 +240,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 return;
             }
 
-            p.PrintLine($"public bool Equals({Syntax.Identifier.Text} other)");
+            p.PrintLine($"public bool Equals({ClassName} other)");
             p.OpenScope();
             {
                 if (Symbol.IsValueType == false)
