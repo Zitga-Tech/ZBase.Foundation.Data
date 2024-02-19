@@ -16,8 +16,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public const string GENERATOR_NAME = nameof(DatabaseGenerator);
         public const string IDATA = "global::ZBase.Foundation.Data.IData";
         public const string DATABASE_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.DatabaseAttribute";
-        public const string LIST_TYPE_T = "global::System.Collections.Generic.List<";
-        public const string DICTIONARY_TYPE_T = "global::System.Collections.Generic.Dictionary<";
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
@@ -308,31 +306,14 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             {
                 foreach (var memberRef in memberRefs)
                 {
-                    if (memberRef.Type is IArrayTypeSymbol arrayType)
+                    if (memberRef.CollectionKeyType != null)
                     {
-                        queue.Enqueue(arrayType.ElementType);
-                        continue;
+                        queue.Enqueue(memberRef.CollectionKeyType);
                     }
-                    
-                    if (memberRef.Type is INamedTypeSymbol namedType)
+
+                    if (memberRef.CollectionElementType != null)
                     {
-                        var typeFullName = memberRef.Type.ToFullName();
-
-                        if (typeFullName.StartsWith(LIST_TYPE_T)
-                            || typeFullName.StartsWith(DICTIONARY_TYPE_T)
-                        )
-                        {
-                            foreach (var typeArg in namedType.TypeArguments)
-                            {
-                                queue.Enqueue(typeArg);
-                            }
-                        }
-                        else
-                        {
-                            queue.Enqueue(namedType);
-                        }
-
-                        continue;
+                        queue.Enqueue(memberRef.CollectionElementType);
                     }
 
                     {
