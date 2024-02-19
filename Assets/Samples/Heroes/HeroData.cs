@@ -1,20 +1,20 @@
-using UnityEngine;
+using System;
 using ZBase.Foundation.Data;
 
 namespace Samples
 {
     public partial class HeroData : IData
     {
-        [SerializeField]
-        private IdData _id;
+        [DataProperty]
+        public IdData Id => Get_Id();
 
-        [SerializeField]
-        private string _name;
+        [DataProperty]
+        public string Name => Get_Name();
 
-        [SerializeField]
-        private StatData _stat;
+        [DataProperty]
+        public StatData Stat => Get_Stat();
 
-        [SerializeField]
-        private StatMultiplierData[] _multipliers;
+        [DataProperty]
+        public ReadOnlyMemory<StatMultiplierData> Multipliers => Get_Multipliers();
     }
 }

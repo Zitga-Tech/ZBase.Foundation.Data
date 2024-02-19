@@ -70,11 +70,9 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     p.PrintLine($"[{SERIALIZE_FIELD_ATTRIBUTE}]");
                 }
 
-                var typeName = prop.Type.ToFullName();
+                var typeName = GetPropertyTypeName(prop);
 
-                p.PrintBeginLine("private ");
-                WritePropertyType(ref p, prop, typeName);
-                p.PrintEndLine($" {prop.FieldName};");
+                p.PrintLine($"private {typeName} {prop.FieldName};");
                 p.PrintEndLine();
 
                 p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
@@ -87,50 +85,13 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 p.PrintEndLine();
 
                 p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
-                p.PrintBeginLine($"private void Set_{prop.Property.Name}(");
-                WritePropertyType(ref p, prop, typeName);
-                p.PrintEndLine($" value)");
+                p.PrintLine($"private void Set_{prop.Property.Name}({typeName} value)");
                 p.OpenScope();
                 {
                     p.PrintLine($"this.{fieldName} = value;");
                 }
                 p.CloseScope();
                 p.PrintEndLine();
-            }
-        }
-
-        private static void WritePropertyType(ref Printer p, PropertyRef prop, string typeName)
-        {
-            switch (prop.CollectionKind)
-            {
-                case CollectionKind.ReadOnlyMemory:
-                case CollectionKind.Memory:
-                case CollectionKind.ReadOnlySpan:
-                case CollectionKind.Span:
-                {
-                    p.Print($"{prop.CollectionElementType.ToFullName()}[]");
-                    break;
-                }
-
-                case CollectionKind.ReadOnlyList:
-                {
-                    p.Print($"{LIST_TYPE_T}{prop.CollectionElementType.ToFullName()}>");
-                    break;
-                }
-
-                case CollectionKind.ReadOnlyDictionary:
-                {
-                    var keyType = prop.CollectionKeyType.ToFullName();
-                    var valueType = prop.CollectionElementType.ToFullName();
-                    p.Print($"{DICTIONARY_TYPE_T}{keyType}, {valueType}>");
-                    break;
-                }
-
-                default:
-                {
-                    p.Print(typeName);
-                    break;
-                }
             }
         }
 
