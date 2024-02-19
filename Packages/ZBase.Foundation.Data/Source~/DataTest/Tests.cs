@@ -73,6 +73,7 @@ namespace MyGame.Heroes
     using ZBase.Foundation.Data;
     using UnityEngine;
     using System.Collections.Generic;
+    using System;
 
     public partial class HeroData : IData
     {
@@ -94,11 +95,11 @@ namespace MyGame.Heroes
         [SerializeField]
         private Dictionary<int, string> _stringMap;
 
-        [SerializeField]
-        private StatMultiplierData[] _multipliers;
+        [DataProperty]
+        public ReadOnlyMemory<StatMultiplierData> Multipliers => Get_Multipliers();
 
-        [SerializeField]
-        private StatMultiplierData[] _multipliersX;
+        [DataProperty]
+        public ReadOnlyMemory<StatMultiplierData> MultipliersX => Get_MultipliersX();
 
         [SerializeField]
         private List<StatMultiplierData> _abc;

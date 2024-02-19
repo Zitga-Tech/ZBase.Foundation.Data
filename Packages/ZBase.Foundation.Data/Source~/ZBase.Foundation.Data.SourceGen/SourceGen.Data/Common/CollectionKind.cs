@@ -9,5 +9,11 @@
         HashSet,
         Queue,
         Stack,
+        ReadOnlyMemory,
+        Memory,
+        ReadOnlySpan,
+        Span,
+        ReadOnlyList,
+        ReadOnlyDictionary,
     }
 }

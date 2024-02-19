@@ -25,6 +25,13 @@ namespace ZBase.Foundation.Data.DataSourceGen
         public const string QUEUE_TYPE_T = "global::System.Collections.Generic.Queue<";
         public const string STACK_TYPE_T = "global::System.Collections.Generic.Stack<";
 
+        public const string IREADONLY_LIST_TYPE_T = "global::System.Collections.Generic.IReadOnlyList<";
+        public const string IREADONLY_DICTIONARY_TYPE_T = "global::System.Collections.Generic.IReadOnlyDictionary<";
+        public const string READONLY_MEMORY_TYPE_T = "global::System.ReadOnlyMemory<";
+        public const string READONLY_SPAN_TYPE_T = "global::System.ReadOnlySpan<";
+        public const string MEMORY_TYPE_T = "global::System.Memory<";
+        public const string SPAN_TYPE_T = "global::System.Span<";
+
         public TypeDeclarationSyntax Syntax { get; }
 
         public INamedTypeSymbol Symbol { get; }
@@ -220,11 +227,14 @@ namespace ZBase.Foundation.Data.DataSourceGen
                         continue;
                     }
 
+                    var checkAutoCollectionType = false;
+
                     if (attribute.ConstructorArguments.Length < 1
                         || attribute.ConstructorArguments[0].Value is not ITypeSymbol fieldType
                     )
                     {
                         fieldType = property.Type;
+                        checkAutoCollectionType = true;
                     }
 
                     property.GatherForwardedAttributes(
@@ -244,6 +254,41 @@ namespace ZBase.Foundation.Data.DataSourceGen
                         FieldIsImplemented = existingFields.Contains(fieldName),
                         ForwardedFieldAttributes = fieldAttributes,
                     };
+
+                    if (checkAutoCollectionType && property.Type is INamedTypeSymbol namedType)
+                    {
+                        if (namedType.TryGetGenericType(READONLY_MEMORY_TYPE_T, 1, out var readMemoryType))
+                        {
+                            propRef.CollectionKind = CollectionKind.ReadOnlyMemory;
+                            propRef.CollectionElementType = readMemoryType.TypeArguments[0];
+                        }
+                        else if (namedType.TryGetGenericType(MEMORY_TYPE_T, 1, out var memoryType))
+                        {
+                            propRef.CollectionKind = CollectionKind.Memory;
+                            propRef.CollectionElementType = memoryType.TypeArguments[0];
+                        }
+                        else if (namedType.TryGetGenericType(READONLY_SPAN_TYPE_T, 1, out var readSpanType))
+                        {
+                            propRef.CollectionKind = CollectionKind.ReadOnlySpan;
+                            propRef.CollectionElementType = readSpanType.TypeArguments[0];
+                        }
+                        else if (namedType.TryGetGenericType(SPAN_TYPE_T, 1, out var spanType))
+                        {
+                            propRef.CollectionKind = CollectionKind.Span;
+                            propRef.CollectionElementType = spanType.TypeArguments[0];
+                        }
+                        else if (namedType.TryGetGenericType(IREADONLY_LIST_TYPE_T, 1, out var readListType))
+                        {
+                            propRef.CollectionKind = CollectionKind.ReadOnlyList;
+                            propRef.CollectionElementType = readListType.TypeArguments[0];
+                        }
+                        else if (namedType.TryGetGenericType(IREADONLY_DICTIONARY_TYPE_T, 2, out var readDictType))
+                        {
+                            propRef.CollectionKind = CollectionKind.ReadOnlyDictionary;
+                            propRef.CollectionKeyType = readDictType.TypeArguments[0];
+                            propRef.CollectionElementType = readDictType.TypeArguments[1];
+                        }
+                    }
 
                     propArrayBuilder.Add(propRef);
                     continue;
@@ -274,6 +319,10 @@ namespace ZBase.Foundation.Data.DataSourceGen
             public ITypeSymbol Type { get; set; }
 
             public CollectionKind CollectionKind { get; set; }
+
+            public ITypeSymbol CollectionKeyType { get; set; }
+
+            public ITypeSymbol CollectionElementType { get; set; }
         }
 
         public class FieldRef : MemberRef
@@ -283,10 +332,6 @@ namespace ZBase.Foundation.Data.DataSourceGen
             public string PropertyName { get; set; }
 
             public bool PropertyIsImplemented { get; set; }
-
-            public ITypeSymbol CollectionElementType { get; set; }
-
-            public ITypeSymbol CollectionKeyType { get; set; }
 
             public ImmutableArray<AttributeInfo> ForwardedPropertyAttributes { get; set; }
         }
@@ -298,7 +343,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
             public string FieldName { get; set; }
 
             public bool FieldIsImplemented { get; set; }
-
+            
             public ImmutableArray<(string, AttributeInfo)> ForwardedFieldAttributes { get; set; }
         }
     }

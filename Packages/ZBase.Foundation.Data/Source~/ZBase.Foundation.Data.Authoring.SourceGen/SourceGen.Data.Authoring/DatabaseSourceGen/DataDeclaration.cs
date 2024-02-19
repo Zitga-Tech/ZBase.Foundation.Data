@@ -19,6 +19,13 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public const string STACK_TYPE_T = "global::System.Collections.Generic.Stack<";
         public const string VERTICAL_LIST_TYPE = "global::Cathei.BakingSheet.VerticalList<";
 
+        public const string IREADONLY_LIST_TYPE_T = "global::System.Collections.Generic.IReadOnlyList<";
+        public const string IREADONLY_DICTIONARY_TYPE_T = "global::System.Collections.Generic.IReadOnlyDictionary<";
+        public const string READONLY_MEMORY_TYPE_T = "global::System.ReadOnlyMemory<";
+        public const string READONLY_SPAN_TYPE_T = "global::System.ReadOnlySpan<";
+        public const string MEMORY_TYPE_T = "global::System.Memory<";
+        public const string SPAN_TYPE_T = "global::System.Span<";
+
         private const string GENERATED_PROPERTY_FROM_FIELD = "global::ZBase.Foundation.Data.SourceGen.GeneratedPropertyFromFieldAttribute";
         private const string GENERATED_FIELD_FROM_PROPERTY = "global::ZBase.Foundation.Data.SourceGen.GeneratedFieldFromPropertyAttribute";
         private const string AGGRESSIVE_INLINING = "[global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]";
@@ -210,6 +217,37 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     memberRef.CollectionKind = CollectionKind.Stack;
                     memberRef.CollectionElementType = stackType.TypeArguments[0];
+                }
+                else if (namedType.TryGetGenericType(READONLY_MEMORY_TYPE_T, 1, out var readMemoryType))
+                {
+                    memberRef.CollectionKind = CollectionKind.Array;
+                    memberRef.CollectionElementType = readMemoryType.TypeArguments[0];
+                }
+                else if (namedType.TryGetGenericType(MEMORY_TYPE_T, 1, out var memoryType))
+                {
+                    memberRef.CollectionKind = CollectionKind.Array;
+                    memberRef.CollectionElementType = memoryType.TypeArguments[0];
+                }
+                else if (namedType.TryGetGenericType(READONLY_SPAN_TYPE_T, 1, out var readSpanType))
+                {
+                    memberRef.CollectionKind = CollectionKind.Array;
+                    memberRef.CollectionElementType = readSpanType.TypeArguments[0];
+                }
+                else if (namedType.TryGetGenericType(SPAN_TYPE_T, 1, out var spanType))
+                {
+                    memberRef.CollectionKind = CollectionKind.Array;
+                    memberRef.CollectionElementType = spanType.TypeArguments[0];
+                }
+                else if (namedType.TryGetGenericType(IREADONLY_LIST_TYPE_T, 1, out var readListType))
+                {
+                    memberRef.CollectionKind = CollectionKind.List;
+                    memberRef.CollectionElementType = readListType.TypeArguments[0];
+                }
+                else if (namedType.TryGetGenericType(IREADONLY_DICTIONARY_TYPE_T, 2, out var readDictType))
+                {
+                    memberRef.CollectionKind = CollectionKind.Dictionary;
+                    memberRef.CollectionKeyType = readDictType.TypeArguments[0];
+                    memberRef.CollectionElementType = readDictType.TypeArguments[1];
                 }
             }
 

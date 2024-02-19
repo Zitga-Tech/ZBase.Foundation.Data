@@ -49,7 +49,6 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 }
 
                 var fieldName = prop.FieldName;
-                var typeName = prop.Type.ToFullName();
 
                 p.PrintLine(string.Format(GENERATED_FIELD_FROM_PROPERTY_ATTRIBUTE, prop.Property.Name));
                 p.PrintLine(GENERATED_CODE);
@@ -71,7 +70,11 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     p.PrintLine($"[{SERIALIZE_FIELD_ATTRIBUTE}]");
                 }
 
-                p.PrintLine($"private {typeName} {prop.FieldName};");
+                var typeName = prop.Type.ToFullName();
+
+                p.PrintBeginLine("private ");
+                WritePropertyType(ref p, prop, typeName);
+                p.PrintEndLine($" {prop.FieldName};");
                 p.PrintEndLine();
 
                 p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
@@ -84,7 +87,9 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 p.PrintEndLine();
 
                 p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
-                p.PrintLine($"private void Set_{prop.Property.Name}({typeName} value)");
+                p.PrintBeginLine($"private void Set_{prop.Property.Name}(");
+                WritePropertyType(ref p, prop, typeName);
+                p.PrintEndLine($" value)");
                 p.OpenScope();
                 {
                     p.PrintLine($"this.{fieldName} = value;");
@@ -92,8 +97,72 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 p.CloseScope();
                 p.PrintEndLine();
             }
+        }
 
-            p.PrintEndLine();
+        private static void WritePropertyType(ref Printer p, PropertyRef prop, string typeName)
+        {
+            switch (prop.CollectionKind)
+            {
+                case CollectionKind.ReadOnlyMemory:
+                case CollectionKind.Memory:
+                case CollectionKind.ReadOnlySpan:
+                case CollectionKind.Span:
+                {
+                    p.Print($"{prop.CollectionElementType.ToFullName()}[]");
+                    break;
+                }
+
+                case CollectionKind.ReadOnlyList:
+                {
+                    p.Print($"{LIST_TYPE_T}{prop.CollectionElementType.ToFullName()}>");
+                    break;
+                }
+
+                case CollectionKind.ReadOnlyDictionary:
+                {
+                    var keyType = prop.CollectionKeyType.ToFullName();
+                    var valueType = prop.CollectionElementType.ToFullName();
+                    p.Print($"{DICTIONARY_TYPE_T}{keyType}, {valueType}>");
+                    break;
+                }
+
+                default:
+                {
+                    p.Print(typeName);
+                    break;
+                }
+            }
+        }
+
+        private static string GetPropertyTypeName(PropertyRef prop)
+        {
+            switch (prop.CollectionKind)
+            {
+                case CollectionKind.ReadOnlyMemory:
+                case CollectionKind.Memory:
+                case CollectionKind.ReadOnlySpan:
+                case CollectionKind.Span:
+                {
+                    return $"{prop.CollectionElementType.ToFullName()}[]";
+                }
+
+                case CollectionKind.ReadOnlyList:
+                {
+                    return $"{LIST_TYPE_T}{prop.CollectionElementType.ToFullName()}>";
+                }
+
+                case CollectionKind.ReadOnlyDictionary:
+                {
+                    var keyType = prop.CollectionKeyType.ToFullName();
+                    var valueType = prop.CollectionElementType.ToFullName();
+                    return $"{DICTIONARY_TYPE_T}{keyType}, {valueType}>";
+                }
+
+                default:
+                {
+                    return prop.Type.ToFullName();
+                }
+            }
         }
 
         private void WriteProperties(ref Printer p)
@@ -270,7 +339,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     {
                         var propRef = PropRefs[i];
                         var fieldName = propRef.FieldName;
-                        var fieldType = propRef.Type.ToFullName();
+                        var fieldType = GetPropertyTypeName(propRef);
                         var and = i == 0 && previous == false ? "  " : "&&";
 
                         p.PrintLine($"{and} global::System.Collections.Generic.EqualityComparer<{fieldType}>.Default.Equals(this.{fieldName}, other.{fieldName})");
@@ -304,7 +373,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 {
                     var propRef = PropRefs[i];
                     var comma = i == 0 && previous == false ? " " : ",";
-                    p.PrintLine($"{comma} {propRef.Type.ToFullName()} {propRef.FieldName}");
+                    p.PrintLine($"{comma} {GetPropertyTypeName(propRef)} {propRef.FieldName}");
                 }
             }
             p = p.DecreasedIndent();
