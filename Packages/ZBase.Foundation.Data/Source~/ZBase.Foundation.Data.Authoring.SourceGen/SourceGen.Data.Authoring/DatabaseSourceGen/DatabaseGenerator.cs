@@ -286,7 +286,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         continue;
                     }
 
-                    var dataDeclaration = new DataDeclaration(type);
+                    var dataDeclaration = new DataDeclaration(type, true);
 
                     if (dataDeclaration.PropRefs.Length < 1 && dataDeclaration.FieldRefs.Length < 1)
                     {
@@ -297,6 +297,15 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                     Build(queue, dataDeclaration.PropRefs);
                     Build(queue, dataDeclaration.FieldRefs);
+
+                    var baseTypeRefs = dataDeclaration.BaseTypeRefs;
+
+                    for (var i = 0; i < baseTypeRefs.Length; i++)
+                    {
+                        var typeRef = baseTypeRefs[i];
+                        Build(queue, typeRef.PropRefs);
+                        Build(queue, typeRef.FieldRefs);
+                    }
                 }
             }
 
@@ -385,6 +394,16 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                 TryAddAll(dataMap, uniqueTypeNames, typeQueue, declaration.PropRefs);
                 TryAddAll(dataMap, uniqueTypeNames, typeQueue, declaration.FieldRefs);
+
+                var baseTypeRefs = declaration.BaseTypeRefs;
+
+                for (var i = 0; i < baseTypeRefs.Length; i++)
+                {
+                    var typeRef = baseTypeRefs[i];
+
+                    TryAddAll(dataMap, uniqueTypeNames, typeQueue, typeRef.PropRefs);
+                    TryAddAll(dataMap, uniqueTypeNames, typeQueue, typeRef.FieldRefs);
+                }
             }
 
             uniqueTypeNames.Remove(idTypeFullName);

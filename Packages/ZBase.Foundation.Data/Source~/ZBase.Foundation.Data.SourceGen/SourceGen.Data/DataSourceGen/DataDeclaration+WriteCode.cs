@@ -31,7 +31,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 WriteGetHashCodeMethod(ref p);
                 WriteEqualsMethod(ref p);
                 WriteIEquatableMethod(ref p);
-                WriteSetValuesMethod(ref p);
+                WriteSetValues_TypeMethod(ref p);
             }
             p.CloseScope();
 
@@ -313,11 +313,11 @@ namespace ZBase.Foundation.Data.DataSourceGen
             p.PrintEndLine();
         }
 
-        private void WriteSetValuesMethod(ref Printer p)
+        private void WriteSetValues_TypeMethod(ref Printer p)
         {
             p.PrintLine("[global::System.Obsolete(\"This method is not intended to be used directly by user code.\")]");
             p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-            p.PrintLine("internal void SetValues(");
+            p.PrintLine($"internal void SetValues_{Symbol.ToValidIdentifier()}(");
             p = p.IncreasedIndent();
             {
                 var previous = false;

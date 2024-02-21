@@ -12,6 +12,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public const string SERIALIZE_FIELD_ATTRIBUTE = "global::UnityEngine.SerializeField";
         public const string JSON_INCLUDE_ATTRIBUTE = "global::System.Text.Json.Serialization.JsonIncludeAttribute";
         public const string JSON_PROPERTY_ATTRIBUTE = "global::Newtonsoft.Json.JsonPropertyAttribute";
+        public const string IDATA = "global::ZBase.Foundation.Data.IData";
+
         public const string LIST_TYPE_T = "global::System.Collections.Generic.List<";
         public const string DICTIONARY_TYPE_T = "global::System.Collections.Generic.Dictionary<";
         public const string HASH_SET_TYPE_T = "global::System.Collections.Generic.HashSet<";
@@ -40,7 +42,9 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
         public ImmutableArray<MemberRef> FieldRefs { get; }
 
-        public DataDeclaration(ITypeSymbol symbol)
+        public ImmutableArray<DataDeclaration> BaseTypeRefs { get; }
+
+        public DataDeclaration(ITypeSymbol symbol, bool buildBaseTypeRefs)
         {
             Symbol = symbol;
             FullName = Symbol.ToFullName();
@@ -50,6 +54,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
             using var propArrayBuilder = ImmutableArrayBuilder<MemberRef>.Rent();
             using var fieldArrayBuilder = ImmutableArrayBuilder<MemberRef>.Rent();
+            using var baseArrayBuilder = ImmutableArrayBuilder<DataDeclaration>.Rent();
 
             var members = Symbol.GetMembers();
 
@@ -164,23 +169,27 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 fieldArrayBuilder.Add(memberRef);
             }
 
-            if (propArrayBuilder.Count > 0)
+            if (buildBaseTypeRefs)
             {
-                PropRefs = propArrayBuilder.ToImmutable();
-            }
-            else
-            {
-                PropRefs = ImmutableArray<MemberRef>.Empty;
+                var baseSymbol = symbol.BaseType;
+
+                while (baseSymbol != null)
+                {
+                    if (baseSymbol.TypeKind != TypeKind.Class
+                        || baseSymbol.ImplementsInterface(IDATA) == false
+                    )
+                    {
+                        break;
+                    }
+
+                    baseArrayBuilder.Add(new DataDeclaration(baseSymbol, false));
+                    baseSymbol = baseSymbol.BaseType;
+                }
             }
 
-            if (fieldArrayBuilder.Count > 0)
-            {
-                FieldRefs = fieldArrayBuilder.ToImmutable();
-            }
-            else
-            {
-                FieldRefs = ImmutableArray<MemberRef>.Empty;
-            }
+            PropRefs = propArrayBuilder.ToImmutable();
+            FieldRefs = fieldArrayBuilder.ToImmutable();
+            BaseTypeRefs = baseArrayBuilder.ToImmutable();
         }
 
         private static void Process(MemberRef memberRef)

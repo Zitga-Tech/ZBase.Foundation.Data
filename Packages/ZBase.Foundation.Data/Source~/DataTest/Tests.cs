@@ -111,6 +111,17 @@ namespace MyGame.Heroes
     public partial class HeroDataTableAsset : DataTableAsset<IdData, HeroData>
     {
     }
+
+    public partial class NewHeroData : HeroData
+    {
+        [DataProperty]
+        [field: SerializeField]
+        public ReadOnlyMemory<int> NewValues => Get_NewValues();
+    }
+
+    public partial class NewHeroDataTableAsset : DataTableAsset<IdData, NewHeroData>
+    {
+    }
 }
 
 namespace MyGame.Enemies
@@ -179,6 +190,12 @@ namespace MyGame.Authoring
         partial class HeroDataTableAsset_HeroDataSheet
         {
         }
+    }
+
+    [Table(typeof(Heroes.NewHeroDataTableAsset), "NewHero", NamingStrategy.SnakeCase)]
+    partial class Database
+    {
+
     }
 
     [Table(typeof(Enemies.EnemyDataTableAsset), "Enemy", NamingStrategy.SnakeCase)]

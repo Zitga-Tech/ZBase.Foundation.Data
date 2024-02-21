@@ -59,10 +59,29 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 p.PrintEndLine();
 
                 WriteConstructor(ref p, dataMap, verticalListMap, typeName, typeFullName, containingTypeFullName);
+
+                var baseTypeRefs = this.BaseTypeRefs;
+
+                for (var i = baseTypeRefs.Length - 1; i >= 0; i--)
+                {
+                    var typeRef = baseTypeRefs[i];
+                    WriteProperties(ref p, dataMap, verticalListMap, typeFullName, containingTypeFullName, idType, typeRef.PropRefs);
+                    WriteProperties(ref p, dataMap, verticalListMap, typeFullName, containingTypeFullName, idType, typeRef.FieldRefs);
+                }
+
                 WriteProperties(ref p, dataMap, verticalListMap, typeFullName, containingTypeFullName, idType, PropRefs);
                 WriteProperties(ref p, dataMap, verticalListMap, typeFullName, containingTypeFullName, idType, FieldRefs);
+
                 WriteConvertMethod(ref p, dataMap);
                 WriteCopyFromMethod(ref p, dataMap);
+
+                for (var i = baseTypeRefs.Length - 1; i >= 0; i--)
+                {
+                    var typeRef = baseTypeRefs[i];
+                    WriteToCollectionMethod(ref p, dataMap, typeRef.PropRefs);
+                    WriteToCollectionMethod(ref p, dataMap, typeRef.FieldRefs);
+                }
+
                 WriteToCollectionMethod(ref p, dataMap, PropRefs);
                 WriteToCollectionMethod(ref p, dataMap, FieldRefs);
             }
@@ -83,6 +102,15 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p.PrintLine($"public __{typeName}()");
             p.OpenScope();
             {
+                var baseTypeRefs = this.BaseTypeRefs;
+
+                for (var i = baseTypeRefs.Length - 1; i >= 0; i--)
+                {
+                    var typeRef = baseTypeRefs[i];
+                    Write(ref p, dataMap, verticalListMap, typeRef.PropRefs, targetTypeFullName, containingTypeFullName);
+                    Write(ref p, dataMap, verticalListMap, typeRef.FieldRefs, targetTypeFullName, containingTypeFullName);
+                }
+
                 Write(ref p, dataMap, verticalListMap, PropRefs, targetTypeFullName, containingTypeFullName);
                 Write(ref p, dataMap, verticalListMap, FieldRefs, targetTypeFullName, containingTypeFullName);
             }
@@ -282,12 +310,35 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 p.PrintLine($"var result = new {typeFullName}();");
                 p.PrintEndLine();
 
-                p.PrintLine("result.SetValues(");
+                var baseTypeRefs = this.BaseTypeRefs;
+
+                for (var i = baseTypeRefs.Length - 1; i >= 0; i--)
+                {
+                    var typeRef = baseTypeRefs[i];
+                    WriteType(ref p, typeRef, dataMap);
+                    p.PrintEndLine();
+                }
+
+                WriteType(ref p, this, dataMap);
+                p.PrintEndLine();
+
+                p.PrintLine("return result;");
+            }
+            p.CloseScope();
+            p.PrintEndLine();
+
+            static void WriteType(
+                  ref Printer p
+                , DataDeclaration typeRef
+                , Dictionary<string, DataDeclaration> dataMap
+            )
+            {
+                p.PrintLine($"result.SetValues_{typeRef.Symbol.ToValidIdentifier()}(");
                 p = p.IncreasedIndent();
                 {
                     var first = true;
 
-                    foreach (var memberRef in PropRefs)
+                    foreach (var memberRef in typeRef.PropRefs)
                     {
                         var comma = first ? " " : ",";
 
@@ -296,7 +347,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         Write(ref p, dataMap, memberRef, comma);
                     }
 
-                    foreach (var memberRef in FieldRefs)
+                    foreach (var memberRef in typeRef.FieldRefs)
                     {
                         var comma = first ? " " : ",";
 
@@ -307,15 +358,10 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 }
                 p = p.DecreasedIndent();
                 p.PrintLine(");");
-
-                p.PrintEndLine();
-                p.PrintLine("return result;");
             }
-            p.CloseScope();
-            p.PrintEndLine();
 
             static void Write(
-                ref Printer p
+                  ref Printer p
                 , Dictionary<string, DataDeclaration> dataMap
                 , MemberRef memberRef
                 , string comma
@@ -453,18 +499,36 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             p.PrintLine($"public void CopyFrom({Symbol.ToFullName()} data)");
             p.OpenScope();
             {
-                foreach (var memberRef in PropRefs)
+                var baseTypeRefs = this.BaseTypeRefs;
+
+                for (var i = baseTypeRefs.Length - 1; i >= 0; i--)
+                {
+                    var typeRef = baseTypeRefs[i];
+                    WriteType(ref p, typeRef, dataMap);
+                    p.PrintEndLine();
+                }
+
+                WriteType(ref p, this, dataMap);
+            }
+            p.CloseScope();
+            p.PrintEndLine();
+
+            static void WriteType(
+                  ref Printer p
+                , DataDeclaration typeRef
+                , Dictionary<string, DataDeclaration> dataMap
+            )
+            {
+                foreach (var memberRef in typeRef.PropRefs)
                 {
                     Write(ref p, dataMap, memberRef);
                 }
 
-                foreach (var memberRef in FieldRefs)
+                foreach (var memberRef in typeRef.FieldRefs)
                 {
                     Write(ref p, dataMap, memberRef);
                 }
             }
-            p.CloseScope();
-            p.PrintEndLine();
 
             static void Write(
                   ref Printer p
@@ -480,6 +544,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                         if (dataMap.ContainsKey(elemTypeFullName))
                         {
+                            p.PrintEndLine();
                             p.PrintLine($"foreach (var item in data.{memberRef.PropertyName}.ToArray())");
                             p.OpenScope();
                             {
@@ -505,6 +570,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                         if (dataMap.ContainsKey(elemTypeFullName))
                         {
+                            p.PrintEndLine();
                             p.PrintLine($"foreach (var item in data.{memberRef.PropertyName})");
                             p.OpenScope();
                             {
@@ -528,6 +594,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         var keyIsData = dataMap.ContainsKey(keyTypeFullName);
                         var elemIsData = dataMap.ContainsKey(elemTypeFullName);
 
+                        p.PrintEndLine();
                         p.PrintLine($"foreach (var kv in data.{memberRef.PropertyName})");
                         p.OpenScope();
                         {
@@ -581,8 +648,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         break;
                     }
                 }
-
-                p.PrintEndLine();
             }
         }
 
