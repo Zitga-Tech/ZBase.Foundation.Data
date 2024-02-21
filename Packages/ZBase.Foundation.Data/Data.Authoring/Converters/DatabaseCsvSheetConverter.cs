@@ -18,6 +18,7 @@ namespace ZBase.Foundation.Data.Authoring
         private readonly string _loadPath;
         private readonly string _extension;
         private readonly bool _includeSubFolders;
+        private readonly bool _includeCommentedFiles;
 
         public DatabaseCsvSheetConverter(
               string loadPath
@@ -28,6 +29,7 @@ namespace ZBase.Foundation.Data.Authoring
             , IFormatProvider formatProvider = null
             , int emptyRowStreakThreshold = 5
             , bool includeSubFolders = true
+            , bool includeCommentedFiles = true
         )
             : base(timeZoneInfo, formatProvider, splitHeader, emptyRowStreakThreshold)
         {
@@ -35,6 +37,7 @@ namespace ZBase.Foundation.Data.Authoring
             _extension = extension;
             _fileSystem = fileSystem ?? new DatabaseFileSystem();
             _includeSubFolders = includeSubFolders;
+            _includeCommentedFiles = includeCommentedFiles;
         }
 
         private class CsvTable : List<List<string>>
@@ -78,9 +81,14 @@ namespace ZBase.Foundation.Data.Authoring
             {
                 var fileName = Path.GetFileNameWithoutExtension(file);
                 
-                if (SheetUtility.ValidateSheetName(fileName) == false)
+                if (SheetUtility.ValidateSheetName(fileName, _includeCommentedFiles) == false)
                 {
                     continue;
+                }
+
+                if (_includeCommentedFiles)
+                {
+                    fileName = fileName.Replace("$", "");
                 }
 
                 var (sheetName, subName) = Config.ParseSheetName(fileName);

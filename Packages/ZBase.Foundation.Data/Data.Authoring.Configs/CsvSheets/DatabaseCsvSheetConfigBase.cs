@@ -16,6 +16,9 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
         internal bool _includeSubFolders = true;
 
         [SerializeField]
+        internal bool _includeCommentedFiles = false;
+
+        [SerializeField]
         internal string _relativeOutputFolderPath;
 
         public string FullCsvFolderPath
@@ -26,6 +29,9 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
 
         public bool IncludeSubFolders
             => _includeSubFolders;
+
+        public bool IncludeCommentedFiles
+            => _includeCommentedFiles;
 
         public string FullOutputFolderPath
             => Path.GetFullPath(Path.Combine(Application.dataPath, _relativeOutputFolderPath ?? ""));

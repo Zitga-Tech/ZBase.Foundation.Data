@@ -9,10 +9,12 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
     {
         private SerializedProperty _relativeCsvFolderPath;
         private SerializedProperty _includeSubFolders;
+        private SerializedProperty _includeCommentedFiles;
         private SerializedProperty _relativeOutputFolderPath;
 
         private GUIContent _labelCsvFolderPath;
         private GUIContent _labelIncludeSubFolders;
+        private GUIContent _labelIncludeCommentedFiles;
         private GUIContent _labelOutputFolderPath;
 
         private void OnEnable()
@@ -21,6 +23,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
             
             _relativeCsvFolderPath = so.FindProperty(nameof(DatabaseCsvSheetConfigBase._relativeCsvFolderPath));
             _includeSubFolders = so.FindProperty(nameof(DatabaseCsvSheetConfigBase._includeSubFolders));
+            _includeCommentedFiles = so.FindProperty(nameof(DatabaseCsvSheetConfigBase._includeCommentedFiles));
             _relativeOutputFolderPath = so.FindProperty(nameof(DatabaseCsvSheetConfigBase._relativeOutputFolderPath));
 
             _labelCsvFolderPath = new GUIContent(
@@ -31,6 +34,11 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
             _labelIncludeSubFolders = new GUIContent(
                   "Include Sub-Folders"
                 , "Include all CSV files in all sub-folders."
+            );
+
+            _labelIncludeCommentedFiles = new GUIContent(
+                  "Include Commented Files"
+                , "Include all CSV files whose name starts with a $."
             );
 
             _labelOutputFolderPath = new GUIContent(
@@ -77,6 +85,19 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
                         EditorGUILayout.EndHorizontal();
 
                         DrawProperty(config, _includeSubFolders, _labelIncludeSubFolders);
+
+
+                        DrawProperty(config, _includeCommentedFiles, _labelIncludeCommentedFiles);
+
+                        if (config.IncludeCommentedFiles)
+                        {
+                            EditorGUILayout.HelpBox(
+                                "Be careful when enable 'Include Commeted Files' option!\n" +
+                                "Files whose name starts with a $ will be included in the exporting process. " +
+                                "For examples: '$hero.csv', '$enemy.csv'."
+                                , MessageType.Warning
+                            );
+                        }
 
                         EditorGUILayout.EndVertical();
                     }

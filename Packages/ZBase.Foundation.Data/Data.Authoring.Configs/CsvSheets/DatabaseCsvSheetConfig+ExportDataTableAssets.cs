@@ -39,6 +39,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
                 DatabaseAssetName = databaseAssetName,
                 CsvFolderPath = FullCsvFolderPath,
                 IncludeSubFolders = IncludeSubFolders,
+                IncludeCommentedFiles = IncludeCommentedFiles,
                 AssetOutputFolderPath = AssetOutputFolderPath,
                 ShowProgress = false,
                 ResultCallback = resultCallback,
@@ -76,6 +77,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
                 DatabaseAssetName = databaseAssetName,
                 CsvFolderPath = FullCsvFolderPath,
                 IncludeSubFolders = IncludeSubFolders,
+                IncludeCommentedFiles = IncludeCommentedFiles,
                 AssetOutputFolderPath = AssetOutputFolderPath,
                 ShowProgress = true,
             };

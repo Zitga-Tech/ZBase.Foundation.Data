@@ -27,6 +27,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
                   args.CsvFolderPath
                 , TimeZoneInfo.Utc
                 , includeSubFolders: args.IncludeSubFolders
+                , includeCommentedFiles: args.IncludeCommentedFiles
             );
 
             ShowProgress(args, "Importing all CSV files...");
@@ -91,6 +92,8 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
             public string CsvFolderPath { get; set; }
 
             public bool IncludeSubFolders { get; set; }
+
+            public bool IncludeCommentedFiles { get; set; }
 
             public string AssetOutputFolderPath { get; set; }
 
