@@ -29,7 +29,7 @@ namespace ZBase.Foundation.Data.Authoring
             , IFormatProvider formatProvider = null
             , int emptyRowStreakThreshold = 5
             , bool includeSubFolders = true
-            , bool includeCommentedFiles = true
+            , bool includeCommentedFiles = false
         )
             : base(timeZoneInfo, formatProvider, splitHeader, emptyRowStreakThreshold)
         {
