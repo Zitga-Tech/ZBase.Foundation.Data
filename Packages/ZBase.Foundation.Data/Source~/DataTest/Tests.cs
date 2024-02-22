@@ -75,6 +75,19 @@ namespace MyGame.Heroes
     using System.Collections.Generic;
     using System;
 
+    [DataMutable]
+    public partial class MutableData : IData
+    {
+        [SerializeField]
+        private int _intValue;
+
+        [SerializeField]
+        private int[] _arrayValue;
+
+        [DataProperty]
+        public ReadOnlyMemory<float> Multipliers => Get_Multipliers();
+    }
+
     public partial class HeroData : IData
     {
         [SerializeField]

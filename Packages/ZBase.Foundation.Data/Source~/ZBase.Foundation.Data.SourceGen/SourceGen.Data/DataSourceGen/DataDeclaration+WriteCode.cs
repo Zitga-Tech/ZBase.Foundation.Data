@@ -136,44 +136,60 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 }
 
                 var fieldName = field.Field.Name;
-                bool isCollection;
                 string typeName;
 
                 switch (field.CollectionKind)
                 {
                     case CollectionKind.Array:
                     {
-                        isCollection = true;
-                        typeName = $"global::System.ReadOnlyMemory<{field.CollectionElementType.ToFullName()}>";
+                        typeName = IsMutable
+                            ? $"{field.CollectionElementType.ToFullName()}[]"
+                            : $"global::System.ReadOnlyMemory<{field.CollectionElementType.ToFullName()}>";
                         break;
                     }
 
                     case CollectionKind.List:
                     {
-                        isCollection = true;
-                        typeName = $"global::System.Collections.Generic.IReadOnlyList<{field.CollectionElementType.ToFullName()}>";
+                        typeName = IsMutable
+                            ? $"global::System.Collections.Generic.List<{field.CollectionElementType.ToFullName()}>"
+                            : $"global::System.Collections.Generic.IReadOnlyList<{field.CollectionElementType.ToFullName()}>";
                         break;
                     }
 
                     case CollectionKind.Dictionary:
                     {
-                        isCollection = true;
-                        typeName = $"global::System.Collections.Generic.IReadOnlyDictionary<{field.CollectionKeyType.ToFullName()}, {field.CollectionElementType.ToFullName()}>";
+                        typeName = IsMutable
+                            ? $"global::System.Collections.Generic.Dictionary<{field.CollectionKeyType.ToFullName()}, {field.CollectionElementType.ToFullName()}>"
+                            : $"global::System.Collections.Generic.IReadOnlyDictionary<{field.CollectionKeyType.ToFullName()}, {field.CollectionElementType.ToFullName()}>";
                         break;
                     }
 
                     case CollectionKind.HashSet:
+                    {
+                        typeName = IsMutable
+                            ? $"global::System.Collections.Generic.HashSet<{field.CollectionElementType.ToFullName()}>"
+                            : $"global::System.Collections.Generic.IReadOnlyCollection<{field.CollectionElementType.ToFullName()}>";
+                        break;
+                    }
+
                     case CollectionKind.Queue:
+                    {
+                        typeName = IsMutable
+                            ? $"global::System.Collections.Generic.Queue<{field.CollectionElementType.ToFullName()}>"
+                            : $"global::System.Collections.Generic.IReadOnlyCollection<{field.CollectionElementType.ToFullName()}>";
+                        break;
+                    }
+
                     case CollectionKind.Stack:
                     {
-                        isCollection = true;
-                        typeName = $"global::System.Collections.Generic.IReadOnlyCollection<{field.CollectionElementType.ToFullName()}>";
+                        typeName = IsMutable
+                            ? $"global::System.Collections.Generic.Stack<{field.CollectionElementType.ToFullName()}>"
+                            : $"global::System.Collections.Generic.IReadOnlyCollection<{field.CollectionElementType.ToFullName()}>";
                         break;
                     }
 
                     default:
                     {
-                        isCollection = false;
                         typeName = field.Type.ToFullName();
                         break;
                     }
@@ -193,7 +209,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     p.PrintLine(AGGRESSIVE_INLINING);
                     p.PrintLine($"get => this.{fieldName};");
 
-                    if (IsMutable && !isCollection)
+                    if (IsMutable)
                     {
                         p.PrintEndLine();
                         p.PrintLine(AGGRESSIVE_INLINING);
@@ -202,18 +218,6 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 }
                 p.CloseScope();
                 p.PrintEndLine();
-
-                if (IsMutable && isCollection)
-                {
-                    p.PrintLine(AGGRESSIVE_INLINING).PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-                    p.PrintLine($"public void Set{field.PropertyName}({field.Type.ToFullName()} value)");
-                    p.OpenScope();
-                    {
-                        p.PrintLine($"this.{fieldName} = value;");
-                    }
-                    p.CloseScope();
-                    p.PrintEndLine();
-                }
             }
 
             p.PrintEndLine();
