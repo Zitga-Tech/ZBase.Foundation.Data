@@ -159,7 +159,7 @@ namespace ZBase.Foundation.SourceGen
         /// </summary>
         /// <returns></returns>
         public Printer PrintBeginLine()
-        => Print(CurrentIndent);
+            => Print(CurrentIndent);
 
         /// <summary>
         /// Print indent and a string
@@ -167,7 +167,10 @@ namespace ZBase.Foundation.SourceGen
         /// <param name="text"></param>
         /// <returns></returns>
         public Printer PrintBeginLine(string text)
-        => Print(CurrentIndent).Print(text);
+            => Print(CurrentIndent).Print(text);
+
+        public Printer PrintBeginLineIf(bool condition, string trueText, string falseText)
+            => condition ? PrintBeginLine(trueText) : PrintBeginLine(falseText);
 
         /// <summary>
         /// Print end-line
@@ -192,6 +195,14 @@ namespace ZBase.Foundation.SourceGen
             return this;
         }
 
+        public Printer PrintEndLineIf(bool condition, string trueText, string falseText)
+        {
+            if (condition)
+                return PrintEndLine(trueText);
+
+            return PrintEndLine(falseText);
+        }
+
         /// <summary>
         /// Print indent, a string and an end-line
         /// </summary>
@@ -211,6 +222,11 @@ namespace ZBase.Foundation.SourceGen
             if (condition)
                 Print(text);
             return this;
+        }
+
+        public Printer PrintIf(bool condition, string trueText, string falseText)
+        {
+            return condition ? Print(trueText) : Print(falseText);
         }
 
         /// <summary>

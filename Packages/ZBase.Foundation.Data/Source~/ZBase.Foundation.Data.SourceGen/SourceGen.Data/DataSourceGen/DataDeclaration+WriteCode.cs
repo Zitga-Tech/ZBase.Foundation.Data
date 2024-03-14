@@ -22,15 +22,25 @@ namespace ZBase.Foundation.Data.DataSourceGen
             p.PrintLine("[global::System.Serializable]");
             p.PrintBeginLine()
                 .Print($"partial {keyword} ").Print(ClassName)
-                .Print($" : global::System.IEquatable<{ClassName}>")
+                .Print(" : ")
+                .PrintIf(HasBaseType, $"{BaseTypeName}, ")
+                .Print($"global::System.IEquatable<{ClassName}>")
                 .PrintEndLine();
             p.OpenScope();
             {
                 WriteFields(ref p);
                 WriteProperties(ref p);
                 WriteGetHashCodeMethod(ref p);
+                WriteGetHashCodeInternalMethod(ref p);
                 WriteEqualsMethod(ref p);
                 WriteIEquatableMethod(ref p);
+                
+                if (Symbol.IsValueType == false)
+                {
+                    WriteEqualsInternalMethod(ref p);
+                    WriteOverrideIEquatableMethod(ref p);
+                }
+
                 WriteSetValues_TypeMethod(ref p);
             }
             p.CloseScope();
@@ -230,11 +240,44 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 return;
             }
 
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
             p.PrintLine("public override int GetHashCode()");
             p.OpenScope();
             {
-                p.PrintLine("var hash = new global::System.HashCode();");
-                
+                p.PrintLine("var hash = GetHashCodeInternal();");
+                p.PrintLine("return hash.ToHashCode();");
+            }
+            p.CloseScope();
+            p.PrintEndLine();
+        }
+
+        private void WriteGetHashCodeInternalMethod(ref Printer p)
+        {
+            var fromBase = false;
+
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
+
+            if (HasBaseType == false && IsSealed == false)
+            {
+                p.PrintBeginLine("protected virtual ");
+            }
+            else if (HasBaseType == true)
+            {
+                fromBase = true;
+                p.PrintBeginLine("protected override ");
+            }
+            else
+            {
+                p.PrintBeginLine("private ");
+            }
+
+            p.PrintEndLine("global::System.HashCode GetHashCodeInternal()");
+            p.OpenScope();
+            {
+                p.PrintBeginLine("var hash = ")
+                    .PrintIf(fromBase, "base.GetHashCodeInternal()", "new global::System.HashCode()")
+                    .PrintEndLine(";");
+
                 foreach (var field in FieldRefs)
                 {
                     p.PrintLine($"hash.Add({field.Field.Name});");
@@ -245,7 +288,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     p.PrintLine($"hash.Add({prop.FieldName});");
                 }
 
-                p.PrintLine("return hash.ToHashCode();");
+                p.PrintLine("return hash;");
             }
             p.CloseScope();
             p.PrintEndLine();
@@ -258,6 +301,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 return;
             }
 
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
             p.PrintLine("public override bool Equals(object obj)");
             p.OpenScope();
             {
@@ -267,6 +311,25 @@ namespace ZBase.Foundation.Data.DataSourceGen
             p.PrintEndLine();
         }
 
+        private void WriteOverrideIEquatableMethod(ref Printer p)
+        {
+            foreach (var typeName in OverrideEquals)
+            {
+                p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
+                p.PrintLine($"public override bool Equals({typeName} other)");
+                p.OpenScope();
+                {
+                    p.PrintLine($"if (other is not {ClassName} otherDerived) return false;");
+                    p.PrintLine("if (ReferenceEquals(this, otherDerived)) return true;");
+                    p.PrintEndLine();
+
+                    p.PrintLine("return this.EqualsInternal(otherDerived);");
+                }
+                p.CloseScope();
+                p.PrintEndLine();
+            }
+        }
+
         private void WriteIEquatableMethod(ref Printer p)
         {
             if (HasIEquatableMethod)
@@ -274,47 +337,72 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 return;
             }
 
-            p.PrintLine($"public bool Equals({ClassName} other)");
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
+            p.PrintBeginLineIf(IsSealed, "public ", "public virtual ");
+            p.PrintEndLine($"bool Equals({ClassName} other)");
             p.OpenScope();
             {
-                if (Symbol.IsValueType == false)
+                if (Symbol.IsValueType)
+                {
+                    p.PrintLine("return");
+                    WriteEqualComparerLines(ref p, false);
+                }
+                else
                 {
                     p.PrintLine("if (ReferenceEquals(other, null)) return false;");
                     p.PrintLine("if (ReferenceEquals(this, other)) return true;");
                     p.PrintEndLine();
+                    p.PrintLine("return EqualsInternal(other);");
                 }
-
-                p.PrintLine("return");
-                p = p.IncreasedIndent();
-                {
-                    var previous = false;
-
-                    for (var i = 0; i < FieldRefs.Length; i++)
-                    {
-                        previous = true;
-                        var fieldRef = FieldRefs[i];
-                        var fieldName = fieldRef.Field.Name;
-                        var fieldType = fieldRef.Type.ToFullName();
-                        var and = i == 0 ? "  " : "&&";
-
-                        p.PrintLine($"{and} global::System.Collections.Generic.EqualityComparer<{fieldType}>.Default.Equals(this.{fieldName}, other.{fieldName})");
-                    }
-
-                    for (var i = 0; i < PropRefs.Length; i++)
-                    {
-                        var propRef = PropRefs[i];
-                        var fieldName = propRef.FieldName;
-                        var fieldType = GetPropertyTypeName(propRef);
-                        var and = i == 0 && previous == false ? "  " : "&&";
-
-                        p.PrintLine($"{and} global::System.Collections.Generic.EqualityComparer<{fieldType}>.Default.Equals(this.{fieldName}, other.{fieldName})");
-                    }
-                }
-                p = p.DecreasedIndent();
-                p.PrintLine(";");
             }
             p.CloseScope();
             p.PrintEndLine();
+        }
+
+        private void WriteEqualsInternalMethod(ref Printer p)
+        {
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
+            p.PrintBeginLineIf(IsSealed, "private ", "protected ")
+                .PrintEndLine($"bool EqualsInternal({ClassName} other)");
+            p.OpenScope();
+            {
+                p.PrintBeginLine("return")
+                    .PrintEndLineIf(HasBaseType, " base.EqualsInternal(other)", "");
+
+                WriteEqualComparerLines(ref p, HasBaseType);
+            }
+            p.CloseScope();
+            p.PrintEndLine();
+        }
+
+        private void WriteEqualComparerLines(ref Printer p, bool previous)
+        {
+            p = p.IncreasedIndent();
+            {
+                for (var i = 0; i < FieldRefs.Length; i++)
+                {
+                    var fieldRef = FieldRefs[i];
+                    var fieldName = fieldRef.Field.Name;
+                    var fieldType = fieldRef.Type.ToFullName();
+                    var and = i == 0 && previous == false ? "  " : "&&";
+                    previous = true;
+
+                    p.PrintLine($"{and} global::System.Collections.Generic.EqualityComparer<{fieldType}>.Default.Equals(this.{fieldName}, other.{fieldName})");
+                }
+
+                for (var i = 0; i < PropRefs.Length; i++)
+                {
+                    var propRef = PropRefs[i];
+                    var fieldName = propRef.FieldName;
+                    var fieldType = GetPropertyTypeName(propRef);
+                    var and = i == 0 && previous == false ? "  " : "&&";
+                    previous = true;
+
+                    p.PrintLine($"{and} global::System.Collections.Generic.EqualityComparer<{fieldType}>.Default.Equals(this.{fieldName}, other.{fieldName})");
+                }
+            }
+            p = p.DecreasedIndent();
+            p.PrintLine(";");
         }
 
         private void WriteSetValues_TypeMethod(ref Printer p)

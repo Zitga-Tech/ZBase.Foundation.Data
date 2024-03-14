@@ -16,6 +16,8 @@ namespace ZBase.Foundation.Data.DataSourceGen
         public const string JSON_INCLUDE_ATTRIBUTE = "global::System.Text.Json.Serialization.JsonIncludeAttribute";
         public const string JSON_PROPERTY_ATTRIBUTE = "global::Newtonsoft.Json.JsonPropertyAttribute";
         public const string DATA_MUTABLE_ATTRIBUTE = "global::ZBase.Foundation.Data.DataMutableAttribute";
+        public const string IDATA = "global::ZBase.Foundation.Data.IData";
+
         public const string AGGRESSIVE_INLINING = "[global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]";
         public const string GENERATED_CODE = "[global::System.CodeDom.Compiler.GeneratedCode(\"ZBase.Foundation.Data.DataGenerator\", \"1.3.0\")]";
         public const string EXCLUDE_COVERAGE = "[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]";
@@ -40,11 +42,19 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
         public bool IsMutable { get; }
 
+        public bool IsSealed { get; }
+
+        public bool HasBaseType => string.IsNullOrEmpty(BaseTypeName) == false;
+
+        public string BaseTypeName { get; }
+
         public bool ReferenceUnityEngine { get; }
 
         public ImmutableArray<FieldRef> FieldRefs { get; }
 
         public ImmutableArray<PropertyRef> PropRefs { get; }
+
+        public ImmutableArray<string> OverrideEquals { get; }
 
         public bool HasGetHashCodeMethod { get; }
 
@@ -61,32 +71,47 @@ namespace ZBase.Foundation.Data.DataSourceGen
             Syntax = candidate;
             Symbol = semanticModel.GetDeclaredSymbol(candidate, token);
             IsMutable = Symbol.HasAttribute(DATA_MUTABLE_ATTRIBUTE);
+            IsSealed = Symbol.IsSealed || Symbol.IsValueType;
 
-            var classNameSb = new StringBuilder(Syntax.Identifier.Text);
-
-            if (candidate.TypeParameterList is TypeParameterListSyntax typeParamList
-                && typeParamList.Parameters.Count > 0
+            if (Symbol.BaseType is INamedTypeSymbol baseNamedTypeSymbol
+                && baseNamedTypeSymbol.TypeKind == TypeKind.Class
+                && baseNamedTypeSymbol.ImplementsInterface(IDATA)
             )
             {
-                classNameSb.Append("<");
-
-                var typeParams = typeParamList.Parameters;
-                var last = typeParams.Count - 1;
-
-                for (var i = 0; i <= last; i++)
-                {
-                    classNameSb.Append(typeParams[i].Identifier.Text);
-
-                    if (i < last)
-                    {
-                        classNameSb.Append(", ");
-                    }
-                }
-
-                classNameSb.Append(">");
+                BaseTypeName = baseNamedTypeSymbol.ToFullName();
+            }
+            else
+            {
+                BaseTypeName = string.Empty;
             }
 
-            ClassName = classNameSb.ToString();
+            {
+                var classNameSb = new StringBuilder(Syntax.Identifier.Text);
+
+                if (candidate.TypeParameterList is TypeParameterListSyntax typeParamList
+                    && typeParamList.Parameters.Count > 0
+                )
+                {
+                    classNameSb.Append("<");
+
+                    var typeParams = typeParamList.Parameters;
+                    var last = typeParams.Count - 1;
+
+                    for (var i = 0; i <= last; i++)
+                    {
+                        classNameSb.Append(typeParams[i].Identifier.Text);
+
+                        if (i < last)
+                        {
+                            classNameSb.Append(", ");
+                        }
+                    }
+
+                    classNameSb.Append(">");
+                }
+
+                ClassName = classNameSb.ToString();
+            }
 
             foreach (var assembly in Symbol.ContainingModule.ReferencedAssemblySymbols)
             {
@@ -99,12 +124,15 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
             var existingFields = new HashSet<string>();
             var existingProperties = new HashSet<string>();
+            var existingOverrideEquals = new HashSet<string>();
 
             using var fieldArrayBuilder = ImmutableArrayBuilder<FieldRef>.Rent();
             using var propArrayBuilder = ImmutableArrayBuilder<PropertyRef>.Rent();
+            using var overrideEqualsArrayBuilder = ImmutableArrayBuilder<string>.Rent();
             using var diagnosticBuilder = ImmutableArrayBuilder<DiagnosticInfo>.Rent();
 
             var members = Symbol.GetMembers();
+            var symbolFullName = Symbol.ToFullName();
 
             foreach (var member in members)
             {
@@ -140,15 +168,41 @@ namespace ZBase.Foundation.Data.DataSourceGen
                             continue;
                         }
 
-                        if (param.Type.Name == Symbol.Name)
+                        var paramTypeName = param.Type.ToFullName();
+
+                        if (paramTypeName == symbolFullName)
                         {
                             HasIEquatableMethod = true;
                             continue;
                         }
+
+                        existingOverrideEquals.Add(paramTypeName);
                     }
                 }
             }
-            
+
+            if (HasBaseType)
+            {
+                var baseType = Symbol.BaseType;
+
+                while (baseType != null)
+                {
+                    if (baseType.ImplementsInterface(IDATA) == false)
+                    {
+                        break;
+                    }
+
+                    var baseTypeName = baseType.ToFullName();
+
+                    if (existingOverrideEquals.Contains(baseTypeName) == false)
+                    {
+                        overrideEqualsArrayBuilder.Add(baseTypeName);
+                    }
+
+                    baseType = baseType.BaseType;
+                }
+            }
+
             foreach (var member in members)
             {
                 if (member is IFieldSymbol field)
@@ -311,6 +365,15 @@ namespace ZBase.Foundation.Data.DataSourceGen
             else
             {
                 PropRefs = ImmutableArray<PropertyRef>.Empty;
+            }
+
+            if (overrideEqualsArrayBuilder.Count > 0)
+            {
+                OverrideEquals = overrideEqualsArrayBuilder.ToImmutable();
+            }
+            else
+            {
+                OverrideEquals = ImmutableArray<string>.Empty;
             }
         }
 

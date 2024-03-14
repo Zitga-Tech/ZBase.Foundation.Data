@@ -47,6 +47,11 @@ namespace MyGame
     {
         [DataProperty]
         public int Id => Get_Id();
+
+        public bool Equals(GenericData<T> other)
+        {
+            return false;
+        }
     }
 
     public partial struct StatMultiplierData : IData
