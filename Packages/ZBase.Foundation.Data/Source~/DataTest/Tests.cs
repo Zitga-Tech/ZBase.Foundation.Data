@@ -34,13 +34,29 @@ namespace MyGame
         public int Id => Get_Id();
     }
 
+    [Serializable]
+    public struct FloatWrapper
+    {
+        public float value;
+
+        public FloatWrapper(float value)
+        {
+            this.value = value;
+        }
+    }
+
+    public struct FloatWrapperConverter
+    {
+        public readonly FloatWrapper Convert(float value) => new(value);
+    }
+
     public partial class StatData : IData
     {
-        [SerializeField]
-        private int _hp;
+        [DataProperty, DataConverter(typeof(FloatWrapperConverter))]
+        public FloatWrapper Hp => Get_Hp();
 
-        [JsonProperty]
-        private int _atk;
+        [JsonProperty, DataConverter(typeof(FloatWrapperConverter))]
+        private FloatWrapper _atk;
     }
 
     public partial class GenericData<T> : IData

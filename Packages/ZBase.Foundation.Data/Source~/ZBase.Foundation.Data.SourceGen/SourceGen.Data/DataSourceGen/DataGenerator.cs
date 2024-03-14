@@ -113,21 +113,27 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 var semanticModel = compilation.GetSemanticModel(syntaxTree);
                 var declaration = new DataDeclaration(candidate, semanticModel, context.CancellationToken);
 
-                if (declaration.FieldRefs.Length < 1 && declaration.PropRefs.Length < 1)
+                if (declaration.FieldRefs.Length > 0 || declaration.PropRefs.Length > 0)
                 {
-                    return;
+                    var assemblyName = compilation.Assembly.Name;
+
+                    OutputSource(
+                          context
+                        , outputSourceGenFiles
+                        , declaration.Syntax
+                        , declaration.WriteCode()
+                        , syntaxTree.GetGeneratedSourceFileName(GENERATOR_NAME, declaration.Syntax, declaration.Symbol.ToValidIdentifier())
+                        , syntaxTree.GetGeneratedSourceFilePath(assemblyName, GENERATOR_NAME)
+                    );
                 }
 
-                var assemblyName = compilation.Assembly.Name;
-
-                OutputSource(
-                      context
-                    , outputSourceGenFiles
-                    , declaration.Syntax
-                    , declaration.WriteCode()
-                    , syntaxTree.GetGeneratedSourceFileName(GENERATOR_NAME, declaration.Syntax, declaration.Symbol.ToValidIdentifier())
-                    , syntaxTree.GetGeneratedSourceFilePath(assemblyName, GENERATOR_NAME)
-                );
+                if (declaration.Diagnostics.Length > 0)
+                {
+                    foreach (var diagnostic in declaration.Diagnostics)
+                    {
+                        context.ReportDiagnostic(diagnostic.ToDiagnostic());
+                    }
+                }
             }
             catch (Exception e)
             {

@@ -12,6 +12,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
     public partial class DataDeclaration
     {
         public const string DATA_PROPERTY_ATTRIBUTE = "global::ZBase.Foundation.Data.DataPropertyAttribute";
+        public const string DATA_CONVERTER_ATTRIBUTE = "global::ZBase.Foundation.Data.DataConverterAttribute";
         public const string SERIALIZE_FIELD_ATTRIBUTE = "global::UnityEngine.SerializeField";
         public const string JSON_INCLUDE_ATTRIBUTE = "global::System.Text.Json.Serialization.JsonIncludeAttribute";
         public const string JSON_PROPERTY_ATTRIBUTE = "global::Newtonsoft.Json.JsonPropertyAttribute";
@@ -55,6 +56,8 @@ namespace ZBase.Foundation.Data.DataSourceGen
         public ImmutableArray<PropertyRef> PropRefs { get; }
 
         public ImmutableArray<string> OverrideEquals { get; }
+
+        public ImmutableArray<DiagnosticInfo> Diagnostics { get; }
 
         public bool HasGetHashCodeMethod { get; }
 
@@ -124,15 +127,15 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
             var existingFields = new HashSet<string>();
             var existingProperties = new HashSet<string>();
-            var existingOverrideEquals = new HashSet<string>();
+            var existingOverrideEquals = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
             using var fieldArrayBuilder = ImmutableArrayBuilder<FieldRef>.Rent();
             using var propArrayBuilder = ImmutableArrayBuilder<PropertyRef>.Rent();
             using var overrideEqualsArrayBuilder = ImmutableArrayBuilder<string>.Rent();
             using var diagnosticBuilder = ImmutableArrayBuilder<DiagnosticInfo>.Rent();
 
+            var equalityComparer = SymbolEqualityComparer.Default;
             var members = Symbol.GetMembers();
-            var symbolFullName = Symbol.ToFullName();
 
             foreach (var member in members)
             {
@@ -168,15 +171,13 @@ namespace ZBase.Foundation.Data.DataSourceGen
                             continue;
                         }
 
-                        var paramTypeName = param.Type.ToFullName();
-
-                        if (paramTypeName == symbolFullName)
+                        if (equalityComparer.Equals(Symbol, param.Type))
                         {
                             HasIEquatableMethod = true;
                             continue;
                         }
 
-                        existingOverrideEquals.Add(paramTypeName);
+                        existingOverrideEquals.Add(param.Type);
                     }
                 }
             }
@@ -192,11 +193,9 @@ namespace ZBase.Foundation.Data.DataSourceGen
                         break;
                     }
 
-                    var baseTypeName = baseType.ToFullName();
-
-                    if (existingOverrideEquals.Contains(baseTypeName) == false)
+                    if (existingOverrideEquals.Contains(baseType) == false)
                     {
-                        overrideEqualsArrayBuilder.Add(baseTypeName);
+                        overrideEqualsArrayBuilder.Add(baseType.ToFullName());
                     }
 
                     baseType = baseType.BaseType;
@@ -365,6 +364,15 @@ namespace ZBase.Foundation.Data.DataSourceGen
             else
             {
                 PropRefs = ImmutableArray<PropertyRef>.Empty;
+            }
+
+            if (diagnosticBuilder.Count > 0)
+            {
+                Diagnostics = diagnosticBuilder.ToImmutable();
+            }
+            else
+            {
+                Diagnostics = ImmutableArray<DiagnosticInfo>.Empty;
             }
 
             if (overrideEqualsArrayBuilder.Count > 0)

@@ -89,43 +89,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         }
                     }
                     p.CloseScope();
-                    p.PrintEndLine();
-
-                    p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-                    p.PrintLine("public void CopyFrom(global::ZBase.Foundation.Data.DatabaseAsset databaseAsset)");
-                    p.OpenScope();
-                    {
-                        if (containsTables)
-                        {
-                            foreach (var table in tables)
-                            {
-                                if (dataTableAssetRefMap.TryGetValue(table.Type.ToFullName(), out var dataTableAssetRef) == false)
-                                {
-                                    continue;
-                                }
-
-                                var dataType = dataTableAssetRef.DataType;
-
-                                if (dataMap.ContainsKey(dataType.ToFullName()) == false)
-                                {
-                                    continue;
-                                }
-
-                                var tableTypeName = dataTableAssetRef.Symbol.ToFullName();
-                                var sheetName = GetSheetName(table, dataType);
-                                var variableName = $"m{dataTableAssetRef.Symbol.Name}";
-
-                                p.PrintLine($"if (databaseAsset.TryGetDataTableAsset<{tableTypeName}>(out var {variableName}))");
-                                p.OpenScope();
-                                {
-                                    p.PrintLine($"this.{sheetName}.CopyFrom({variableName});");
-                                }
-                                p.CloseScope();
-                                p.PrintEndLine();
-                            }
-                        }
-                    }
-                    p.CloseScope();
                 }
                 p.CloseScope();
             }

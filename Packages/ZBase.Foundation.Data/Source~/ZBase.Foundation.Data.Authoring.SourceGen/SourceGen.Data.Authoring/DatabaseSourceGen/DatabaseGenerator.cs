@@ -126,7 +126,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         return;
                     }
 
-                    var dataMap = BuildDataMap(declaration);
+                    var dataMap = BuildDataMap(context, declaration);
                     var dataTableAssetRefMap = BuildDataTableAssetRefMap(declaration, dataMap);
 
                     OutputSource(
@@ -258,7 +258,10 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
         }
 
-        private static Dictionary<string, DataDeclaration> BuildDataMap(DatabaseDeclaration declaration)
+        private static Dictionary<string, DataDeclaration> BuildDataMap(
+              SourceProductionContext context
+            , DatabaseDeclaration declaration
+        )
         {
             var tables = declaration.DatabaseRef.Tables;
             var map = new Dictionary<string, DataDeclaration>();
@@ -286,7 +289,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         continue;
                     }
 
-                    var dataDeclaration = new DataDeclaration(type, true);
+                    var dataDeclaration = new DataDeclaration(context, type, true);
 
                     if (dataDeclaration.PropRefs.Length < 1 && dataDeclaration.FieldRefs.Length < 1)
                     {
@@ -315,21 +318,29 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             {
                 foreach (var memberRef in memberRefs)
                 {
-                    if (memberRef.CollectionKeyType != null)
-                    {
-                        queue.Enqueue(memberRef.CollectionKeyType);
-                    }
+                    BuildTypeRef(queue, memberRef.TypeRef);
+                    BuildTypeRef(queue, memberRef.ConverterRef.SourceTypeRef);
+                }
+            }
 
-                    if (memberRef.CollectionElementType != null)
-                    {
-                        queue.Enqueue(memberRef.CollectionElementType);
-                    }
+            static void BuildTypeRef(Queue<ITypeSymbol> queue, DataDeclaration.TypeRef typeRef)
+            {
+                var collectionTypeRef = typeRef.CollectionTypeRef;
 
-                    {
-                        queue.Enqueue(memberRef.Type);
-                    }
+                if (collectionTypeRef.CollectionKeyType != null)
+                {
+                    queue.Enqueue(collectionTypeRef.CollectionKeyType);
                 }
 
+                if (collectionTypeRef.CollectionElementType != null)
+                {
+                    queue.Enqueue(collectionTypeRef.CollectionElementType);
+                }
+
+                if (typeRef.Type != null)
+                {
+                    queue.Enqueue(typeRef.Type);
+                }
             }
         }
 
@@ -429,30 +440,43 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             {
                 foreach (var memberRef in memberRefs)
                 {
-                    switch (memberRef.CollectionKind)
+                    TryAddTypeRef(dataMap, uniqueTypeNames, typeQueue, memberRef.TypeRef);
+                    TryAddTypeRef(dataMap, uniqueTypeNames, typeQueue, memberRef.ConverterRef.SourceTypeRef);
+                }
+            }
+
+            static void TryAddTypeRef(
+                  Dictionary<string, DataDeclaration> dataMap
+                , HashSet<string> uniqueTypeNames
+                , Queue<DataDeclaration> typeQueue
+                , DataDeclaration.TypeRef typeRef
+            )
+            {
+                var collectionTypeRef = typeRef.CollectionTypeRef;
+
+                switch (collectionTypeRef.CollectionKind)
+                {
+                    case CollectionKind.Array:
+                    case CollectionKind.List:
+                    case CollectionKind.HashSet:
+                    case CollectionKind.Queue:
+                    case CollectionKind.Stack:
                     {
-                        case CollectionKind.Array:
-                        case CollectionKind.List:
-                        case CollectionKind.HashSet:
-                        case CollectionKind.Queue:
-                        case CollectionKind.Stack:
-                        {
-                            TryAdd(memberRef.CollectionElementType, dataMap, uniqueTypeNames, typeQueue);
-                            break;
-                        }
+                        TryAdd(collectionTypeRef.CollectionElementType, dataMap, uniqueTypeNames, typeQueue);
+                        break;
+                    }
 
-                        case CollectionKind.Dictionary:
-                        {
-                            TryAdd(memberRef.CollectionKeyType, dataMap, uniqueTypeNames, typeQueue);
-                            TryAdd(memberRef.CollectionElementType, dataMap, uniqueTypeNames, typeQueue);
-                            break;
-                        }
+                    case CollectionKind.Dictionary:
+                    {
+                        TryAdd(collectionTypeRef.CollectionKeyType, dataMap, uniqueTypeNames, typeQueue);
+                        TryAdd(collectionTypeRef.CollectionElementType, dataMap, uniqueTypeNames, typeQueue);
+                        break;
+                    }
 
-                        default:
-                        {
-                            TryAdd(memberRef.Type, dataMap, uniqueTypeNames, typeQueue);
-                            break;
-                        }
+                    default:
+                    {
+                        TryAdd(typeRef.Type, dataMap, uniqueTypeNames, typeQueue);
+                        break;
                     }
                 }
             }
