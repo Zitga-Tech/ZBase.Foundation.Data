@@ -1,7 +1,7 @@
 {
   "name": "com.zbase.foundation.data",
   "displayName": "ZBase.Foundation.Data",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "unity": "2022.2",
   "documentationUrl": "https://github.com/Zitga-Tech/ZBase.Foundation.Data/blob/main/README.md",
   "type": "library",
