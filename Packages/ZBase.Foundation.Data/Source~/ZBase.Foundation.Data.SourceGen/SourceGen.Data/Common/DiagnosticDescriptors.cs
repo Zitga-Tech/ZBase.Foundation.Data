@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis;
 #pragma warning disable IDE0090 // Use 'new DiagnosticDescriptor(...)'
 #pragma warning disable RS2008 // Enable analyzer release tracking
 
-namespace ZBase.Foundation.Data
+namespace ZBase.Foundation.Data.DataSourceGen
 {
     /// <summary>
     /// A container for all <see cref="DiagnosticDescriptor"/> instances for errors reported by analyzers in this project.
@@ -21,7 +21,7 @@ namespace ZBase.Foundation.Data
         /// </para>
         /// </summary>
         public static readonly DiagnosticDescriptor InvalidPropertyTargetedAttribute = new DiagnosticDescriptor(
-              id: "DATA0001"
+              id: "DATA_0001"
             , title: "Invalid property targeted attribute type"
             , messageFormat: "The field {0} is using attribute \"{1}\" which was not recognized as a valid type (are you missing a using directive?)"
             , category: "DataGenerator"
@@ -37,7 +37,7 @@ namespace ZBase.Foundation.Data
         /// </para>
         /// </summary>
         public static readonly DiagnosticDescriptor InvalidFieldTargetedAttribute = new DiagnosticDescriptor(
-              id: "DATA0002"
+              id: "DATA_0002"
             , title: "Invalid field targeted attribute type"
             , messageFormat: "The property is using attribute \"{1}\" which was not recognized as a valid type (are you missing a using directive?)"
             , category: "DataGenerator"

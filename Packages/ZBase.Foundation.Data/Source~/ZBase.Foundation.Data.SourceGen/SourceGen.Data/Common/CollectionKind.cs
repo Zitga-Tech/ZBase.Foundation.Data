@@ -1,4 +1,4 @@
-﻿namespace ZBase.Foundation.Data
+﻿namespace ZBase.Foundation.Data.DataSourceGen
 {
     public enum CollectionKind
     {

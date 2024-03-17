@@ -5,15 +5,13 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ZBase.Foundation.SourceGen;
+using static ZBase.Foundation.Data.DataSourceGen.Helpers;
 
 namespace ZBase.Foundation.Data.DataSourceGen
 {
     [Generator]
     public class DataGenerator : IIncrementalGenerator
     {
-        public const string GENERATOR_NAME = nameof(DataGenerator);
-        public const string IDATA = "global::ZBase.Foundation.Data.IData";
-
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
             var projectPathProvider = SourceGenHelpers.GetSourceGenConfigProvider(context);
@@ -122,8 +120,8 @@ namespace ZBase.Foundation.Data.DataSourceGen
                         , outputSourceGenFiles
                         , declaration.Syntax
                         , declaration.WriteCode()
-                        , syntaxTree.GetGeneratedSourceFileName(GENERATOR_NAME, declaration.Syntax, declaration.Symbol.ToValidIdentifier())
-                        , syntaxTree.GetGeneratedSourceFilePath(assemblyName, GENERATOR_NAME)
+                        , syntaxTree.GetGeneratedSourceFileName(DATA_GENERATOR_NAME, declaration.Syntax, declaration.Symbol.ToValidIdentifier())
+                        , syntaxTree.GetGeneratedSourceFilePath(assemblyName, DATA_GENERATOR_NAME)
                     );
                 }
 
@@ -175,10 +173,10 @@ namespace ZBase.Foundation.Data.DataSourceGen
         }
 
         private static readonly DiagnosticDescriptor s_errorDescriptor
-            = new("SG_DATA_01"
+            = new("DATA_UNKNOWN_0001"
                 , "Data Generator Error"
                 , "This error indicates a bug in the Data source generators. Error message: '{0}'."
-                , "ZBase.Foundation.Data.IData"
+                , "DataGenerator"
                 , DiagnosticSeverity.Error
                 , isEnabledByDefault: true
                 , description: ""

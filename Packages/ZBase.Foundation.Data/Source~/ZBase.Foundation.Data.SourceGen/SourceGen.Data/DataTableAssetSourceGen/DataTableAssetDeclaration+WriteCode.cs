@@ -1,6 +1,7 @@
 ﻿using ZBase.Foundation.SourceGen;
+using static ZBase.Foundation.Data.DataSourceGen.Helpers;
 
-namespace ZBase.Foundation.Data.DataTableAssetSourceGen
+namespace ZBase.Foundation.Data.DataSourceGen
 {
     partial class DataTableAssetDeclaration
     {

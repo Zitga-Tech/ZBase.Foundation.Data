@@ -1,12 +1,10 @@
 ﻿using ZBase.Foundation.SourceGen;
+using static ZBase.Foundation.Data.DataSourceGen.Helpers;
 
 namespace ZBase.Foundation.Data.DataSourceGen
 {
     partial class DataDeclaration
     {
-        private const string GENERATED_PROPERTY_FROM_FIELD_ATTRIBUTE = "[global::ZBase.Foundation.Data.SourceGen.GeneratedPropertyFromField(nameof({0}), typeof({1}))]";
-        private const string GENERATED_FIELD_FROM_PROPERTY_ATTRIBUTE = "[global::ZBase.Foundation.Data.SourceGen.GeneratedFieldFromProperty(nameof({0}))]";
-
         public string WriteCode()
         {
             var keyword = Symbol.IsValueType ? "struct" : "class";

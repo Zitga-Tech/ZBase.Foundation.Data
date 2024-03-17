@@ -1,7 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace ZBase.Foundation.Data.DataTableAssetSourceGen
+namespace ZBase.Foundation.Data.DataSourceGen
 {
     public class DataTableAssetRef
     {

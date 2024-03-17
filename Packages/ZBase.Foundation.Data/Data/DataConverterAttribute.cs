@@ -4,7 +4,7 @@ namespace ZBase.Foundation.Data
 {
     /// <summary>
     /// Instructs the source generator to use a custom converter for the annotated property or field
-    /// in the <c>SetValues_</c> methods and all related authoring mechanism.
+    /// in the authoring mechanism.
     /// </summary>
     /// <remarks>
     /// <para>

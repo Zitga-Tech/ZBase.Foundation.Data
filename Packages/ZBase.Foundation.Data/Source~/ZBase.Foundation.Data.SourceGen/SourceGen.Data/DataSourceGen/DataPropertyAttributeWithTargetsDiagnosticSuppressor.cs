@@ -9,7 +9,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using ZBase.Foundation.SourceGen;
 
-using static ZBase.Foundation.Data.SuppressionDescriptors;
+using static ZBase.Foundation.Data.DataSourceGen.SuppressionDescriptors;
+using static ZBase.Foundation.Data.DataSourceGen.Helpers;
 
 namespace ZBase.Foundation.Data.ObservablePropertySourceGen
 {
@@ -32,8 +33,6 @@ namespace ZBase.Foundation.Data.ObservablePropertySourceGen
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DataPropertyAttributeWithTargetsDiagnosticSuppressor : DiagnosticSuppressor
     {
-        public const string DATA_PROPERTY_ATTRIBUTE = "global::ZBase.Foundation.Data.DataPropertyAttribute";
-
         /// <inheritdoc/>
         public override ImmutableArray<SuppressionDescriptor> SupportedSuppressions => ImmutableArray.Create(FieldAttributeListForDataProperty);
 

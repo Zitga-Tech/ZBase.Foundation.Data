@@ -4,7 +4,7 @@
 
 using Microsoft.CodeAnalysis;
 
-namespace ZBase.Foundation.Data
+namespace ZBase.Foundation.Data.DataSourceGen
 {
     /// <summary>
     /// A container for all <see cref="SuppressionDescriptors"/> instances for suppressed diagnostics by analyzers in this project.

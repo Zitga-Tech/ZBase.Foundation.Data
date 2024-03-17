@@ -4,15 +4,13 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ZBase.Foundation.SourceGen;
+using static ZBase.Foundation.Data.DataSourceGen.Helpers;
 
-namespace ZBase.Foundation.Data.DataTableAssetSourceGen
+namespace ZBase.Foundation.Data.DataSourceGen
 {
     [Generator]
     public class DataTableAssetGenerator : IIncrementalGenerator
     {
-        public const string GENERATOR_NAME = nameof(DataTableAssetGenerator);
-        public const string DATA_TABLE_ASSET_T = "global::ZBase.Foundation.Data.DataTableAsset<";
-
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
             var projectPathProvider = SourceGenHelpers.GetSourceGenConfigProvider(context);
@@ -115,7 +113,7 @@ namespace ZBase.Foundation.Data.DataTableAssetSourceGen
                 }
 
                 var source = declaration.WriteCode();
-                var sourceFilePath = syntaxTree.GetGeneratedSourceFilePath(compilation.Assembly.Name, GENERATOR_NAME);
+                var sourceFilePath = syntaxTree.GetGeneratedSourceFilePath(compilation.Assembly.Name, DATA_TABLE_ASSET_GENERATOR_NAME);
                 var outputSource = TypeCreationHelpers.GenerateSourceTextForRootNodes(
                       sourceFilePath
                     , syntax
@@ -124,7 +122,7 @@ namespace ZBase.Foundation.Data.DataTableAssetSourceGen
                 );
 
                 context.AddSource(
-                      syntaxTree.GetGeneratedSourceFileName(GENERATOR_NAME, syntax, declaration.TypeRef.Symbol.ToValidIdentifier())
+                      syntaxTree.GetGeneratedSourceFileName(DATA_TABLE_ASSET_GENERATOR_NAME, syntax, declaration.TypeRef.Symbol.ToValidIdentifier())
                     , outputSource
                 );
 

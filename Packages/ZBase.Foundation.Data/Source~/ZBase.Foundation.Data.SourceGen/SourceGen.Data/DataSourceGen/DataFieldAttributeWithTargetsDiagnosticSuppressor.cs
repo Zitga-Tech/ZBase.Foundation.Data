@@ -9,7 +9,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using ZBase.Foundation.SourceGen;
 
-using static ZBase.Foundation.Data.SuppressionDescriptors;
+using static ZBase.Foundation.Data.DataSourceGen.SuppressionDescriptors;
+using static ZBase.Foundation.Data.DataSourceGen.Helpers;
 
 namespace ZBase.Foundation.Data.DataSourceGen
 {
@@ -32,10 +33,6 @@ namespace ZBase.Foundation.Data.DataSourceGen
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class DataFieldAttributeWithTargetsDiagnosticSuppressor : DiagnosticSuppressor
     {
-        public const string SERIALIZE_FIELD_ATTRIBUTE = "global::UnityEngine.SerializeField";
-        public const string JSON_INCLUDE_ATTRIBUTE = "global::System.Text.Json.Serialization.JsonIncludeAttribute";
-        public const string JSON_PROPERTY_ATTRIBUTE = "global::Newtonsoft.Json.JsonPropertyAttribute";
-
         /// <inheritdoc/>
         public override ImmutableArray<SuppressionDescriptor> SupportedSuppressions => ImmutableArray.Create(PropertyAttributeListForDataField);
 

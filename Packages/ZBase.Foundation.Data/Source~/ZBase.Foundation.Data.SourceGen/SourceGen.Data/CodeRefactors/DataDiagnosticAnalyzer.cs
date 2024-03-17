@@ -2,20 +2,15 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using ZBase.Foundation.SourceGen;
+using static ZBase.Foundation.Data.DataSourceGen.Helpers;
 
-namespace ZBase.Foundation.Data.CodeRefactors
+namespace ZBase.Foundation.Data.DataSourceGen
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     internal class DataDiagnosticAnalyzer : DiagnosticAnalyzer
     {
         public const string DIAGNOSTIC_FIELD = "DATA0010";
         public const string DIAGNOSTIC_PROPERTY = "DATA0011";
-
-        public const string INTERFACE = "ZBase.Foundation.Data.IData";
-        public const string DATA_PROPERTY_ATTRIBUTE = "global::ZBase.Foundation.Data.DataPropertyAttribute";
-        public const string SERIALIZE_FIELD_ATTRIBUTE = "global::UnityEngine.SerializeField";
-        public const string JSON_INCLUDE_ATTRIBUTE = "global::System.Text.Json.Serialization.JsonIncludeAttribute";
-        public const string JSON_PROPERTY_ATTRIBUTE = "global::Newtonsoft.Json.JsonPropertyAttribute";
 
         private static readonly DiagnosticDescriptor s_diagnosticField = new(
               id: DIAGNOSTIC_FIELD
@@ -53,7 +48,7 @@ namespace ZBase.Foundation.Data.CodeRefactors
         {
             if (context.Symbol is not IFieldSymbol fieldSymbol
                 || fieldSymbol.ContainingType is not INamedTypeSymbol typeSymbol
-                || typeSymbol.InheritsFromInterface(INTERFACE) == false
+                || typeSymbol.InheritsFromInterface(IDATA) == false
                 || (fieldSymbol.HasAttribute(SERIALIZE_FIELD_ATTRIBUTE) == false
                     && fieldSymbol.HasAttribute(JSON_INCLUDE_ATTRIBUTE) == false
                     && fieldSymbol.HasAttribute(JSON_PROPERTY_ATTRIBUTE) == false
@@ -71,7 +66,7 @@ namespace ZBase.Foundation.Data.CodeRefactors
         {
             if (context.Symbol is not IPropertySymbol propSymbol
                 || propSymbol.ContainingType is not INamedTypeSymbol typeSymbol
-                || typeSymbol.InheritsFromInterface(INTERFACE) == false
+                || typeSymbol.InheritsFromInterface(IDATA) == false
                 || propSymbol.HasAttribute(DATA_PROPERTY_ATTRIBUTE) == false
             )
             {

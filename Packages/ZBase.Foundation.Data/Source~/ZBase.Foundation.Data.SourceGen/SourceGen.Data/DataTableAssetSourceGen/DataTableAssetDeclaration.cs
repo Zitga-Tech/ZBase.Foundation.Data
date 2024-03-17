@@ -1,14 +1,9 @@
 ﻿using Microsoft.CodeAnalysis;
 
-namespace ZBase.Foundation.Data.DataTableAssetSourceGen
+namespace ZBase.Foundation.Data.DataSourceGen
 {
     public partial class DataTableAssetDeclaration
     {
-        public const string GENERATOR_NAME = nameof(DataTableAssetGenerator);
-        private const string AGGRESSIVE_INLINING = "[global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]";
-        private const string GENERATED_CODE = "[global::System.CodeDom.Compiler.GeneratedCode(\"ZBase.Foundation.Data.DataTableAssetGenerator\", \"1.0.0\")]";
-        private const string EXCLUDE_COVERAGE = "[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]";
-
         public DataTableAssetRef TypeRef { get; }
 
         public bool GetIdMethodIsImplemented { get; }

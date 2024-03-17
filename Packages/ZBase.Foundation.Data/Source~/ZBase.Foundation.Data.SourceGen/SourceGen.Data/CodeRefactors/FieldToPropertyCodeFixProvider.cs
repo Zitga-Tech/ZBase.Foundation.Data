@@ -13,7 +13,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Formatting;
 using ZBase.Foundation.SourceGen;
 
-namespace ZBase.Foundation.Data.CodeRefactors
+namespace ZBase.Foundation.Data.DataSourceGen
 {
     [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(FieldToPropertyCodeFixProvider)), Shared]
     internal class FieldToPropertyCodeFixProvider : CodeFixProvider
