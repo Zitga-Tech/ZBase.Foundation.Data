@@ -6,7 +6,7 @@ namespace ZBase.Foundation.Data.Authoring
     public sealed class TableAttribute : Attribute
     {
         /// <summary>
-        /// Type derived from <see cref="DataTableAsset{TKey, TData}"/>
+        /// Type derived from <see cref="DataTableAsset{TId, TData}"/>
         /// </summary>
         public Type DataTableAssetType { get; }
 
@@ -20,30 +20,32 @@ namespace ZBase.Foundation.Data.Authoring
         /// </summary>
         public NamingStrategy NamingStrategy { get; }
 
+        public Type[] Converters { get; }
+
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="dataTableAssetType">Type derived from <see cref="DataTableAsset{TKey, TData}"/></param>
-        public TableAttribute(Type dataTableAssetType)
-            : this(dataTableAssetType, dataTableAssetType.Name)
+        /// <param name="dataTableAssetType">Type derived from <see cref="DataTableAsset{TId, TData}"/></param>
+        public TableAttribute(Type dataTableAssetType, params Type[] converters)
+            : this(dataTableAssetType, dataTableAssetType.Name, converters)
         { }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="dataTableAssetType">Type derived from <see cref="DataTableAsset{TKey, TData}"/></param>
+        /// <param name="dataTableAssetType">Type derived from <see cref="DataTableAsset{TId, TData}"/></param>
         /// <param name="sheetName">Alternative name of <see cref="DataTableAssetType"/></param>
-        public TableAttribute(Type dataTableAssetType, string sheetName)
-            : this(dataTableAssetType, sheetName, NamingStrategy.PascalCase)
+        public TableAttribute(Type dataTableAssetType, string sheetName, params Type[] converters)
+            : this(dataTableAssetType, sheetName, NamingStrategy.PascalCase, converters)
         { }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="dataTableAssetType">Type derived from <see cref="DataTableAsset{TKey, TData}"/></param>
+        /// <param name="dataTableAssetType">Type derived from <see cref="DataTableAsset{TId, TData}"/></param>
         /// <param name="sheetName">Alternative name of <see cref="DataTableAssetType"/></param>
         /// <param name="namingStrategy">How the names of the sheet and its properties are serialized.</param>
-        public TableAttribute(Type dataTableAssetType, string sheetName, NamingStrategy namingStrategy)
+        public TableAttribute(Type dataTableAssetType, string sheetName, NamingStrategy namingStrategy, params Type[] converters)
         {
             if (typeof(DataTableAsset).IsAssignableFrom(dataTableAssetType) == false)
             {
@@ -62,6 +64,7 @@ namespace ZBase.Foundation.Data.Authoring
 
             this.SheetName = sheetName;
             this.NamingStrategy = namingStrategy;
+            this.Converters = converters ?? Array.Empty<Type>();
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using ZBase.Foundation.SourceGen;
+using static ZBase.Foundation.Data.DatabaseSourceGen.Helpers;
 
 namespace ZBase.Foundation.Data.DatabaseSourceGen
 {
@@ -98,7 +99,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             return p.Result;
         }
 
-        private static string GetSheetName(DatabaseRef.Table table, ITypeSymbol dataType)
+        private static string GetSheetName(TableRef table, ITypeSymbol dataType)
             => $"{table.Type.Name}_{dataType.Name}Sheet";
     }
 }

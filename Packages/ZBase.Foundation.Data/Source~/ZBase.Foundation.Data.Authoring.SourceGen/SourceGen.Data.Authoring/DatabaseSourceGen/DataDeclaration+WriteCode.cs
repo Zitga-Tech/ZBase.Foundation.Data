@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using ZBase.Foundation.SourceGen;
+using static ZBase.Foundation.Data.DatabaseSourceGen.Helpers;
 
 namespace ZBase.Foundation.Data.DatabaseSourceGen
 {

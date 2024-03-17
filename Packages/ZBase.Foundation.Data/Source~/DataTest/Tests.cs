@@ -34,8 +34,26 @@ namespace MyGame
         public int Id => Get_Id();
     }
 
+    public interface IConvert<in TFrom, out TTo>
+    {
+        TTo Convert(TFrom value);
+    }
+
     [Serializable]
-    public struct FloatWrapper
+    public struct IntWrapper : IConvert<int, IntWrapper>
+    {
+        public int value;
+
+        public IntWrapper(int value)
+        {
+            this.value = value;
+        }
+
+        public IntWrapper Convert(int value) => new(value);
+    }
+
+    [Serializable]
+    public struct FloatWrapper : IConvert<float, FloatWrapper>
     {
         public float value;
 
@@ -43,6 +61,13 @@ namespace MyGame
         {
             this.value = value;
         }
+
+        public FloatWrapper Convert(float value) => new(value);
+    }
+
+    public struct IntWrapperConverter
+    {
+        public readonly IntWrapper Convert(int value) => new(value);
     }
 
     public struct FloatWrapperConverter
@@ -50,9 +75,14 @@ namespace MyGame
         public readonly FloatWrapper Convert(float value) => new(value);
     }
 
+    public struct WrapperConverter<TFrom, TTo> where TTo : struct, IConvert<TFrom, TTo>
+    {
+        public readonly TTo Convert(TFrom value) => default(TTo).Convert(value);
+    }
+
     public partial class StatData : IData
     {
-        [DataProperty, DataConverter(typeof(FloatWrapperConverter))]
+        [DataProperty, DataConverter(typeof(WrapperConverter<float, FloatWrapper>))]
         public FloatWrapper Hp => Get_Hp();
 
         [JsonProperty, DataConverter(typeof(FloatWrapperConverter))]
@@ -208,8 +238,9 @@ namespace MyGame.Enemies
 namespace MyGame.Authoring
 {
     using ZBase.Foundation.Data.Authoring;
+    using MyGame.Heroes;
 
-    [Database]
+    [Database(typeof(IntWrapperConverter))]
     public partial class Database : UnityEngine.ScriptableObject
     {
         partial class SheetContainer
@@ -218,7 +249,7 @@ namespace MyGame.Authoring
     }
 
     [Table(typeof(Heroes.HeroDataTableAsset), "Hero", NamingStrategy.SnakeCase)]
-    [VerticalList(typeof(Heroes.HeroData), nameof(Heroes.HeroData.Multipliers))]
+    [VerticalList(typeof(Heroes.HeroData), nameof(Heroes.HeroData.Multipliers), typeof(HeroDataTableAsset))]
     partial class Database
     {
         partial class HeroDataTableAsset_HeroDataSheet
@@ -227,6 +258,7 @@ namespace MyGame.Authoring
     }
 
     [Table(typeof(Heroes.NewHeroDataTableAsset), "NewHero", NamingStrategy.SnakeCase)]
+    [VerticalList(typeof(Heroes.NewHeroData), nameof(Heroes.NewHeroData.Multipliers))]
     partial class Database
     {
 

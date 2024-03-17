@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ZBase.Foundation.SourceGen;
 
-namespace ZBase.Foundation.Data
+namespace ZBase.Foundation.Data.DatabaseSourceGen
 {
     public static class GeneratorHelper
     {

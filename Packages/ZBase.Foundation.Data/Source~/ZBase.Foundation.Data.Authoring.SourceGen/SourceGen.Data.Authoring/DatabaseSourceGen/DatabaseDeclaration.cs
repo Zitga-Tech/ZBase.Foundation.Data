@@ -2,56 +2,97 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using ZBase.Foundation.SourceGen;
+using static ZBase.Foundation.Data.DatabaseSourceGen.Helpers;
 
 namespace ZBase.Foundation.Data.DatabaseSourceGen
 {
     public partial class DatabaseDeclaration
     {
-        public const string GENERATOR_NAME = nameof(DatabaseGenerator);
-        public const string IDATA = "global::ZBase.Foundation.Data.IData";
-        public const string DATA_TABLE_ASSET_T = "global::ZBase.Foundation.Data.DataTableAsset<";
-        public const string TABLE_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.TableAttribute";
-        public const string VERTICAL_LIST_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.VerticalListAttribute";
-
-        private const string AGGRESSIVE_INLINING = "[global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]";
-        private const string GENERATED_CODE = "[global::System.CodeDom.Compiler.GeneratedCode(\"ZBase.Foundation.Data.DatabaseGenerator\", \"1.0.0\")]";
-        private const string EXCLUDE_COVERAGE = "[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]";
-
         public DatabaseRef DatabaseRef { get; }
 
-        public DatabaseDeclaration(DatabaseRef databaseRef)
+        public DatabaseDeclaration(SourceProductionContext context, DatabaseRef databaseRef)
         {
-            this.DatabaseRef = databaseRef;
-            InitializeTables();
+            DatabaseRef = databaseRef;
+            InitializeConverters(context);
+            InitializeTables(context);
 
             if (DatabaseRef.Tables.Length > 0)
             {
-                InitializeVerticalLists();
+                InitializeVerticalLists(context);
             }
         }
 
-        private void InitializeTables()
+        private void InitializeConverters(SourceProductionContext context)
+        {
+            var attrib = DatabaseRef.Attribute;
+            var args = attrib.ConstructorArguments;
+
+            if (args.Length < 1)
+            {
+                return;
+            }
+
+            var arg = args[0];
+
+            if (arg.Kind == TypedConstantKind.Array)
+            {
+                arg.Values.GetConverterMapMap(context, attrib, DatabaseRef.ConverterMapMap, 0);
+            }
+        }
+
+        private void InitializeTables(SourceProductionContext context)
         {
             var uniqueTypeNames = new HashSet<string>();
-            var tables = new List<DatabaseRef.Table>();
+            var tables = new List<TableRef>();
             var attributes = DatabaseRef.Symbol.GetAttributes(TABLE_ATTRIBUTE);
 
             foreach (var attrib in attributes)
             {
                 var args = attrib.ConstructorArguments;
 
-                if (args.Length < 1
-                    || args[0].Value is not INamedTypeSymbol type
-                    || type.IsAbstract
-                    || type.IsGenericType
-                    || type.BaseType == null
-                )
+                if (args.Length < 1)
                 {
                     continue;
                 }
 
-                if (type.TryGetGenericType(DATA_TABLE_ASSET_T, 2, out var baseType) == false)
+                if (args[0].Value is not INamedTypeSymbol type)
                 {
+                    context.ReportDiagnostic(
+                          TableDiagnosticDescriptors.NotTypeOfExpression
+                        , attrib.ApplicationSyntaxReference.GetSyntax()
+                    );
+                    continue;
+                }
+
+                if (type.IsAbstract)
+                {
+                    context.ReportDiagnostic(
+                          TableDiagnosticDescriptors.AbstractTypeNotSupported
+                        , attrib.ApplicationSyntaxReference.GetSyntax()
+                        , type.Name
+                    );
+                    continue;
+                }
+
+                if (type.IsGenericType)
+                {
+                    context.ReportDiagnostic(
+                          TableDiagnosticDescriptors.GenericTypeNotSupported
+                        , attrib.ApplicationSyntaxReference.GetSyntax()
+                        , type.Name
+                    );
+                    continue;
+                }
+
+                if (type.BaseType == null
+                    || type.TryGetGenericType(DATA_TABLE_ASSET_T, 2, out var baseType) == false
+                )
+                {
+                    context.ReportDiagnostic(
+                          TableDiagnosticDescriptors.NotDerivedFromDataTableAsset
+                        , attrib.ApplicationSyntaxReference.GetSyntax()
+                        , type.Name
+                    );
                     continue;
                 }
 
@@ -64,23 +105,52 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                 uniqueTypeNames.Add(fullTypeName);
 
-                var table = new DatabaseRef.Table {
+                var table = new TableRef {
                     Type = type,
                     BaseType = baseType,
                 };
 
                 if (args.Length > 1)
                 {
-                    table.SheetName = args[1].Value.ToString();
-                }
-                else
-                {
-                    table.SheetName = type.Name;
+                    var arg = args[1];
+
+                    if (arg.Kind != TypedConstantKind.Array && arg.Value is string sheetName)
+                    {
+                        table.SheetName = sheetName;
+                    }
+                    else if (arg.Kind == TypedConstantKind.Array)
+                    {
+                        arg.Values.GetConverterMapMap(context, attrib, table.ConverterMapMap, 1);
+                    }
                 }
 
                 if (args.Length > 2)
                 {
-                    table.NamingStrategy = args[2].Value.ToNamingStrategy();
+                    var arg = args[2];
+
+                    if (arg.Kind != TypedConstantKind.Array && arg.Value != null)
+                    {
+                        table.NamingStrategy = arg.Value.ToNamingStrategy();
+                    }
+                    else if (arg.Kind == TypedConstantKind.Array)
+                    {
+                        arg.Values.GetConverterMapMap(context, attrib, table.ConverterMapMap, 2);
+                    }
+                }
+
+                if (args.Length > 3)
+                {
+                    var arg = args[3];
+
+                    if (arg.Kind == TypedConstantKind.Array)
+                    {
+                        arg.Values.GetConverterMapMap(context, attrib, table.ConverterMapMap, 3);
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(table.SheetName))
+                {
+                    table.SheetName = type.Name;
                 }
 
                 tables.Add(table);
@@ -88,33 +158,61 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
             if (tables.Count > 0)
             {
-                using var arrayBuilder = ImmutableArrayBuilder<DatabaseRef.Table>.Rent();
+                using var arrayBuilder = ImmutableArrayBuilder<TableRef>.Rent();
                 arrayBuilder.AddRange(tables);
-                DatabaseRef.Tables = arrayBuilder.ToImmutable();
-            }
-            else
-            {
-                DatabaseRef.Tables = ImmutableArray<DatabaseRef.Table>.Empty;
+                DatabaseRef.SetTables(arrayBuilder.ToImmutable());
             }
         }
 
-        private void InitializeVerticalLists()
+        private void InitializeVerticalLists(SourceProductionContext context)
         {
-            var verticalListMap = DatabaseRef.VerticalListMap = new();
+            var verticalListMap = DatabaseRef.VerticalListMap;
             var attributes = DatabaseRef.Symbol.GetAttributes(VERTICAL_LIST_ATTRIBUTE);
 
             foreach (var attrib in attributes)
             {
                 var args = attrib.ConstructorArguments;
 
-                if (args.Length < 2
-                    || args[0].Value is not INamedTypeSymbol targetType
-                    || targetType.IsAbstract
-                    || targetType.InheritsFromInterface(IDATA, true) == false
-                    || args[1].Value is not string propertyName
-                    || string.IsNullOrWhiteSpace(propertyName)
-                )
+                if (args.Length < 2)
                 {
+                    continue;
+                }
+
+                if (args[0].Value is not INamedTypeSymbol targetType)
+                {
+                    context.ReportDiagnostic(
+                          VerticalListDiagnosticDescriptors.NotTypeOfExpression
+                        , attrib.ApplicationSyntaxReference.GetSyntax()
+                    );
+                    continue;
+                }
+
+                if (targetType.IsAbstract)
+                {
+                    context.ReportDiagnostic(
+                          VerticalListDiagnosticDescriptors.AbstractTypeNotSupported
+                        , attrib.ApplicationSyntaxReference.GetSyntax()
+                        , targetType.Name
+                    );
+                    continue;
+                }
+
+                if (targetType.InheritsFromInterface(IDATA, true) == false)
+                {
+                    context.ReportDiagnostic(
+                          VerticalListDiagnosticDescriptors.NotImplementIData
+                        , attrib.ApplicationSyntaxReference.GetSyntax()
+                        , targetType.Name
+                    );
+                    continue;
+                }
+
+                if (args[1].Value is not string propertyName || string.IsNullOrWhiteSpace(propertyName))
+                {
+                    context.ReportDiagnostic(
+                          VerticalListDiagnosticDescriptors.InvalidPropertyName
+                        , attrib.ApplicationSyntaxReference.GetSyntax()
+                    );
                     continue;
                 }
 
@@ -133,6 +231,11 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     }
                     else
                     {
+                        context.ReportDiagnostic(
+                              VerticalListDiagnosticDescriptors.InvalidTableType
+                            , attrib.ApplicationSyntaxReference.GetSyntax()
+                            , args[2].Value?.ToString() ?? string.Empty
+                        );
                         continue;
                     }
                 }

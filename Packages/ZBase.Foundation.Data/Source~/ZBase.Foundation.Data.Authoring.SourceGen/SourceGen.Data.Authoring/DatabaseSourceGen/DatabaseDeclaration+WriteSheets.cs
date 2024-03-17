@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using ZBase.Foundation.SourceGen;
+using static ZBase.Foundation.Data.DatabaseSourceGen.Helpers;
 
 namespace ZBase.Foundation.Data.DatabaseSourceGen
 {
@@ -8,7 +9,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public const string GENERATED_SHEET_ATTRIBUTE = "[global::ZBase.Foundation.Data.Authoring.SourceGen.GeneratedSheet(typeof({0}), typeof({1}), typeof({2}))]";
 
         public string WriteSheet(
-              DatabaseRef.Table table
+              TableRef table
             , DataTableAssetRef dataTableAssetRef
             , DataDeclaration dataTypeDeclaration
             , Dictionary<string, DataDeclaration> dataMap

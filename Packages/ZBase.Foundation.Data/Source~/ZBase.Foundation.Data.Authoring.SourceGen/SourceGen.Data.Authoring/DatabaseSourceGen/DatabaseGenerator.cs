@@ -7,16 +7,13 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ZBase.Foundation.SourceGen;
+using static ZBase.Foundation.Data.DatabaseSourceGen.Helpers;
 
 namespace ZBase.Foundation.Data.DatabaseSourceGen
 {
     [Generator]
     public class DatabaseGenerator : IIncrementalGenerator
     {
-        public const string GENERATOR_NAME = nameof(DatabaseGenerator);
-        public const string IDATA = "global::ZBase.Foundation.Data.IData";
-        public const string DATABASE_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.DatabaseAttribute";
-
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
             var projectPathProvider = SourceGenHelpers.GetSourceGenConfigProvider(context);
@@ -62,16 +59,18 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
             var semanticModel = context.SemanticModel;
             var symbol = semanticModel.GetDeclaredSymbol(classSyntax, token);
-            
-            if (symbol.HasAttribute(DATABASE_ATTRIBUTE))
+            var attribute = symbol.GetAttribute(DATABASE_ATTRIBUTE);
+
+            if (attribute == null)
             {
-                return new DatabaseRef {
-                    Syntax = classSyntax,
-                    Symbol = symbol,
-                };
+                return null;
             }
 
-            return null;
+            return new DatabaseRef(
+                  classSyntax
+                , symbol
+                , attribute
+            );
         }
 
         private static void GenerateOutput(
@@ -95,7 +94,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     SourceGenHelpers.ProjectPath = projectPath;
 
-                    var declaration = new DatabaseDeclaration(candidate);
+                    var declaration = new DatabaseDeclaration(context, candidate);
                     var assemblyName = compilation.Assembly.Name;
                     var syntaxTree = candidate.Syntax.SyntaxTree;
                     var databaseIdentifier = candidate.Symbol.ToValidIdentifier();
@@ -113,7 +112,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                     if (declaration.DatabaseRef.Tables.Length < 1)
                     {
-
                         OutputSource(
                               context
                             , outputSourceGenFiles
@@ -314,7 +312,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
             return map;
 
-            static void Build(Queue<ITypeSymbol> queue, ImmutableArray<DataDeclaration.MemberRef> memberRefs)
+            static void Build(Queue<ITypeSymbol> queue, ImmutableArray<MemberRef> memberRefs)
             {
                 foreach (var memberRef in memberRefs)
                 {
@@ -323,7 +321,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 }
             }
 
-            static void BuildTypeRef(Queue<ITypeSymbol> queue, DataDeclaration.TypeRef typeRef)
+            static void BuildTypeRef(Queue<ITypeSymbol> queue, TypeRef typeRef)
             {
                 var collectionTypeRef = typeRef.CollectionTypeRef;
 
@@ -435,7 +433,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                   Dictionary<string, DataDeclaration> dataMap
                 , HashSet<string> uniqueTypeNames
                 , Queue<DataDeclaration> typeQueue
-                , ImmutableArray<DataDeclaration.MemberRef> memberRefs
+                , ImmutableArray<MemberRef> memberRefs
             )
             {
                 foreach (var memberRef in memberRefs)
@@ -449,7 +447,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                   Dictionary<string, DataDeclaration> dataMap
                 , HashSet<string> uniqueTypeNames
                 , Queue<DataDeclaration> typeQueue
-                , DataDeclaration.TypeRef typeRef
+                , TypeRef typeRef
             )
             {
                 var collectionTypeRef = typeRef.CollectionTypeRef;
@@ -509,10 +507,10 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         }
 
         private static readonly DiagnosticDescriptor s_errorDescriptor
-            = new("SG_DATABASE_01"
+            = new("DATABASE_UNKNOWN_0001"
                 , "Database Generator Error"
                 , "This error indicates a bug in the Database source generators. Error message: '{0}'."
-                , "ZBase.Foundation.Data.Authoring.DatabaseAttribute"
+                , "DatabaseGenerator"
                 , DiagnosticSeverity.Error
                 , isEnabledByDefault: true
                 , description: ""
