@@ -18,7 +18,13 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
         public ImmutableArray<DataDeclaration> BaseTypeRefs { get; }
 
-        public DataDeclaration(SourceProductionContext context, ITypeSymbol symbol, bool buildBaseTypeRefs)
+        public DataDeclaration(
+              SourceProductionContext context
+            , DatabaseDeclaration database
+            , TableRef tableRef
+            , ITypeSymbol symbol
+            , bool buildBaseTypeRefs
+        )
         {
             Symbol = symbol;
             FullName = Symbol.ToFullName();
@@ -122,7 +128,12 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 memberRef.TypeRef.Type = fieldType;
 
                 memberRef.Process();
-                memberRef.GetConverterRef(context, member);
+
+                if (memberRef.TryMakeConverterRef(context, member) == false)
+                {
+                    memberRef.GetCommonConverterRef(database, tableRef);
+                }
+
                 propArrayBuilder.Add(memberRef);
             }
 
@@ -143,7 +154,12 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 memberRef.TypeRef.Type = fieldType;
 
                 memberRef.Process();
-                memberRef.GetConverterRef(context, member);
+                
+                if (memberRef.TryMakeConverterRef(context, member) == false)
+                {
+                    memberRef.GetCommonConverterRef(database, tableRef);
+                }
+                
                 fieldArrayBuilder.Add(memberRef);
             }
 
@@ -160,7 +176,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         break;
                     }
 
-                    baseArrayBuilder.Add(new DataDeclaration(context, baseSymbol, false));
+                    baseArrayBuilder.Add(new DataDeclaration(context, database, tableRef, baseSymbol, false));
                     baseSymbol = baseSymbol.BaseType;
                 }
             }

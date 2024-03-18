@@ -44,7 +44,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public static void Process(this MemberRef memberRef)
         {
             var typeRef = memberRef.TypeRef;
-            GetCollectionTypeRef(typeRef);
+            MakeCollectionTypeRef(typeRef);
 
             var typeMembers = typeRef.Type.GetMembers();
             bool? fieldTypeHasParameterlessConstructor = null;
@@ -78,7 +78,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
         }
 
-        public static void GetCollectionTypeRef(this TypeRef typeRef)
+        public static void MakeCollectionTypeRef(this TypeRef typeRef)
         {
             var collectionTypeRef = typeRef.CollectionTypeRef;
 
@@ -149,7 +149,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
         }
 
-        public static void GetConverterRef(
+        public static bool TryMakeConverterRef(
               this MemberRef targetRef
             , SourceProductionContext context
             , ISymbol targetSymbol
@@ -159,7 +159,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 || attrib.ConstructorArguments.Length != 1
             )
             {
-                return;
+                return false;
             }
 
             if (attrib.ConstructorArguments[0].Value is not INamedTypeSymbol type)
@@ -168,7 +168,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                       ConverterDiagnosticDescriptors.NotTypeOfExpression
                     , attrib.ApplicationSyntaxReference.GetSyntax()
                 );
-                return;
+                return false;
             }
 
             if (type.IsAbstract)
@@ -178,7 +178,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     , attrib.ApplicationSyntaxReference.GetSyntax()
                     , type.Name
                 );
-                return;
+                return false;
             }
 
             if (type.IsUnboundGenericType)
@@ -188,7 +188,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     , attrib.ApplicationSyntaxReference.GetSyntax()
                     , type.Name
                 );
-                return;
+                return false;
             }
 
             if (type.IsValueType == false)
@@ -219,7 +219,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         , attrib.ApplicationSyntaxReference.GetSyntax()
                         , type.Name
                     );
-                    return;
+                    return false;
                 }
             }
 
@@ -253,7 +253,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     , attrib.ApplicationSyntaxReference.GetSyntax()
                     , type.Name
                 );
-                return;
+                return false;
             }
 
             var targetType = targetRef.TypeRef.Type;
@@ -264,9 +264,9 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                       ConverterDiagnosticDescriptors.MissingConvertMethodReturnType
                     , attrib.ApplicationSyntaxReference.GetSyntax()
                     , type.Name
-                    , targetType.Name
+                    , targetType.ToFullName()
                 );
-                return;
+                return false;
             }
 
             if (convertMethod.Parameters.Length != 1
@@ -278,9 +278,9 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                       ConverterDiagnosticDescriptors.InvalidConvertMethodReturnType
                     , attrib.ApplicationSyntaxReference.GetSyntax()
                     , type.Name
-                    , targetType.Name
+                    , targetType.ToFullName()
                 );
-                return;
+                return false;
             }
 
             var converterRef = targetRef.ConverterRef;
@@ -291,10 +291,31 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             var sourceTypeRef = converterRef.SourceTypeRef;
             sourceTypeRef.Type = convertMethod.Parameters[0].Type;
 
-            GetCollectionTypeRef(sourceTypeRef);
+            MakeCollectionTypeRef(sourceTypeRef);
+
+            return true;
         }
 
-        public static bool TryGetConverterRef(
+        public static void GetCommonConverterRef(
+              this MemberRef targetRef
+            , DatabaseDeclaration database
+            , TableRef tableRef
+        )
+        {
+            if (tableRef.ConverterMap.TryGetValue(targetRef.TypeRef.Type, out var converterRef))
+            {
+                targetRef.ConverterRef.CopyFrom(converterRef);
+                return;
+            }
+
+            if (database.DatabaseRef.ConverterMap.TryGetValue(targetRef.TypeRef.Type, out converterRef))
+            {
+                targetRef.ConverterRef.CopyFrom(converterRef);
+                return;
+            }
+        }
+
+        public static bool TryMakeConverterRef(
               this TypedConstant typedConstant
             , SourceProductionContext context
             , AttributeData attrib
@@ -442,12 +463,12 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             var sourceTypeRef = result.SourceTypeRef;
             sourceTypeRef.Type = convertMethod.Parameters[0].Type;
 
-            GetCollectionTypeRef(sourceTypeRef);
+            MakeCollectionTypeRef(sourceTypeRef);
 
             return true;
         }
 
-        public static void GetConverterMapMap(
+        public static void MakeConverterMap(
               this ImmutableArray<TypedConstant> values
             , SourceProductionContext context
             , AttributeData attrib
@@ -462,7 +483,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
             for (var i = 0; i < values.Length; i++)
             {
-                if (values[i].TryGetConverterRef(context, attrib, i, out var converterRef) == false)
+                if (values[i].TryMakeConverterRef(context, attrib, i, out var converterRef) == false)
                 {
                     continue;
                 }
@@ -474,7 +495,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         , attrib.ApplicationSyntaxReference.GetSyntax()
                         , converterRef.ConverterType.Name
                         , anotherConverter.ConverterType.Name
-                        , anotherConverter.TargetType.Name
+                        , anotherConverter.TargetType.ToFullName()
                         , offset + i
                     );
                 }

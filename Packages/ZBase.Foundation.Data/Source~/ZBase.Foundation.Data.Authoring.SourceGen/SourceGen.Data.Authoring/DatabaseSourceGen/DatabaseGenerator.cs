@@ -260,10 +260,10 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
         private static Dictionary<ITypeSymbol, DataDeclaration> BuildDataMap(
               SourceProductionContext context
-            , DatabaseDeclaration declaration
+            , DatabaseDeclaration database
         )
         {
-            var tables = declaration.DatabaseRef.Tables;
+            var tables = database.DatabaseRef.Tables;
             var map = new Dictionary<ITypeSymbol, DataDeclaration>(SymbolEqualityComparer.Default);
             var queue = new Queue<ITypeSymbol>();
 
@@ -287,7 +287,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         continue;
                     }
 
-                    var dataDeclaration = new DataDeclaration(context, type, true);
+                    var dataDeclaration = new DataDeclaration(context, database, table, type, true);
 
                     if (dataDeclaration.PropRefs.Length < 1 && dataDeclaration.FieldRefs.Length < 1)
                     {
@@ -343,11 +343,11 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         }
 
         private static Dictionary<ITypeSymbol, DataTableAssetRef> BuildDataTableAssetRefMap(
-              DatabaseDeclaration declaration
+              DatabaseDeclaration database
             , Dictionary<ITypeSymbol, DataDeclaration> dataMap
         )
         {
-            var tables = declaration.DatabaseRef.Tables;
+            var tables = database.DatabaseRef.Tables;
             var map = new Dictionary<ITypeSymbol, DataTableAssetRef>(SymbolEqualityComparer.Default);
             var uniqueTypeNames = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
             var typeQueue = new Queue<DataDeclaration>();

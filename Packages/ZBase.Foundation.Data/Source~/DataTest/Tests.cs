@@ -103,7 +103,7 @@ namespace MyGame
     public partial struct StatMultiplierData : IData
     {
         [SerializeField]
-        private int _level;
+        private IntWrapper _level;
 
         [SerializeField]
         private float _hp;

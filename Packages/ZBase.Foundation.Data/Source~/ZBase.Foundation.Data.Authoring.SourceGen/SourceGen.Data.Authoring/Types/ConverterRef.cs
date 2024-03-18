@@ -32,5 +32,15 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
             return expression;
         }
+
+        public void CopyFrom(ConverterRef source)
+        {
+            if (source == null) return;
+
+            Kind = source.Kind;
+            ConverterType = source.ConverterType;
+            TargetType = source.TargetType;
+            SourceTypeRef.CopyFrom(source.SourceTypeRef);
+        }
     }
 }

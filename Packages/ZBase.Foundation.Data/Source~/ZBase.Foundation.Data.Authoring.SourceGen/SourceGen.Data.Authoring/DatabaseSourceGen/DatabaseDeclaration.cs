@@ -39,7 +39,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
             if (arg.Kind == TypedConstantKind.Array)
             {
-                arg.Values.GetConverterMapMap(context, attrib, DatabaseRef.ConverterMap, 0);
+                arg.Values.MakeConverterMap(context, attrib, DatabaseRef.ConverterMap, 0);
             }
         }
 
@@ -121,7 +121,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     }
                     else if (arg.Kind == TypedConstantKind.Array)
                     {
-                        arg.Values.GetConverterMapMap(context, attrib, table.ConverterMap, 1);
+                        arg.Values.MakeConverterMap(context, attrib, table.ConverterMap, 1);
                     }
                 }
 
@@ -135,7 +135,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     }
                     else if (arg.Kind == TypedConstantKind.Array)
                     {
-                        arg.Values.GetConverterMapMap(context, attrib, table.ConverterMap, 2);
+                        arg.Values.MakeConverterMap(context, attrib, table.ConverterMap, 2);
                     }
                 }
 
@@ -145,7 +145,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                     if (arg.Kind == TypedConstantKind.Array)
                     {
-                        arg.Values.GetConverterMapMap(context, attrib, table.ConverterMap, 3);
+                        arg.Values.MakeConverterMap(context, attrib, table.ConverterMap, 3);
                     }
                 }
 
