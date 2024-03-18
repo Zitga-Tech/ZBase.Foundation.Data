@@ -111,14 +111,14 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             , description: "The type must not be open generic to be considered a valid converter."
         );
 
-        public static readonly DiagnosticDescriptor RedundantConverter = new DiagnosticDescriptor(
+        public static readonly DiagnosticDescriptor ConverterAmbiguity = new DiagnosticDescriptor(
               id: "DATABASE_CONVERTER_0011"
-            , title: "Redundant converter"
-            , messageFormat: "The type \"{0}\" at position {4} is redundant because a method of the same signature \"{2} Convert({3})\" has been already defined by {1}"
+            , title: "Converter ambiguity"
+            , messageFormat: "The type \"{0}\" at position {3} will be ignored because a \"Convert\" method that returns a value of \"{2}\" has already been defined in \"{1}\""
             , category: "DatabaseGenerator"
             , defaultSeverity: DiagnosticSeverity.Warning
             , isEnabledByDefault: true
-            , description: "A \"Convert\" method of the same signature has already been defined by another type."
+            , description: "Multiple converters whose \"Convert\" method returns a value of the same type are not allowed."
         );
     }
 }

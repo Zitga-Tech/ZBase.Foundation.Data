@@ -4,10 +4,10 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 {
     public class CollectionTypeRef
     {
-        public CollectionKind CollectionKind { get; set; }
+        public CollectionKind Kind { get; set; }
 
-        public ITypeSymbol CollectionElementType { get; set; }
+        public ITypeSymbol ElementType { get; set; }
 
-        public ITypeSymbol CollectionKeyType { get; set; }
+        public ITypeSymbol KeyType { get; set; }
     }
 }

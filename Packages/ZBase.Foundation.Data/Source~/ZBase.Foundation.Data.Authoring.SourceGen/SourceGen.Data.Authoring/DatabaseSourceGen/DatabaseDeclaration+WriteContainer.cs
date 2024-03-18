@@ -8,8 +8,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
     partial class DatabaseDeclaration
     {
         public string WriteContainer(
-              Dictionary<string, DataTableAssetRef> dataTableAssetRefMap
-            , Dictionary<string, DataDeclaration> dataMap
+              Dictionary<ITypeSymbol, DataTableAssetRef> dataTableAssetRefMap
+            , Dictionary<ITypeSymbol, DataDeclaration> dataMap
         )
         {
             var syntax = DatabaseRef.Syntax;
@@ -41,14 +41,14 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     {
                         foreach (var table in tables)
                         {
-                            if (dataTableAssetRefMap.TryGetValue(table.Type.ToFullName(), out var dataTableAssetRef) == false)
+                            if (dataTableAssetRefMap.TryGetValue(table.Type, out var dataTableAssetRef) == false)
                             {
                                 continue;
                             }
 
                             var dataType = dataTableAssetRef.DataType;
 
-                            if (dataMap.ContainsKey(dataType.ToFullName()) == false)
+                            if (dataMap.ContainsKey(dataType) == false)
                             {
                                 continue;
                             }
@@ -70,14 +70,14 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         {
                             foreach (var table in tables)
                             {
-                                if (dataTableAssetRefMap.TryGetValue(table.Type.ToFullName(), out var dataTableAssetRef) == false)
+                                if (dataTableAssetRefMap.TryGetValue(table.Type, out var dataTableAssetRef) == false)
                                 {
                                     continue;
                                 }
 
                                 var dataType = dataTableAssetRef.DataType;
 
-                                if (dataMap.ContainsKey(dataType.ToFullName()) == false)
+                                if (dataMap.ContainsKey(dataType) == false)
                                 {
                                     continue;
                                 }

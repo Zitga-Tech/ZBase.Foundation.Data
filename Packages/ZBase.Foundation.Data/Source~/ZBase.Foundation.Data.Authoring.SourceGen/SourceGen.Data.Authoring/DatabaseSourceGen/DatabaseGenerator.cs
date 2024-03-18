@@ -86,16 +86,18 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 return;
             }
 
+            var objectType = compilation.GetSpecialType(SpecialType.System_Object);
+
             context.CancellationToken.ThrowIfCancellationRequested();
+
+            SourceGenHelpers.ProjectPath = projectPath;
+            var assemblyName = compilation.Assembly.Name;
 
             foreach (var candidate in candidates)
             {
                 try
                 {
-                    SourceGenHelpers.ProjectPath = projectPath;
-
-                    var declaration = new DatabaseDeclaration(context, candidate);
-                    var assemblyName = compilation.Assembly.Name;
+                    var declaration = new DatabaseDeclaration(context, candidate, objectType);
                     var syntaxTree = candidate.Syntax.SyntaxTree;
                     var databaseIdentifier = candidate.Symbol.ToValidIdentifier();
 
@@ -121,7 +123,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                             , databaseSourceFilePath
                         );
 
-                        return;
+                        continue;
                     }
 
                     var dataMap = BuildDataMap(context, declaration);
@@ -140,12 +142,12 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                     foreach (var table in tables)
                     {
-                        if (dataTableAssetRefMap.TryGetValue(table.Type.ToFullName(), out var dataTableAssetRef) == false)
+                        if (dataTableAssetRefMap.TryGetValue(table.Type, out var dataTableAssetRef) == false)
                         {
                             continue;
                         }
 
-                        if (dataMap.TryGetValue(dataTableAssetRef.DataType.ToFullName(), out var dataTypeDeclaration) == false)
+                        if (dataMap.TryGetValue(dataTableAssetRef.DataType, out var dataTypeDeclaration) == false)
                         {
                             continue;
                         }
@@ -166,7 +168,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                               context
                             , outputSourceGenFiles
                             , declaration.DatabaseRef.Syntax
-                            , declaration.WriteSheet(table, dataTableAssetRef, dataTypeDeclaration, dataMap)
+                            , declaration.WriteSheet(table, dataTableAssetRef, dataTypeDeclaration, dataMap, objectType)
                             , sheetHintName
                             , sheetSourceFilePath
                         );
@@ -174,11 +176,11 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 }
                 catch (Exception e)
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(
+                    context.ReportDiagnostic(
                           s_errorDescriptor
-                        , candidate.Syntax.GetLocation()
+                        , candidate.Attribute.ApplicationSyntaxReference.GetSyntax()
                         , e.ToUnityPrintableString()
-                    ));
+                    );
                 }
             }
         }
@@ -256,13 +258,13 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
         }
 
-        private static Dictionary<string, DataDeclaration> BuildDataMap(
+        private static Dictionary<ITypeSymbol, DataDeclaration> BuildDataMap(
               SourceProductionContext context
             , DatabaseDeclaration declaration
         )
         {
             var tables = declaration.DatabaseRef.Tables;
-            var map = new Dictionary<string, DataDeclaration>();
+            var map = new Dictionary<ITypeSymbol, DataDeclaration>(SymbolEqualityComparer.Default);
             var queue = new Queue<ITypeSymbol>();
 
             foreach (var table in tables)
@@ -280,9 +282,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         continue;
                     }
 
-                    var typeName = type.ToFullName();
-
-                    if (map.ContainsKey(typeName))
+                    if (map.ContainsKey(type))
                     {
                         continue;
                     }
@@ -294,7 +294,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         continue;
                     }
 
-                    map[typeName] = dataDeclaration;
+                    map[type] = dataDeclaration;
 
                     Build(queue, dataDeclaration.PropRefs);
                     Build(queue, dataDeclaration.FieldRefs);
@@ -325,14 +325,14 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             {
                 var collectionTypeRef = typeRef.CollectionTypeRef;
 
-                if (collectionTypeRef.CollectionKeyType != null)
+                if (collectionTypeRef.KeyType != null)
                 {
-                    queue.Enqueue(collectionTypeRef.CollectionKeyType);
+                    queue.Enqueue(collectionTypeRef.KeyType);
                 }
 
-                if (collectionTypeRef.CollectionElementType != null)
+                if (collectionTypeRef.ElementType != null)
                 {
-                    queue.Enqueue(collectionTypeRef.CollectionElementType);
+                    queue.Enqueue(collectionTypeRef.ElementType);
                 }
 
                 if (typeRef.Type != null)
@@ -342,21 +342,21 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
         }
 
-        private static Dictionary<string, DataTableAssetRef> BuildDataTableAssetRefMap(
+        private static Dictionary<ITypeSymbol, DataTableAssetRef> BuildDataTableAssetRefMap(
               DatabaseDeclaration declaration
-            , Dictionary<string, DataDeclaration> dataMap
+            , Dictionary<ITypeSymbol, DataDeclaration> dataMap
         )
         {
             var tables = declaration.DatabaseRef.Tables;
-            var map = new Dictionary<string, DataTableAssetRef>();
-            var uniqueTypeNames = new HashSet<string>();
+            var map = new Dictionary<ITypeSymbol, DataTableAssetRef>(SymbolEqualityComparer.Default);
+            var uniqueTypeNames = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
             var typeQueue = new Queue<DataDeclaration>();
 
             foreach (var table in tables)
             {
-                var typeName = table.Type.ToFullName();
+                var type = table.Type;
 
-                if (map.ContainsKey(typeName) == false)
+                if (map.ContainsKey(type) == false)
                 {
                     var dataTableAssetRef = new DataTableAssetRef {
                         Symbol = table.Type,
@@ -365,7 +365,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     };
 
                     InitializeDataTableAssetRef(dataTableAssetRef, dataMap, uniqueTypeNames, typeQueue);
-                    map[typeName] = dataTableAssetRef;
+                    map[type] = dataTableAssetRef;
                 }
 
                 uniqueTypeNames.Clear();
@@ -377,24 +377,24 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
         private static void InitializeDataTableAssetRef(
               DataTableAssetRef dataTableAssetRef
-            , Dictionary<string, DataDeclaration> dataMap
-            , HashSet<string> uniqueTypeNames
+            , Dictionary<ITypeSymbol, DataDeclaration> dataMap
+            , HashSet<ITypeSymbol> uniqueTypeNames
             , Queue<DataDeclaration> typeQueue
         )
         {
-            var idTypeFullName = dataTableAssetRef.IdType.ToFullName();
-            var dataTypeFullName = dataTableAssetRef.DataType.ToFullName();
+            var idType = dataTableAssetRef.IdType;
+            var dataType = dataTableAssetRef.DataType;
 
-            if (dataMap.TryGetValue(idTypeFullName, out var idDeclaration))
+            if (dataMap.TryGetValue(idType, out var idDeclaration))
             {
                 typeQueue.Enqueue(idDeclaration);
-                uniqueTypeNames.Add(idTypeFullName);
+                uniqueTypeNames.Add(idType);
             }
 
-            if (dataMap.TryGetValue(dataTypeFullName, out var dataDeclaration))
+            if (dataMap.TryGetValue(dataType, out var dataDeclaration))
             {
                 typeQueue.Enqueue(dataDeclaration);
-                uniqueTypeNames.Add(dataTypeFullName);
+                uniqueTypeNames.Add(dataType);
             }
 
             while (typeQueue.Count > 0)
@@ -415,23 +415,23 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 }
             }
 
-            uniqueTypeNames.Remove(idTypeFullName);
-            uniqueTypeNames.Remove(dataTypeFullName);
+            uniqueTypeNames.Remove(idType);
+            uniqueTypeNames.Remove(dataType);
 
             if (uniqueTypeNames.Count > 0)
             {
-                using var arrayBuilder = ImmutableArrayBuilder<string>.Rent();
+                using var arrayBuilder = ImmutableArrayBuilder<ITypeSymbol>.Rent();
                 arrayBuilder.AddRange(uniqueTypeNames);
-                dataTableAssetRef.NestedDataTypeFullNames = arrayBuilder.ToImmutable();
+                dataTableAssetRef.NestedDataTypes = arrayBuilder.ToImmutable();
             }
             else
             {
-                dataTableAssetRef.NestedDataTypeFullNames = ImmutableArray<string>.Empty;
+                dataTableAssetRef.NestedDataTypes = ImmutableArray<ITypeSymbol>.Empty;
             }
 
             static void TryAddAll(
-                  Dictionary<string, DataDeclaration> dataMap
-                , HashSet<string> uniqueTypeNames
+                  Dictionary<ITypeSymbol, DataDeclaration> dataMap
+                , HashSet<ITypeSymbol> uniqueTypeNames
                 , Queue<DataDeclaration> typeQueue
                 , ImmutableArray<MemberRef> memberRefs
             )
@@ -444,15 +444,15 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
 
             static void TryAddTypeRef(
-                  Dictionary<string, DataDeclaration> dataMap
-                , HashSet<string> uniqueTypeNames
+                  Dictionary<ITypeSymbol, DataDeclaration> dataMap
+                , HashSet<ITypeSymbol> uniqueTypeNames
                 , Queue<DataDeclaration> typeQueue
                 , TypeRef typeRef
             )
             {
                 var collectionTypeRef = typeRef.CollectionTypeRef;
 
-                switch (collectionTypeRef.CollectionKind)
+                switch (collectionTypeRef.Kind)
                 {
                     case CollectionKind.Array:
                     case CollectionKind.List:
@@ -460,14 +460,14 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     case CollectionKind.Queue:
                     case CollectionKind.Stack:
                     {
-                        TryAdd(collectionTypeRef.CollectionElementType, dataMap, uniqueTypeNames, typeQueue);
+                        TryAdd(collectionTypeRef.ElementType, dataMap, uniqueTypeNames, typeQueue);
                         break;
                     }
 
                     case CollectionKind.Dictionary:
                     {
-                        TryAdd(collectionTypeRef.CollectionKeyType, dataMap, uniqueTypeNames, typeQueue);
-                        TryAdd(collectionTypeRef.CollectionElementType, dataMap, uniqueTypeNames, typeQueue);
+                        TryAdd(collectionTypeRef.KeyType, dataMap, uniqueTypeNames, typeQueue);
+                        TryAdd(collectionTypeRef.ElementType, dataMap, uniqueTypeNames, typeQueue);
                         break;
                     }
 
@@ -481,8 +481,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
             static void TryAdd(
                   ITypeSymbol typeSymbol
-                , Dictionary<string, DataDeclaration> dataMap
-                , HashSet<string> uniqueTypeNames
+                , Dictionary<ITypeSymbol, DataDeclaration> dataMap
+                , HashSet<ITypeSymbol> uniqueTypeNames
                 , Queue<DataDeclaration> typeQueue
             )
             {
@@ -491,17 +491,15 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     return;
                 }
 
-                var typeFullName = typeSymbol.ToFullName();
-
-                if (uniqueTypeNames.Contains(typeFullName))
+                if (uniqueTypeNames.Contains(typeSymbol))
                 {
                     return;
                 }
 
-                if (dataMap.TryGetValue(typeFullName, out var typeDeclaration))
+                if (dataMap.TryGetValue(typeSymbol, out var typeDeclaration))
                 {
                     typeQueue.Enqueue(typeDeclaration);
-                    uniqueTypeNames.Add(typeFullName);
+                    uniqueTypeNames.Add(typeSymbol);
                 }
             }
         }

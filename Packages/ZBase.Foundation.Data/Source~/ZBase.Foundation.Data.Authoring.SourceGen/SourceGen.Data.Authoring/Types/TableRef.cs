@@ -14,8 +14,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public NamingStrategy NamingStrategy { get; set; }
 
         /// <summary>
-        /// Target Type --map-to--> Source Type --map-to--> Converter Ref
+        /// Target Type --map-to--> Converter Ref
         /// </summary>
-        public Dictionary<ITypeSymbol, Dictionary<ITypeSymbol, ConverterRef>> ConverterMapMap { get; } = new(SymbolEqualityComparer.Default);
+        public Dictionary<ITypeSymbol, ConverterRef> ConverterMap { get; } = new(SymbolEqualityComparer.Default);
     }
 }

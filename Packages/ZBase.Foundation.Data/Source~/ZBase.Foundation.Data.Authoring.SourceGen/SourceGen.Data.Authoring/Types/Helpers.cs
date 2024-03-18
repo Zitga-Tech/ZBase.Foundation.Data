@@ -84,67 +84,67 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
             if (typeRef.Type is IArrayTypeSymbol arrayType)
             {
-                collectionTypeRef.CollectionKind = CollectionKind.Array;
-                collectionTypeRef.CollectionElementType = arrayType.ElementType;
+                collectionTypeRef.Kind = CollectionKind.Array;
+                collectionTypeRef.ElementType = arrayType.ElementType;
             }
             else if (typeRef.Type is INamedTypeSymbol namedType)
             {
                 if (namedType.TryGetGenericType(LIST_TYPE_T, 1, out var listType))
                 {
-                    collectionTypeRef.CollectionKind = CollectionKind.List;
-                    collectionTypeRef.CollectionElementType = listType.TypeArguments[0];
+                    collectionTypeRef.Kind = CollectionKind.List;
+                    collectionTypeRef.ElementType = listType.TypeArguments[0];
                 }
                 else if (namedType.TryGetGenericType(DICTIONARY_TYPE_T, 2, out var dictType))
                 {
-                    collectionTypeRef.CollectionKind = CollectionKind.Dictionary;
-                    collectionTypeRef.CollectionKeyType = dictType.TypeArguments[0];
-                    collectionTypeRef.CollectionElementType = dictType.TypeArguments[1];
+                    collectionTypeRef.Kind = CollectionKind.Dictionary;
+                    collectionTypeRef.KeyType = dictType.TypeArguments[0];
+                    collectionTypeRef.ElementType = dictType.TypeArguments[1];
                 }
                 else if (namedType.TryGetGenericType(HASH_SET_TYPE_T, 1, out var hashSetType))
                 {
-                    collectionTypeRef.CollectionKind = CollectionKind.HashSet;
-                    collectionTypeRef.CollectionElementType = hashSetType.TypeArguments[0];
+                    collectionTypeRef.Kind = CollectionKind.HashSet;
+                    collectionTypeRef.ElementType = hashSetType.TypeArguments[0];
                 }
                 else if (namedType.TryGetGenericType(QUEUE_TYPE_T, 1, out var queueType))
                 {
-                    collectionTypeRef.CollectionKind = CollectionKind.Queue;
-                    collectionTypeRef.CollectionElementType = queueType.TypeArguments[0];
+                    collectionTypeRef.Kind = CollectionKind.Queue;
+                    collectionTypeRef.ElementType = queueType.TypeArguments[0];
                 }
                 else if (namedType.TryGetGenericType(STACK_TYPE_T, 1, out var stackType))
                 {
-                    collectionTypeRef.CollectionKind = CollectionKind.Stack;
-                    collectionTypeRef.CollectionElementType = stackType.TypeArguments[0];
+                    collectionTypeRef.Kind = CollectionKind.Stack;
+                    collectionTypeRef.ElementType = stackType.TypeArguments[0];
                 }
                 else if (namedType.TryGetGenericType(READONLY_MEMORY_TYPE_T, 1, out var readMemoryType))
                 {
-                    collectionTypeRef.CollectionKind = CollectionKind.Array;
-                    collectionTypeRef.CollectionElementType = readMemoryType.TypeArguments[0];
+                    collectionTypeRef.Kind = CollectionKind.Array;
+                    collectionTypeRef.ElementType = readMemoryType.TypeArguments[0];
                 }
                 else if (namedType.TryGetGenericType(MEMORY_TYPE_T, 1, out var memoryType))
                 {
-                    collectionTypeRef.CollectionKind = CollectionKind.Array;
-                    collectionTypeRef.CollectionElementType = memoryType.TypeArguments[0];
+                    collectionTypeRef.Kind = CollectionKind.Array;
+                    collectionTypeRef.ElementType = memoryType.TypeArguments[0];
                 }
                 else if (namedType.TryGetGenericType(READONLY_SPAN_TYPE_T, 1, out var readSpanType))
                 {
-                    collectionTypeRef.CollectionKind = CollectionKind.Array;
-                    collectionTypeRef.CollectionElementType = readSpanType.TypeArguments[0];
+                    collectionTypeRef.Kind = CollectionKind.Array;
+                    collectionTypeRef.ElementType = readSpanType.TypeArguments[0];
                 }
                 else if (namedType.TryGetGenericType(SPAN_TYPE_T, 1, out var spanType))
                 {
-                    collectionTypeRef.CollectionKind = CollectionKind.Array;
-                    collectionTypeRef.CollectionElementType = spanType.TypeArguments[0];
+                    collectionTypeRef.Kind = CollectionKind.Array;
+                    collectionTypeRef.ElementType = spanType.TypeArguments[0];
                 }
                 else if (namedType.TryGetGenericType(IREADONLY_LIST_TYPE_T, 1, out var readListType))
                 {
-                    collectionTypeRef.CollectionKind = CollectionKind.List;
-                    collectionTypeRef.CollectionElementType = readListType.TypeArguments[0];
+                    collectionTypeRef.Kind = CollectionKind.List;
+                    collectionTypeRef.ElementType = readListType.TypeArguments[0];
                 }
                 else if (namedType.TryGetGenericType(IREADONLY_DICTIONARY_TYPE_T, 2, out var readDictType))
                 {
-                    collectionTypeRef.CollectionKind = CollectionKind.Dictionary;
-                    collectionTypeRef.CollectionKeyType = readDictType.TypeArguments[0];
-                    collectionTypeRef.CollectionElementType = readDictType.TypeArguments[1];
+                    collectionTypeRef.Kind = CollectionKind.Dictionary;
+                    collectionTypeRef.KeyType = readDictType.TypeArguments[0];
+                    collectionTypeRef.ElementType = readDictType.TypeArguments[1];
                 }
             }
         }
@@ -451,7 +451,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
               this ImmutableArray<TypedConstant> values
             , SourceProductionContext context
             , AttributeData attrib
-            , Dictionary<ITypeSymbol, Dictionary<ITypeSymbol, ConverterRef>> converterMapMap
+            , Dictionary<ITypeSymbol, ConverterRef> converterMap
             , int offset
         )
         {
@@ -467,27 +467,20 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     continue;
                 }
 
-                if (converterMapMap.TryGetValue(converterRef.TargetType, out var converterMap) == false)
-                {
-                    converterMap = new(SymbolEqualityComparer.Default);
-                    converterMapMap[converterRef.TargetType] = converterMap;
-                }
-
-                if (converterMap.TryGetValue(converterRef.SourceTypeRef.Type, out var anotherConverter) != false)
+                if (converterMap.TryGetValue(converterRef.TargetType, out var anotherConverter))
                 {
                     context.ReportDiagnostic(
-                          ConverterDiagnosticDescriptors.RedundantConverter
+                          ConverterDiagnosticDescriptors.ConverterAmbiguity
                         , attrib.ApplicationSyntaxReference.GetSyntax()
                         , converterRef.ConverterType.Name
                         , anotherConverter.ConverterType.Name
                         , anotherConverter.TargetType.Name
-                        , anotherConverter.SourceTypeRef.Type.Name
                         , offset + i
                     );
                 }
                 else
                 {
-                    converterMap[converterRef.SourceTypeRef.Type] = converterRef;
+                    converterMap[converterRef.TargetType] = converterRef;
                 }
             }
         }

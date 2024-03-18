@@ -16,16 +16,16 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public ImmutableArray<TableRef> Tables { get; private set; }
 
         /// <summary>
-        /// Target Type --map-to--> Source Type --map-to--> Converter Ref
+        /// Target Type --map-to--> Converter Ref
         /// </summary>
-        public Dictionary<ITypeSymbol, Dictionary<ITypeSymbol, ConverterRef>> ConverterMapMap { get; }
+        public Dictionary<ITypeSymbol, ConverterRef> ConverterMap { get; }
 
         /// <summary>
         /// TargetTypeFullName --map-to--> ContainingTypeFullName --map-to--> PropertyName(s)
         /// <br/>
         /// ContainingTypeFullName can be empty if it is not defined.
         /// </summary>
-        public Dictionary<string, Dictionary<string, HashSet<string>>> VerticalListMap { get; }
+        public Dictionary<ITypeSymbol, Dictionary<ITypeSymbol, HashSet<string>>> VerticalListMap { get; }
 
         public DatabaseRef(ClassDeclarationSyntax syntax, ITypeSymbol symbol, AttributeData attribute)
         {
@@ -33,8 +33,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             Symbol = symbol;
             Attribute = attribute;
             Tables = ImmutableArray<TableRef>.Empty;
-            ConverterMapMap = new(SymbolEqualityComparer.Default);
-            VerticalListMap = new();
+            ConverterMap = new(SymbolEqualityComparer.Default);
+            VerticalListMap = new(SymbolEqualityComparer.Default);
         }
 
         public void SetTables(ImmutableArray<TableRef> tables)

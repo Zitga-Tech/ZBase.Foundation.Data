@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Microsoft.CodeAnalysis;
 using ZBase.Foundation.SourceGen;
 using static ZBase.Foundation.Data.DatabaseSourceGen.Helpers;
 
@@ -12,7 +13,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
               TableRef table
             , DataTableAssetRef dataTableAssetRef
             , DataDeclaration dataTypeDeclaration
-            , Dictionary<string, DataDeclaration> dataMap
+            , Dictionary<ITypeSymbol, DataDeclaration> dataMap
+            , ITypeSymbol objectType
         )
         {
             var idType = dataTableAssetRef.IdType;
@@ -21,13 +23,13 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             var idTypeFullName = idType.ToFullName();
             var dataTypeFullName = dataType.ToFullName();
             var dataTableAssetTypeName = dataTableAssetType.ToFullName();
-            var nestedDataTypeFullNames = dataTableAssetRef.NestedDataTypeFullNames;
+            var nestedDataTypeFullNames = dataTableAssetRef.NestedDataTypes;
             var verticalListMap = DatabaseRef.VerticalListMap;
             var databaseClassName = DatabaseRef.Syntax.Identifier.Text;
 
             var sheetName = GetSheetName(table, dataType);
             var sheetDataTypeName = $"{sheetName}.__{dataType.Name}";
-            var sheetIdTypeName = dataMap.TryGetValue(idTypeFullName, out var idTypeDeclaration)
+            var sheetIdTypeName = dataMap.TryGetValue(idType, out var idTypeDeclaration)
                 ? $"{sheetName}.__{idType.Name}"
                 : idTypeFullName;
 
@@ -96,7 +98,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                           ref p
                         , dataMap
                         , verticalListMap
-                        , dataTableAssetTypeName
+                        , dataTableAssetType
+                        , objectType
                         , idType: null
                     );
 
@@ -104,7 +107,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                           ref p
                         , dataMap
                         , verticalListMap
-                        , dataTableAssetTypeName
+                        , dataTableAssetType
+                        , objectType
                         , idTypeDeclaration?.Symbol ?? idType
                     );
 
@@ -116,7 +120,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                                   ref p
                                 , dataMap
                                 , verticalListMap
-                                , dataTableAssetTypeName
+                                , dataTableAssetType
+                                , objectType
                                 , idType: null
                             );
                         }

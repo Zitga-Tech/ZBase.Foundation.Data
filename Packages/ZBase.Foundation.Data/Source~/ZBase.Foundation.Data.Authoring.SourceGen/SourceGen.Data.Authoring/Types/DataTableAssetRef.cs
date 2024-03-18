@@ -11,6 +11,6 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
         public ITypeSymbol DataType { get; set; }
 
-        public ImmutableArray<string> NestedDataTypeFullNames { get; set; }
+        public ImmutableArray<ITypeSymbol> NestedDataTypes { get; set; }
     }
 }
