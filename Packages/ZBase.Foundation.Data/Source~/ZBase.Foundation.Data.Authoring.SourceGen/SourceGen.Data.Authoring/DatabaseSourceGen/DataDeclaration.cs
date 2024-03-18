@@ -110,6 +110,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             }
 
             var uniqueFieldNames = new HashSet<string>();
+            var outerNode = database.DatabaseRef.Syntax;
 
             foreach (var (propertyName, fieldName, member, fieldType) in properties)
             {
@@ -121,6 +122,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 uniqueFieldNames.Add(fieldName);
 
                 var memberRef = new MemberRef {
+                    Symbol = member,
                     PropertyName = propertyName,
                     TypeHasParameterlessConstructor = false,
                 };
@@ -129,9 +131,12 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                 memberRef.Process();
 
-                if (memberRef.TryMakeConverterRef(context, member) == false)
+                if (memberRef.TryMakeConverterRef(context, outerNode, member) == false)
                 {
-                    memberRef.GetCommonConverterRef(database, tableRef);
+                    if (memberRef.TryGetCommonConverterRef(database, tableRef) == false)
+                    {
+                        memberRef.TryFallbackConverterRef(outerNode);
+                    }
                 }
 
                 propArrayBuilder.Add(memberRef);
@@ -147,6 +152,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 uniqueFieldNames.Add(fieldName);
 
                 var memberRef = new MemberRef {
+                    Symbol = member,
                     PropertyName = propertyName,
                     TypeHasParameterlessConstructor = false,
                 };
@@ -155,9 +161,12 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                 memberRef.Process();
                 
-                if (memberRef.TryMakeConverterRef(context, member) == false)
+                if (memberRef.TryMakeConverterRef(context, outerNode, member) == false)
                 {
-                    memberRef.GetCommonConverterRef(database, tableRef);
+                    if (memberRef.TryGetCommonConverterRef(database, tableRef) == false)
+                    {
+                        memberRef.TryFallbackConverterRef(outerNode);
+                    }
                 }
                 
                 fieldArrayBuilder.Add(memberRef);

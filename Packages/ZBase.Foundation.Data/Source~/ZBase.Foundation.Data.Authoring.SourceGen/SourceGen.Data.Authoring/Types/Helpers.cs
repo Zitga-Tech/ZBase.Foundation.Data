@@ -152,6 +152,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public static bool TryMakeConverterRef(
               this MemberRef targetRef
             , SourceProductionContext context
+            , SyntaxNode outerNode
             , ISymbol targetSymbol
         )
         {
@@ -162,7 +163,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 return false;
             }
 
-            if (attrib.ConstructorArguments[0].Value is not INamedTypeSymbol type)
+            if (attrib.ConstructorArguments[0].Value is not INamedTypeSymbol converterType)
             {
                 context.ReportDiagnostic(
                       ConverterDiagnosticDescriptors.NotTypeOfExpression
@@ -170,30 +171,58 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 );
                 return false;
             }
-
-            if (type.IsAbstract)
+            else
             {
-                context.ReportDiagnostic(
+                var targetType = targetRef.TypeRef.Type;
+                var syntaxRef = attrib.ApplicationSyntaxReference;
+
+                if (TryGetConvertMethod(outerNode, converterType, out var convertMethod, targetType, context, syntaxRef) == false)
+                {
+                    return false;
+                }
+
+                MakeConverterRef(targetRef.ConverterRef, converterType, convertMethod, targetType);
+
+                return true;
+            }
+        }
+
+        private static bool TryGetConvertMethod(
+              SyntaxNode outerNode
+            , INamedTypeSymbol converterType
+            , out IMethodSymbol convertMethod
+            , ITypeSymbol returnType = null
+            , SourceProductionContext? context = null
+            , SyntaxReference syntaxRef = null
+        )
+        {
+            if (converterType.IsAbstract)
+            {
+                context?.ReportDiagnostic(
                       ConverterDiagnosticDescriptors.AbstractTypeNotSupported
-                    , attrib.ApplicationSyntaxReference.GetSyntax()
-                    , type.Name
+                    , syntaxRef?.GetSyntax() ?? outerNode
+                    , converterType.Name
                 );
+
+                convertMethod = null;
                 return false;
             }
 
-            if (type.IsUnboundGenericType)
+            if (converterType.IsUnboundGenericType)
             {
-                context.ReportDiagnostic(
+                context?.ReportDiagnostic(
                       ConverterDiagnosticDescriptors.OpenGenericTypeNotSupported
-                    , attrib.ApplicationSyntaxReference.GetSyntax()
-                    , type.Name
+                    , syntaxRef?.GetSyntax() ?? outerNode
+                    , converterType.Name
                 );
+
+                convertMethod = null;
                 return false;
             }
 
-            if (type.IsValueType == false)
+            if (converterType.IsValueType == false)
             {
-                var ctors = type.GetMembers(".ctor");
+                var ctors = converterType.GetMembers(".ctor");
                 IMethodSymbol ctorMethod = null;
 
                 foreach (var ctor in ctors)
@@ -214,18 +243,22 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                 if (ctorMethod == null)
                 {
-                    context.ReportDiagnostic(
+                    context?.ReportDiagnostic(
                           ConverterDiagnosticDescriptors.MissingDefaultConstructor
-                        , attrib.ApplicationSyntaxReference.GetSyntax()
-                        , type.Name
+                        , syntaxRef?.GetSyntax() ?? outerNode
+                        , converterType.Name
                     );
+
+                    convertMethod = null;
                     return false;
                 }
             }
 
-            var members = type.GetMembers("Convert");
-            IMethodSymbol convertMethod = null;
-            var multipleConvertMethods = false;
+            var members = converterType.GetMembers("Convert");
+            IMethodSymbol staticConvertMethod = null;
+            IMethodSymbol instanceConvertMethod = null;
+            var multipleStaticConvertMethods = false;
+            var multipleInstanceConvertMethods = false;
 
             foreach (var member in members)
             {
@@ -236,55 +269,123 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     continue;
                 }
 
-                if (convertMethod != null)
+                if (method.IsStatic)
                 {
-                    convertMethod = null;
-                    multipleConvertMethods = true;
-                    break;
+                    if (multipleStaticConvertMethods == false)
+                    {
+                        if (staticConvertMethod != null)
+                        {
+                            staticConvertMethod = null;
+                            multipleStaticConvertMethods = true;
+                        }
+                        else
+                        {
+                            staticConvertMethod = method;
+                        }
+                    }
+
+                    continue;
                 }
 
-                convertMethod = method;
+                if (multipleInstanceConvertMethods == false)
+                {
+                    if (instanceConvertMethod != null)
+                    {
+                        instanceConvertMethod = null;
+                        multipleInstanceConvertMethods = true;
+                    }
+                    else
+                    {
+                        instanceConvertMethod = method;
+                    }
+                }
             }
+
+            var multipleConvertMethods = multipleStaticConvertMethods
+                || (multipleStaticConvertMethods == false && multipleInstanceConvertMethods)
+                ;
 
             if (multipleConvertMethods)
             {
-                context.ReportDiagnostic(
-                      ConverterDiagnosticDescriptors.ConvertMethodAmbiguity
-                    , attrib.ApplicationSyntaxReference.GetSyntax()
-                    , type.Name
+                var diagnostic = multipleStaticConvertMethods
+                    ? ConverterDiagnosticDescriptors.StaticConvertMethodAmbiguity
+                    : ConverterDiagnosticDescriptors.InstancedConvertMethodAmbiguity
+                    ;
+
+                context?.ReportDiagnostic(
+                      diagnostic
+                    , syntaxRef?.GetSyntax() ?? outerNode
+                    , converterType.Name
                 );
+
+                convertMethod = null;
                 return false;
             }
 
-            var targetType = targetRef.TypeRef.Type;
+            convertMethod = staticConvertMethod ?? instanceConvertMethod;
 
             if (convertMethod == null)
             {
-                context.ReportDiagnostic(
-                      ConverterDiagnosticDescriptors.MissingConvertMethodReturnType
-                    , attrib.ApplicationSyntaxReference.GetSyntax()
-                    , type.Name
-                    , targetType.ToFullName()
+                var diagnostic = returnType != null
+                    ? ConverterDiagnosticDescriptors.MissingConvertMethodReturnType
+                    : ConverterDiagnosticDescriptors.MissingConvertMethod
+                    ;
+
+                context?.ReportDiagnostic(
+                      diagnostic
+                    , syntaxRef?.GetSyntax() ?? outerNode
+                    , converterType.Name
+                    , returnType?.ToFullName() ?? string.Empty
                 );
+
+                convertMethod = null;
                 return false;
             }
 
             if (convertMethod.Parameters.Length != 1
                 || convertMethod.ReturnsVoid
-                || SymbolEqualityComparer.Default.Equals(convertMethod.ReturnType, targetType) == false
+                || (returnType != null && SymbolEqualityComparer.Default.Equals(convertMethod.ReturnType, returnType) == false)
             )
             {
-                context.ReportDiagnostic(
-                      ConverterDiagnosticDescriptors.InvalidConvertMethodReturnType
-                    , attrib.ApplicationSyntaxReference.GetSyntax()
-                    , type.Name
-                    , targetType.ToFullName()
+                DiagnosticDescriptor diagnostic;
+
+                if (convertMethod.IsStatic)
+                {
+                    diagnostic = returnType != null
+                        ? ConverterDiagnosticDescriptors.InvalidStaticConvertMethodReturnType
+                        : ConverterDiagnosticDescriptors.InvalidStaticConvertMethod
+                        ;
+                }
+                else
+                {
+                    diagnostic = returnType != null
+                        ? ConverterDiagnosticDescriptors.InvalidInstancedConvertMethodReturnType
+                        : ConverterDiagnosticDescriptors.InvalidInstancedConvertMethod
+                        ;
+                }
+
+                context?.ReportDiagnostic(
+                      diagnostic
+                    , syntaxRef?.GetSyntax() ?? outerNode
+                    , converterType.Name
+                    , returnType?.ToFullName() ?? string.Empty
                 );
+
+                convertMethod = null;
                 return false;
             }
 
-            var converterRef = targetRef.ConverterRef;
-            converterRef.ConverterType = type;
+            return true;
+        }
+
+        private static void MakeConverterRef(
+              ConverterRef converterRef
+            , INamedTypeSymbol converterType
+            , IMethodSymbol convertMethod
+            , ITypeSymbol targetType
+        )
+        {
+            converterRef.ConverterType = converterType;
             converterRef.TargetType = targetType;
             converterRef.Kind = convertMethod.IsStatic ? ConverterKind.Static : ConverterKind.Instance;
 
@@ -292,11 +393,9 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             sourceTypeRef.Type = convertMethod.Parameters[0].Type;
 
             MakeCollectionTypeRef(sourceTypeRef);
-
-            return true;
         }
 
-        public static void GetCommonConverterRef(
+        public static bool TryGetCommonConverterRef(
               this MemberRef targetRef
             , DatabaseDeclaration database
             , TableRef tableRef
@@ -305,19 +404,35 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             if (tableRef.ConverterMap.TryGetValue(targetRef.TypeRef.Type, out var converterRef))
             {
                 targetRef.ConverterRef.CopyFrom(converterRef);
-                return;
+                return true;
             }
 
             if (database.DatabaseRef.ConverterMap.TryGetValue(targetRef.TypeRef.Type, out converterRef))
             {
                 targetRef.ConverterRef.CopyFrom(converterRef);
+                return true;
+            }
+
+            return false;
+        }
+
+        public static void TryFallbackConverterRef(this MemberRef targetRef, SyntaxNode outerNode)
+        {
+            if (targetRef.TypeRef.Type is not INamedTypeSymbol returnType)
+            {
                 return;
+            }
+
+            if (TryGetConvertMethod(outerNode, returnType, out var convertMethod, returnType))
+            {
+                MakeConverterRef(targetRef.ConverterRef, returnType, convertMethod, returnType);
             }
         }
 
         public static bool TryMakeConverterRef(
               this TypedConstant typedConstant
             , SourceProductionContext context
+            , SyntaxNode outerNode
             , AttributeData attrib
             , int position
             , out ConverterRef result
@@ -335,142 +450,23 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 return false;
             }
 
-            if (type.IsAbstract)
-            {
-                context.ReportDiagnostic(
-                      ConverterDiagnosticDescriptors.AbstractTypeNotSupported
-                    , attrib.ApplicationSyntaxReference.GetSyntax()
-                    , type.Name
-                );
+            var syntaxRef = attrib.ApplicationSyntaxReference;
 
+            if (TryGetConvertMethod(outerNode, type, out var convertMethod, context: context, syntaxRef: syntaxRef) == false)
+            {
                 result = default;
                 return false;
             }
 
-            if (type.IsUnboundGenericType)
-            {
-                context.ReportDiagnostic(
-                      ConverterDiagnosticDescriptors.OpenGenericTypeNotSupported
-                    , attrib.ApplicationSyntaxReference.GetSyntax()
-                    , type.Name
-                );
-
-                result = default;
-                return false;
-            }
-
-            if (type.IsValueType == false)
-            {
-                var ctors = type.GetMembers(".ctor");
-                IMethodSymbol ctorMethod = null;
-
-                foreach (var ctor in ctors)
-                {
-                    if (ctor is not IMethodSymbol method
-                        || method.DeclaredAccessibility != Accessibility.Public
-                    )
-                    {
-                        continue;
-                    }
-
-                    if (method.Parameters.Length == 0)
-                    {
-                        ctorMethod = method;
-                        break;
-                    }
-                }
-
-                if (ctorMethod == null)
-                {
-                    context.ReportDiagnostic(
-                          ConverterDiagnosticDescriptors.MissingDefaultConstructor
-                        , attrib.ApplicationSyntaxReference.GetSyntax()
-                        , type.Name
-                    );
-
-                    result = default;
-                    return false;
-                }
-            }
-
-            var members = type.GetMembers("Convert");
-            IMethodSymbol convertMethod = null;
-            var multipleConvertMethods = false;
-
-            foreach (var member in members)
-            {
-                if (member is not IMethodSymbol method
-                    || method.DeclaredAccessibility != Accessibility.Public
-                )
-                {
-                    continue;
-                }
-
-                if (convertMethod != null)
-                {
-                    convertMethod = null;
-                    multipleConvertMethods = true;
-                    break;
-                }
-
-                convertMethod = method;
-            }
-
-            if (multipleConvertMethods)
-            {
-                context.ReportDiagnostic(
-                      ConverterDiagnosticDescriptors.ConvertMethodAmbiguity
-                    , attrib.ApplicationSyntaxReference.GetSyntax()
-                    , type.Name
-                );
-
-                result = default;
-                return false;
-            }
-
-            if (convertMethod == null)
-            {
-                context.ReportDiagnostic(
-                      ConverterDiagnosticDescriptors.MissingConvertMethod
-                    , attrib.ApplicationSyntaxReference.GetSyntax()
-                    , type.Name
-                );
-
-                result = default;
-                return false;
-            }
-
-            if (convertMethod.Parameters.Length != 1
-                || convertMethod.ReturnsVoid
-            )
-            {
-                context.ReportDiagnostic(
-                      ConverterDiagnosticDescriptors.InvalidConvertMethod
-                    , attrib.ApplicationSyntaxReference.GetSyntax()
-                    , type.Name
-                );
-
-                result = default;
-                return false;
-            }
-
-            result = new ConverterRef {
-                ConverterType = type,
-                TargetType = convertMethod.ReturnType,
-                Kind = convertMethod.IsStatic ? ConverterKind.Static : ConverterKind.Instance,
-            };
-
-            var sourceTypeRef = result.SourceTypeRef;
-            sourceTypeRef.Type = convertMethod.Parameters[0].Type;
-
-            MakeCollectionTypeRef(sourceTypeRef);
-
+            result = new ConverterRef();
+            MakeConverterRef(result, type, convertMethod, convertMethod.ReturnType);
             return true;
         }
 
         public static void MakeConverterMap(
               this ImmutableArray<TypedConstant> values
             , SourceProductionContext context
+            , SyntaxNode outerNode
             , AttributeData attrib
             , Dictionary<ITypeSymbol, ConverterRef> converterMap
             , int offset
@@ -483,7 +479,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
             for (var i = 0; i < values.Length; i++)
             {
-                if (values[i].TryMakeConverterRef(context, attrib, i, out var converterRef) == false)
+                if (values[i].TryMakeConverterRef(context, outerNode, attrib, i, out var converterRef) == false)
                 {
                     continue;
                 }
@@ -492,7 +488,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     context.ReportDiagnostic(
                           ConverterDiagnosticDescriptors.ConverterAmbiguity
-                        , attrib.ApplicationSyntaxReference.GetSyntax()
+                        , attrib.ApplicationSyntaxReference?.GetSyntax() ?? outerNode
                         , converterRef.ConverterType.Name
                         , anotherConverter.ConverterType.Name
                         , anotherConverter.TargetType.ToFullName()

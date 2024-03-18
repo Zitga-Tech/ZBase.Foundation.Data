@@ -2,7 +2,7 @@ using ZBase.Foundation.Data.Authoring;
 
 namespace Samples.Authoring
 {
-    [Database]
+    [Database(typeof(IntWrapperConverter), typeof(FloatWrapperConverter))]
     public partial class DatabaseDefinition { }
 
 

@@ -6,9 +6,9 @@ namespace Samples
     public partial class StatData : IData
     {
         [SerializeField]
-        private int _hp;
+        private IntWrapper _hp;
 
         [SerializeField]
-        private int _atk;
+        private FloatWrapper _atk;
     }
 }

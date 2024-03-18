@@ -67,7 +67,7 @@ namespace MyGame
 
     public struct IntWrapperConverter
     {
-        public readonly IntWrapper Convert(int value) => new(value);
+        public static IntWrapper Convert(int value) => new(value);
     }
 
     public struct FloatWrapperConverter
@@ -106,7 +106,7 @@ namespace MyGame
         private IntWrapper _level;
 
         [SerializeField]
-        private float _hp;
+        private FloatWrapper _hp;
 
         [SerializeField]
         private float _atk;
