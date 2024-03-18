@@ -25,6 +25,9 @@ namespace Samples
         public readonly override int GetHashCode()
             => value.GetHashCode();
 
+        public static IntWrapper Convert(int value)
+            => new(value);
+
         public static implicit operator IntWrapper(int value)
             => new(value);
 
