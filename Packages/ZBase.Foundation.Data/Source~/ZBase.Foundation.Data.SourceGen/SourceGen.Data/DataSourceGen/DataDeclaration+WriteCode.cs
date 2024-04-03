@@ -40,6 +40,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 }
 
                 WriteSetValues_TypeMethod(ref p);
+                WriteEqualityOperators(ref p);
             }
             p.CloseScope();
 
@@ -442,6 +443,49 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     var fieldName = prop.FieldName;
                     p.PrintLine($"this.{fieldName} = {fieldName};");
                 }
+            }
+            p.CloseScope();
+            p.PrintEndLine();
+        }
+
+        private void WriteEqualityOperators(ref Printer p)
+        {
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
+            p.PrintLine($"public static bool operator ==({ClassName} left, {ClassName} right)");
+            p.OpenScope();
+            {
+                if (Symbol.IsValueType == false)
+                {
+                    p.PrintLine("if (ReferenceEquals(left, null))");
+                    p.OpenScope();
+                    {
+                        p.PrintLine("return ReferenceEquals(right, null);");
+                    }
+                    p.CloseScope();
+                    p.PrintEndLine();
+                }
+
+                p.PrintLine("return left.Equals(right);");
+            }
+            p.CloseScope();
+            p.PrintEndLine();
+
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
+            p.PrintLine($"public static bool operator !=({ClassName} left, {ClassName} right)");
+            p.OpenScope();
+            {
+                if (Symbol.IsValueType == false)
+                {
+                    p.PrintLine("if (ReferenceEquals(left, null))");
+                    p.OpenScope();
+                    {
+                        p.PrintLine("return !ReferenceEquals(right, null);");
+                    }
+                    p.CloseScope();
+                    p.PrintEndLine();
+                }
+
+                p.PrintLine("return !left.Equals(right);");
             }
             p.CloseScope();
             p.PrintEndLine();
