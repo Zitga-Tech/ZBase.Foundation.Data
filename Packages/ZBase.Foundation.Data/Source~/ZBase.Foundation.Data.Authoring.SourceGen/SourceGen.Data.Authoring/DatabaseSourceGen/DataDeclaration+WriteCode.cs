@@ -397,7 +397,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                         else
                         {
                             var elemTypeFullName = elemType.ToFullName();
-                            expression = converterRef.Convert($"this.{memberRef.PropertyName}?.ToArray() ?? global::System.Array.Empty<{elemTypeFullName}>()");
+                            expression = converterRef.Convert($"this.{memberRef.PropertyName}?.ToArray() ?? new {elemTypeFullName}[0]");
                         }
                         break;
                     }
@@ -593,7 +593,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             {
                 p.PrintLine($"if (this.{memberRef.PropertyName} == null || this.{memberRef.PropertyName}.Count == 0)");
                 p = p.IncreasedIndent();
-                p.PrintLine($"return global::System.Array.Empty<{elemTypeFullName}>();");
+                p.PrintLine($"return new {elemTypeFullName}[0];");
                 p = p.DecreasedIndent();
                 p.PrintEndLine();
 

@@ -72,7 +72,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     {
                         p.PrintLine($"if (this.Items == null || this.Count == 0)");
                         p = p.IncreasedIndent();
-                        p.PrintLine($"return global::System.Array.Empty<{typeFullName}>();");
+                        p.PrintLine($"return new {typeFullName}[0];");
                         p = p.DecreasedIndent();
                         p.PrintEndLine();
 
