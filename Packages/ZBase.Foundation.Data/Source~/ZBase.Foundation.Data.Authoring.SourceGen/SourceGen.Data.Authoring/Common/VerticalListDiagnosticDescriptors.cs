@@ -50,15 +50,5 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             , isEnabledByDefault: true
             , description: "The property name must be a valid identifier."
         );
-
-        public static readonly DiagnosticDescriptor InvalidTableType = new DiagnosticDescriptor(
-              id: "DATABASE_VERTICAL_LIST_0005"
-            , title: "Invalid table type"
-            , messageFormat: "The type \"{0}\" is not a valid table type, which must not be abstract nor generic, and must be derived from DataTableAsset<TId, TData>"
-            , category: "DatabaseGenerator"
-            , defaultSeverity: DiagnosticSeverity.Error
-            , isEnabledByDefault: true
-            , description: "The type \"{0}\" is not a valid table type, which must not be abstract nor generic, and must be derived from DataTableAsset<TId, TData>."
-        );
     }
 }

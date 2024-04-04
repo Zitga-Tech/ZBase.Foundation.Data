@@ -5,7 +5,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 {
     public class TableRef
     {
-        public ITypeSymbol Type { get; set; }
+        public INamedTypeSymbol Type { get; set; }
 
         public INamedTypeSymbol BaseType { get; set; }
 

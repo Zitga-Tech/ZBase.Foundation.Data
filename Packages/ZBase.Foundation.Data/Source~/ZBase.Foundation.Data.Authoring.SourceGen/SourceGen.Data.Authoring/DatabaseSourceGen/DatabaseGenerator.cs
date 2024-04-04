@@ -97,7 +97,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             {
                 try
                 {
-                    var declaration = new DatabaseDeclaration(context, candidate, objectType);
+                    var declaration = new DatabaseDeclaration(context, candidate);
                     var syntaxTree = candidate.Syntax.SyntaxTree;
                     var databaseIdentifier = candidate.Symbol.ToValidIdentifier();
 

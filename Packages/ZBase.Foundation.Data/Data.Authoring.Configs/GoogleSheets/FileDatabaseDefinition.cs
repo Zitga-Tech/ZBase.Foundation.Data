@@ -1,8 +1,10 @@
 namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 {
-    [Database]
-    [Table(typeof(FileDataTableAsset), "Files", NamingStrategy.SnakeCase)]
-    public partial class FileDatabaseDefinition { }
+    [Database(NamingStrategy.SnakeCase)]
+    public partial class FileDatabaseDefinition
+    {
+        [Table] public FileDataTableAsset Files { get; }
+    }
 
     public sealed partial class FileDataTableAsset : DataTableAsset<int, FileData> { }
 

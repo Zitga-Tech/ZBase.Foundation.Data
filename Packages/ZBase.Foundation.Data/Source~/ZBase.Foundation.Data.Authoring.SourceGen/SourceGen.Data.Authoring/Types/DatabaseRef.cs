@@ -13,6 +13,8 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
         public AttributeData Attribute { get; }
 
+        public NamingStrategy NamingStrategy { get; set; }
+
         public ImmutableArray<TableRef> Tables { get; private set; }
 
         /// <summary>

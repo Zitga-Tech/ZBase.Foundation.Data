@@ -9,19 +9,26 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
     {
         public DatabaseRef DatabaseRef { get; }
 
-        public DatabaseDeclaration(
-              SourceProductionContext context
-            , DatabaseRef databaseRef
-            , INamedTypeSymbol objectType
-        )
+        public DatabaseDeclaration(SourceProductionContext context, DatabaseRef databaseRef)
         {
             DatabaseRef = databaseRef;
+            InitializeNamingStrategy();
             InitializeConverters(context);
             InitializeTables(context);
+        }
 
-            if (DatabaseRef.Tables.Length > 0)
+        private void InitializeNamingStrategy()
+        {
+            var attrib = DatabaseRef.Attribute;
+            var args = attrib.ConstructorArguments;
+
+            foreach (var arg in args)
             {
-                InitializeVerticalLists(context, objectType);
+                if (arg.Kind != TypedConstantKind.Array && arg.Value != null)
+                {
+                    DatabaseRef.NamingStrategy = arg.Value.ToNamingStrategy();
+                    break;
+                }
             }
         }
 
@@ -30,41 +37,50 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             var attrib = DatabaseRef.Attribute;
             var args = attrib.ConstructorArguments;
 
-            if (args.Length < 1)
+            foreach (var arg in args)
             {
-                return;
-            }
-
-            var arg = args[0];
-
-            if (arg.Kind == TypedConstantKind.Array)
-            {
-                arg.Values.MakeConverterMap(context, DatabaseRef.Syntax, attrib, DatabaseRef.ConverterMap, 0);
+                if (arg.Kind == TypedConstantKind.Array)
+                {
+                    arg.Values.MakeConverterMap(context, DatabaseRef.Syntax, attrib, DatabaseRef.ConverterMap, 0);
+                    break;
+                }
             }
         }
 
         private void InitializeTables(SourceProductionContext context)
         {
-            var uniqueTypeNames = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
             var tables = new List<TableRef>();
-            var attributes = DatabaseRef.Symbol.GetAttributes(TABLE_ATTRIBUTE);
-            var outerNode = DatabaseRef.Syntax;
-
-            foreach (var attrib in attributes)
+            var databaseRef = DatabaseRef;
+            var members = databaseRef.Symbol.GetMembers();
+            var outerNode = databaseRef.Syntax;
+            var namingStrategy = databaseRef.NamingStrategy;
+            
+            foreach (var member in members)
             {
-                var args = attrib.ConstructorArguments;
+                INamedTypeSymbol type;
 
-                if (args.Length < 1)
+                if (member is IFieldSymbol field)
+                {
+                    type = field.Type as INamedTypeSymbol;
+                }
+                else if (member is IPropertySymbol property)
+                {
+                    type = property.Type as INamedTypeSymbol;
+                }
+                else
                 {
                     continue;
                 }
 
-                if (args[0].Value is not INamedTypeSymbol type)
+                if (type == null)
                 {
-                    context.ReportDiagnostic(
-                          TableDiagnosticDescriptors.NotTypeOfExpression
-                        , attrib.ApplicationSyntaxReference.GetSyntax()
-                    );
+                    continue;
+                }
+
+                var attrib = member.GetAttribute(TABLE_ATTRIBUTE);
+
+                if (attrib == null)
+                {
                     continue;
                 }
 
@@ -100,36 +116,15 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     continue;
                 }
 
-                if (uniqueTypeNames.Contains(type))
-                {
-                    continue;
-                }
-
-                uniqueTypeNames.Add(type);
-
                 var table = new TableRef {
                     Type = type,
                     BaseType = baseType,
+                    SheetName = member.Name,
+                    NamingStrategy = namingStrategy,
                 };
 
-                if (args.Length > 1)
+                foreach (var arg in attrib.ConstructorArguments)
                 {
-                    var arg = args[1];
-
-                    if (arg.Kind != TypedConstantKind.Array && arg.Value is string sheetName)
-                    {
-                        table.SheetName = sheetName;
-                    }
-                    else if (arg.Kind == TypedConstantKind.Array)
-                    {
-                        arg.Values.MakeConverterMap(context, outerNode, attrib, table.ConverterMap, 1);
-                    }
-                }
-
-                if (args.Length > 2)
-                {
-                    var arg = args[2];
-
                     if (arg.Kind != TypedConstantKind.Array && arg.Value != null)
                     {
                         table.NamingStrategy = arg.Value.ToNamingStrategy();
@@ -140,36 +135,28 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     }
                 }
 
-                if (args.Length > 3)
-                {
-                    var arg = args[3];
-
-                    if (arg.Kind == TypedConstantKind.Array)
-                    {
-                        arg.Values.MakeConverterMap(context, outerNode, attrib, table.ConverterMap, 3);
-                    }
-                }
-
-                if (string.IsNullOrWhiteSpace(table.SheetName))
-                {
-                    table.SheetName = type.Name;
-                }
-
                 tables.Add(table);
+
+                GetVerticalLists(context, databaseRef, member, table);
             }
 
             if (tables.Count > 0)
             {
                 using var arrayBuilder = ImmutableArrayBuilder<TableRef>.Rent();
                 arrayBuilder.AddRange(tables);
-                DatabaseRef.SetTables(arrayBuilder.ToImmutable());
+                databaseRef.SetTables(arrayBuilder.ToImmutable());
             }
         }
 
-        private void InitializeVerticalLists(SourceProductionContext context, INamedTypeSymbol objectType)
+        private static void GetVerticalLists(
+              SourceProductionContext context
+            , DatabaseRef databaseRef
+            , ISymbol member
+            , TableRef tableRef
+        )
         {
-            var verticalListMap = DatabaseRef.VerticalListMap;
-            var attributes = DatabaseRef.Symbol.GetAttributes(VERTICAL_LIST_ATTRIBUTE);
+            var verticalListMap = databaseRef.VerticalListMap;
+            var attributes = member.GetAttributes(VERTICAL_LIST_ATTRIBUTE);
 
             foreach (var attrib in attributes)
             {
@@ -218,41 +205,16 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                     continue;
                 }
 
-                INamedTypeSymbol dataTableAssetType;
-
-                if (args.Length > 2)
-                {
-                    if (args[2].Value is INamedTypeSymbol containingType
-                        && containingType.IsAbstract == false
-                        && containingType.IsGenericType == false
-                        && containingType.TryGetGenericType(DATA_TABLE_ASSET_T, 2, out _)
-                    )
-                    {
-                        dataTableAssetType = containingType;
-                    }
-                    else
-                    {
-                        context.ReportDiagnostic(
-                              VerticalListDiagnosticDescriptors.InvalidTableType
-                            , attrib.ApplicationSyntaxReference.GetSyntax()
-                            , args[2].Value?.ToString() ?? string.Empty
-                        );
-                        continue;
-                    }
-                }
-                else
-                {
-                    dataTableAssetType = objectType;
-                }
+                var tableType = tableRef.Type;
 
                 if (verticalListMap.TryGetValue(targetType, out var innerMap) == false)
                 {
                     verticalListMap[targetType] = innerMap = new(SymbolEqualityComparer.Default);
                 }
 
-                if (innerMap.TryGetValue(dataTableAssetType, out var propertNames) == false)
+                if (innerMap.TryGetValue(tableType, out var propertNames) == false)
                 {
-                    innerMap[dataTableAssetType] = propertNames = new();
+                    innerMap[tableType] = propertNames = new();
                 }
 
                 propertNames.Add(propertyName);

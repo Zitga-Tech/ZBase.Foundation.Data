@@ -239,8 +239,9 @@ namespace MyGame.Authoring
 {
     using ZBase.Foundation.Data.Authoring;
     using MyGame.Heroes;
+    using MyGame.Enemies;
 
-    [Database(typeof(IntWrapperConverter))]
+    [Database(NamingStrategy.SnakeCase, typeof(IntWrapperConverter))]
     public partial class Database : UnityEngine.ScriptableObject
     {
         partial class SheetContainer
@@ -248,26 +249,28 @@ namespace MyGame.Authoring
         }
     }
 
-    [Table(typeof(Heroes.HeroDataTableAsset), "Hero", NamingStrategy.SnakeCase)]
-    [VerticalList(typeof(Heroes.HeroData), nameof(Heroes.HeroData.Multipliers), typeof(HeroDataTableAsset))]
     partial class Database
     {
+        [VerticalList(typeof(HeroData), nameof(HeroData.Multipliers))]
+        [Table] public HeroDataTableAsset Hero { get; }
+
         partial class HeroDataTableAsset_HeroDataSheet
         {
         }
     }
 
-    [Table(typeof(Heroes.NewHeroDataTableAsset), "NewHero", NamingStrategy.SnakeCase)]
-    [VerticalList(typeof(Heroes.NewHeroData), nameof(Heroes.NewHeroData.Multipliers))]
     partial class Database
     {
-
+        [VerticalList(typeof(NewHeroData), nameof(NewHeroData.Multipliers))]
+        [Table] public NewHeroDataTableAsset NewHero { get; }
     }
 
-    [Table(typeof(Enemies.EnemyDataTableAsset), "Enemy", NamingStrategy.SnakeCase)]
-    [Table(typeof(Enemies.NewEnemyDataTableAsset), "NewEnemy", NamingStrategy.SnakeCase)]
     partial class Database
     {
+        [Table] public EnemyDataTableAsset Enemy { get; }
+
+        [Table] public NewEnemyDataTableAsset NewEnemy { get; }
+
         partial class EnemyDataTableAsset_EnemyDataSheet
         {
         }
