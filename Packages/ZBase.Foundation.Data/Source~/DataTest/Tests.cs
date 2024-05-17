@@ -126,7 +126,7 @@ namespace MyGame.Heroes
     using System.Collections.Generic;
     using System;
 
-    [DataMutable]
+    [DataMutable(true)]
     public partial class MutableData : IData
     {
         [SerializeField]

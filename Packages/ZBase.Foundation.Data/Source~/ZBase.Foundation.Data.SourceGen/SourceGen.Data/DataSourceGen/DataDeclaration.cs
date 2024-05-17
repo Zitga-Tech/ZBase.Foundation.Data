@@ -19,6 +19,8 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
         public bool IsMutable { get; }
 
+        public bool WithoutPropertySetter { get; }
+
         public DataFieldPolicy FieldPolicy { get; }
 
         public bool IsSealed { get; }
@@ -53,8 +55,21 @@ namespace ZBase.Foundation.Data.DataSourceGen
         {
             Syntax = candidate;
             Symbol = semanticModel.GetDeclaredSymbol(candidate, context.CancellationToken);
-            IsMutable = Symbol.HasAttribute(DATA_MUTABLE_ATTRIBUTE);
             IsSealed = Symbol.IsSealed || Symbol.IsValueType;
+
+            var mutableAttrib = Symbol.GetAttribute(DATA_MUTABLE_ATTRIBUTE);
+
+            if (mutableAttrib != null)
+            {
+                IsMutable = true;
+
+                var args = mutableAttrib.ConstructorArguments;
+
+                if (args.Length > 0 && args[0].Kind == TypedConstantKind.Primitive)
+                {
+                    WithoutPropertySetter = (bool)args[0].Value;
+                }
+            }
 
             var fieldPolicyAttrib = Symbol.GetAttribute(DATA_FIELD_POLICY_ATTRIBUTE);
 
@@ -150,6 +165,16 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 if (member is IPropertySymbol property)
                 {
                     existingProperties.Add(property.Name);
+
+                    if (WithoutPropertySetter && property.SetMethod != null)
+                    {
+                        context.ReportDiagnostic(
+                              DiagnosticDescriptors.PropertySetterIsNotAllowed
+                            , property.SetMethod.DeclaringSyntaxReferences[0].GetSyntax()
+                            , Symbol.Name
+                        );
+                    }
+
                     continue;
                 }
                 

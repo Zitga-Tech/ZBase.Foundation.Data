@@ -69,11 +69,21 @@ namespace ZBase.Foundation.Data.DataSourceGen
         public static readonly DiagnosticDescriptor ImmutableDataPropertySetterMustBePrivate = new DiagnosticDescriptor(
               id: "DATA_0005"
             , title: "Property setters of immutable data must be private"
-            , messageFormat: "\"{0}\" is immutable thus its property setter must be private (are you missing [DataMutable] attribute?)"
+            , messageFormat: "\"{0}\" is immutable thus its property setters must be private (are you missing [DataMutable] attribute?)"
             , category: "DataGenerator"
             , defaultSeverity: DiagnosticSeverity.Error
             , isEnabledByDefault: true
             , description: "The data type must already decorated with [DataMutable] to be able have non-private property setters."
+        );
+        
+        public static readonly DiagnosticDescriptor PropertySetterIsNotAllowed = new DiagnosticDescriptor(
+              id: "DATA_0006"
+            , title: "Property setter is not allowed because the type is decorated with [DataMutable(withoutPropertySetter: true)]"
+            , messageFormat: "Property setter is not allowed because \"{0}\" is decorated with [DataMutable(withoutPropertySetter: true)]"
+            , category: "DataGenerator"
+            , defaultSeverity: DiagnosticSeverity.Error
+            , isEnabledByDefault: true
+            , description: "Property setter is not allowed because the type is decorated with [DataMutable(withoutPropertySetter: true)]."
         );
 
     }

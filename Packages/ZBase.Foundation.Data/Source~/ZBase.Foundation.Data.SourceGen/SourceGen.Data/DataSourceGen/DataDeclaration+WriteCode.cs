@@ -224,7 +224,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     p.PrintLine(AGGRESSIVE_INLINING);
                     p.PrintLine($"get => this.{fieldName};");
 
-                    if (IsMutable)
+                    if (IsMutable && WithoutPropertySetter == false)
                     {
                         p.PrintEndLine();
                         p.PrintLine(AGGRESSIVE_INLINING);
