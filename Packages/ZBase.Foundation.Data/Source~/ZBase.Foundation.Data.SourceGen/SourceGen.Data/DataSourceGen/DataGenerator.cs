@@ -109,7 +109,12 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
                 var syntaxTree = candidate.SyntaxTree;
                 var semanticModel = compilation.GetSemanticModel(syntaxTree);
-                var declaration = new DataDeclaration(candidate, semanticModel, context.CancellationToken);
+                var declaration = new DataDeclaration(context, candidate, semanticModel);
+
+                if (declaration.IsValid == false)
+                {
+                    return;
+                }
 
                 if (declaration.FieldRefs.Length > 0 || declaration.PropRefs.Length > 0)
                 {

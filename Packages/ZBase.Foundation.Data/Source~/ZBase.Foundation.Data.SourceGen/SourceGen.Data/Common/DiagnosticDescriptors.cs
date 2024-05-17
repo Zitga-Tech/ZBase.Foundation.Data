@@ -23,7 +23,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
         public static readonly DiagnosticDescriptor InvalidPropertyTargetedAttribute = new DiagnosticDescriptor(
               id: "DATA_0001"
             , title: "Invalid property targeted attribute type"
-            , messageFormat: "The field {0} is using attribute \"{1}\" which was not recognized as a valid type (are you missing a using directive?)"
+            , messageFormat: "The field \"{0}\" is using attribute \"{1}\" which was not recognized as a valid type (are you missing a using directive?)"
             , category: "DataGenerator"
             , defaultSeverity: DiagnosticSeverity.Error
             , isEnabledByDefault: true
@@ -39,11 +39,42 @@ namespace ZBase.Foundation.Data.DataSourceGen
         public static readonly DiagnosticDescriptor InvalidFieldTargetedAttribute = new DiagnosticDescriptor(
               id: "DATA_0002"
             , title: "Invalid field targeted attribute type"
-            , messageFormat: "The property is using attribute \"{1}\" which was not recognized as a valid type (are you missing a using directive?)"
+            , messageFormat: "The property \"{0}\" is using attribute \"{1}\" which was not recognized as a valid type (are you missing a using directive?)"
             , category: "DataGenerator"
             , defaultSeverity: DiagnosticSeverity.Error
             , isEnabledByDefault: true
             , description: "All attributes targeting the generated field for a property must correctly be resolved to valid types."
         );
+
+        public static readonly DiagnosticDescriptor CannotDecorateImmutableDataWithFieldPolicyAttribute = new DiagnosticDescriptor(
+              id: "DATA_0003"
+            , title: "Cannot decorate immutable data with [DataFieldPolicy] attribute"
+            , messageFormat: "\"{0}\" is immutable thus cannot be decorated with [DataFieldPolicy] attribute (are you missing [DataMutable] attribute?)"
+            , category: "DataGenerator"
+            , defaultSeverity: DiagnosticSeverity.Error
+            , isEnabledByDefault: true
+            , description: "The data type must already decorated with [DataMutable] to be able have [DataFieldPolicy]."
+        );
+        
+        public static readonly DiagnosticDescriptor ImmutableDataFieldMustBePrivate = new DiagnosticDescriptor(
+              id: "DATA_0004"
+            , title: "Fields of immutable data must be private"
+            , messageFormat: "\"{0}\" is immutable thus its fields must be private (are you missing [DataMutable] attribute?)"
+            , category: "DataGenerator"
+            , defaultSeverity: DiagnosticSeverity.Error
+            , isEnabledByDefault: true
+            , description: "The data type must already decorated with [DataMutable] to be able have non-private fields."
+        );
+        
+        public static readonly DiagnosticDescriptor ImmutableDataPropertySetterMustBePrivate = new DiagnosticDescriptor(
+              id: "DATA_0005"
+            , title: "Property setters of immutable data must be private"
+            , messageFormat: "\"{0}\" is immutable thus its property setter must be private (are you missing [DataMutable] attribute?)"
+            , category: "DataGenerator"
+            , defaultSeverity: DiagnosticSeverity.Error
+            , isEnabledByDefault: true
+            , description: "The data type must already decorated with [DataMutable] to be able have non-private property setters."
+        );
+
     }
 }

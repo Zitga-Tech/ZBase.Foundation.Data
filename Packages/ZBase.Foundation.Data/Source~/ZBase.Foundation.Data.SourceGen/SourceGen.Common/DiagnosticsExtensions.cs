@@ -46,6 +46,15 @@ namespace ZBase.Foundation.SourceGen
             diagnostics.Add(DiagnosticInfo.Create(descriptor, node, args));
         }
 
+        public static void ReportDiagnostic(
+            this SourceProductionContext context,
+            DiagnosticDescriptor descriptor,
+            SyntaxNode node,
+            params object[] args)
+        {
+            context.ReportDiagnostic(DiagnosticInfo.Create(descriptor, node, args).ToDiagnostic());
+        }
+
         /// <summary>
         /// Registers an output node into an <see cref="IncrementalGeneratorInitializationContext"/> to output diagnostics.
         /// </summary>

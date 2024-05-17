@@ -4,7 +4,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
-using System.Threading;
 using ZBase.Foundation.SourceGen;
 using static ZBase.Foundation.Data.DataSourceGen.Helpers;
 
@@ -19,6 +18,8 @@ namespace ZBase.Foundation.Data.DataSourceGen
         public string ClassName { get; }
 
         public bool IsMutable { get; }
+
+        public DataFieldPolicy FieldPolicy { get; }
 
         public bool IsSealed { get; }
 
@@ -42,16 +43,40 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
         public bool HasIEquatableMethod { get; }
 
+        public bool IsValid { get; }
+
         public DataDeclaration(
-              TypeDeclarationSyntax candidate
+              SourceProductionContext context
+            , TypeDeclarationSyntax candidate
             , SemanticModel semanticModel
-            , CancellationToken token
         )
         {
             Syntax = candidate;
-            Symbol = semanticModel.GetDeclaredSymbol(candidate, token);
+            Symbol = semanticModel.GetDeclaredSymbol(candidate, context.CancellationToken);
             IsMutable = Symbol.HasAttribute(DATA_MUTABLE_ATTRIBUTE);
             IsSealed = Symbol.IsSealed || Symbol.IsValueType;
+
+            var fieldPolicyAttrib = Symbol.GetAttribute(DATA_FIELD_POLICY_ATTRIBUTE);
+
+            if (IsMutable == false && fieldPolicyAttrib != null)
+            {
+                context.ReportDiagnostic(
+                      DiagnosticDescriptors.CannotDecorateImmutableDataWithFieldPolicyAttribute
+                    , fieldPolicyAttrib.ApplicationSyntaxReference.GetSyntax()
+                    , Symbol.Name
+                );
+                return;
+            }
+
+            if (fieldPolicyAttrib != null)
+            {
+                var args = fieldPolicyAttrib.ConstructorArguments;
+
+                if (args.Length > 0 && args[0].Kind == TypedConstantKind.Enum)
+                {
+                    FieldPolicy = (DataFieldPolicy)args[0].Value;
+                }
+            }
 
             if (Symbol.BaseType is INamedTypeSymbol baseNamedTypeSymbol
                 && baseNamedTypeSymbol.TypeKind == TypeKind.Class
@@ -178,7 +203,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     baseType = baseType.BaseType;
                 }
             }
-
+            
             foreach (var member in members)
             {
                 if (member is IFieldSymbol field)
@@ -191,9 +216,19 @@ namespace ZBase.Foundation.Data.DataSourceGen
                         continue;
                     }
 
+                    if (IsMutable == false && field.DeclaredAccessibility != Accessibility.Private)
+                    {
+                        context.ReportDiagnostic(
+                              DiagnosticDescriptors.ImmutableDataFieldMustBePrivate
+                            , field.DeclaringSyntaxReferences[0].GetSyntax()
+                            , Symbol.Name
+                        );
+                        continue;
+                    }
+
                     field.GatherForwardedAttributes(
                           semanticModel
-                        , token
+                        , context.CancellationToken
                         , diagnosticBuilder
                         , out var propertyAttributes
                         , DiagnosticDescriptors.InvalidPropertyTargetedAttribute
@@ -257,6 +292,19 @@ namespace ZBase.Foundation.Data.DataSourceGen
                         continue;
                     }
 
+                    if (IsMutable == false
+                        && property.SetMethod != null
+                        && property.SetMethod.DeclaredAccessibility != Accessibility.Private
+                    )
+                    {
+                        context.ReportDiagnostic(
+                              DiagnosticDescriptors.ImmutableDataPropertySetterMustBePrivate
+                            , property.SetMethod.DeclaringSyntaxReferences[0].GetSyntax()
+                            , Symbol.Name
+                        );
+                        continue;
+                    }
+
                     var checkAutoCollectionType = false;
 
                     if (attribute.ConstructorArguments.Length < 1
@@ -269,7 +317,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
                     property.GatherForwardedAttributes(
                           semanticModel
-                        , token
+                        , context.CancellationToken
                         , diagnosticBuilder
                         , out var fieldAttributes
                         , DiagnosticDescriptors.InvalidFieldTargetedAttribute
@@ -360,6 +408,8 @@ namespace ZBase.Foundation.Data.DataSourceGen
             {
                 OverrideEquals = ImmutableArray<string>.Empty;
             }
+
+            IsValid = true;
         }
 
         public abstract class MemberRef
@@ -393,6 +443,13 @@ namespace ZBase.Foundation.Data.DataSourceGen
             public bool FieldIsImplemented { get; set; }
             
             public ImmutableArray<(string, AttributeInfo)> ForwardedFieldAttributes { get; set; }
+        }
+
+        public enum DataFieldPolicy
+        {
+            Private = 0,
+            Internal,
+            Public,
         }
     }
 }

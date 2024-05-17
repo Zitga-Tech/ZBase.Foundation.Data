@@ -50,6 +50,12 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
         private void WriteFields(ref Printer p)
         {
+            var accessKeyword = FieldPolicy switch {
+                DataFieldPolicy.Public => "public",
+                DataFieldPolicy.Internal => "internal",
+                _ => "private",
+            };
+
             foreach (var prop in PropRefs)
             {
                 if (prop.FieldIsImplemented)
@@ -81,7 +87,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
                 var typeName = GetPropertyTypeName(prop);
 
-                p.PrintLine($"private {typeName} {prop.FieldName};");
+                p.PrintLine($"{accessKeyword} {typeName} {prop.FieldName};");
                 p.PrintEndLine();
 
                 p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
