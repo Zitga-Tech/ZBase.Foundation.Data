@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -28,8 +30,9 @@ namespace ZBase.Foundation.Data
         public virtual bool TryGetRow(TId id, out TData row)
         {
             var span = Rows.Span;
+            var length = span.Length;
 
-            for (var i = 0; i < span.Length; i++)
+            for (var i = 0; i < length; i++)
             {
                 ref readonly var item = ref span[i];
 
@@ -42,6 +45,24 @@ namespace ZBase.Foundation.Data
 
             row = default;
             return false;
+        }
+
+        public virtual DataRef<TData> GetRowRef(TId id)
+        {
+            var span = Rows.Span;
+            var length = span.Length;
+
+            for (var i = 0; i < length; i++)
+            {
+                ref readonly var item = ref span[i];
+
+                if (GetId(item).Equals(id))
+                {
+                    return new(span.Slice(i, 1));
+                }
+            }
+
+            return default;
         }
 
         internal sealed override void SetRows(object obj)
@@ -59,10 +80,10 @@ namespace ZBase.Foundation.Data
 
         protected abstract TId GetId(in TData row);
 
-        [HideInCallstack]
+        [HideInCallstack, DoesNotReturn, Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         protected static void LogIfCannotCast(object obj, UnityEngine.Object context)
         {
-            Debug.LogError($"Cannot cast {obj.GetType()} into {typeof(TData[])}", context);
+            UnityEngine.Debug.LogError($"Cannot cast {obj.GetType()} into {typeof(TData[])}", context);
         }
     }
 }
