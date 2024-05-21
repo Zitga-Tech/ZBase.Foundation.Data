@@ -161,7 +161,7 @@ namespace ZBase.Foundation.Data.Authoring
                         dataTableAsset.name = dataTableAssetType.Name;
 
                         var dataArray = toDataArrayMethod.Invoke(sheet, null);
-                        dataTableAsset.SetRows(dataArray);
+                        dataTableAsset.SetEntries(dataArray);
 
                         dataTableAssetList.Add(dataTableAsset);
                     }

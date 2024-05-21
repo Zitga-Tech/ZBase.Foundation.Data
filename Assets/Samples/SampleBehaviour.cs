@@ -18,12 +18,12 @@ namespace Samples
                 Id = 1,
             };
 
-            var rowRef = table.GetRowByRef(id);
-            Debug.Log($"rowRef = {rowRef.IsValid}");
+            var entryRef = table.GetEntryByRef(id);
+            Debug.Log($"valid = {entryRef.IsValid}");
 
-            if (rowRef.IsValid)
+            if (entryRef.IsValid)
             {
-                ref readonly var data = ref rowRef.GetValueByRef();
+                ref readonly var data = ref entryRef.GetValueByRef();
                 Debug.Log($"name = {data.Name}; hp = {data.Stat.Hp}; atk = {data.Stat.Atk}");
             }
         }

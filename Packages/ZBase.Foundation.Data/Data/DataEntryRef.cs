@@ -7,12 +7,12 @@ using UnityEngine;
 
 namespace ZBase.Foundation.Data
 {
-    public readonly struct DataMemory<T> : IEquatable<DataMemory<T>>
+    public readonly ref struct DataEntryRef<T>
     {
-        private readonly ReadOnlyMemory<T> _value;
+        private readonly ReadOnlySpan<T> _value;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public DataMemory(ReadOnlyMemory<T> value)
+        public DataEntryRef(ReadOnlySpan<T> value)
         {
             _value = value;
         }
@@ -27,49 +27,65 @@ namespace ZBase.Foundation.Data
         public readonly ref readonly T GetValueByRef()
         {
             ThrowIfInvalid(IsValid);
-            return ref _value.Span[0];
+            return ref _value[0];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly ref readonly T GetValueByRef(ref T defaultValue)
         {
-            return ref IsValid ? ref _value.Span[0] : ref defaultValue;
+            return ref IsValid ? ref _value[0] : ref defaultValue;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly T GetValue()
         {
             ThrowIfInvalid(IsValid);
-            return _value.Span[0];
+            return _value[0];
         }
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly T GetValue(T defaultValue)
         {
-            return IsValid ? _value.Span[0] : defaultValue;
+            return IsValid ? _value[0] : defaultValue;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(DataMemory<T> other)
+        public bool Equals(DataEntryRef<T> other)
         {
-            return _value.Equals(other._value);
+            return _value == other._value;
         }
 
-        [EditorBrowsable(EditorBrowsableState.Never)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(DataEntryRef<T> left, DataEntryRef<T> right)
+        {
+            return left._value == right._value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(DataEntryRef<T> left, DataEntryRef<T> right)
+        {
+            return left._value != right._value;
+        }
+
+#pragma warning disable CS0809 // Obsolete member overrides non-obsolete member
+        [Obsolete("Equals() on DataAccessorRef will always throw an exception. Use the equality operator instead.")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public override bool Equals(object obj)
         {
-            return obj is DataMemory<T> other && _value.Equals(other._value);
+            throw new NotSupportedException(
+                "Equals() on DataAccessorRef will always throw an exception. Use the equality operator instead."
+            );
         }
 
+        [Obsolete("GetHashCode() on DataAccessorRef will always throw an exception.")]
         [EditorBrowsable(EditorBrowsableState.Never)]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override int GetHashCode()
         {
-            return _value.IsEmpty == false
-                ? HashCode.Combine(RuntimeHelpers.GetHashCode(_value), 0, _value.Length)
-                : 0;
+            throw new NotSupportedException(
+                "GetHashCode() on DataAccessorRef will always throw an exception."
+            );
         }
+#pragma warning restore CS0809 // Obsolete member overrides non-obsolete member
 
         [HideInCallstack, DoesNotReturn, Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void ThrowIfInvalid(bool isValid)
@@ -78,18 +94,6 @@ namespace ZBase.Foundation.Data
             {
                 throw new InvalidOperationException("DataRef is invalid");
             }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator ==(DataMemory<T> left, DataMemory<T> right)
-        {
-            return left.Equals(right);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool operator !=(DataMemory<T> left, DataMemory<T> right)
-        {
-            return !(left == right);
         }
     }
 }

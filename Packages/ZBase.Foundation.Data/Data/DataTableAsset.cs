@@ -3,12 +3,13 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace ZBase.Foundation.Data
 {
     public abstract class DataTableAsset : ScriptableObject
     {
-        internal abstract void SetRows(object obj);
+        internal abstract void SetEntries(object obj);
 
         internal protected virtual void Initialize() { }
 
@@ -18,18 +19,18 @@ namespace ZBase.Foundation.Data
     public abstract class DataTableAsset<TId, TData> : DataTableAsset
         where TData : IData
     {
-        [SerializeField]
-        private TData[] _rows;
+        [SerializeField, FormerlySerializedAs("_rows")]
+        private TData[] _entries;
 
-        public ReadOnlyMemory<TData> Rows
+        public ReadOnlyMemory<TData> Entries
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => _rows;
+            get => _entries;
         }
 
-        public virtual bool TryGetRow(TId id, out TData row)
+        public virtual bool TryGetEntry(TId id, out TData entry)
         {
-            var span = Rows.Span;
+            var span = Entries.Span;
             var length = span.Length;
 
             for (var i = 0; i < length; i++)
@@ -38,18 +39,18 @@ namespace ZBase.Foundation.Data
 
                 if (GetId(item).Equals(id))
                 {
-                    row = item;
+                    entry = item;
                     return true;
                 }
             }
 
-            row = default;
+            entry = default;
             return false;
         }
 
-        public virtual DataMemory<TData> GetRow(TId id)
+        public virtual DataEntry<TData> GetEntry(TId id)
         {
-            var span = Rows.Span;
+            var span = Entries.Span;
             var length = span.Length;
 
             for (var i = 0; i < length; i++)
@@ -58,16 +59,16 @@ namespace ZBase.Foundation.Data
 
                 if (GetId(item).Equals(id))
                 {
-                    return new(Rows.Slice(i, 1));
+                    return new(Entries.Slice(i, 1));
                 }
             }
 
             return default;
         }
         
-        public virtual DataRef<TData> GetRowByRef(TId id)
+        public virtual DataEntryRef<TData> GetEntryByRef(TId id)
         {
-            var span = Rows.Span;
+            var span = Entries.Span;
             var length = span.Length;
 
             for (var i = 0; i < length; i++)
@@ -83,15 +84,15 @@ namespace ZBase.Foundation.Data
             return default;
         }
 
-        internal sealed override void SetRows(object obj)
+        internal sealed override void SetEntries(object obj)
         {
-            if (obj is TData[] rows)
+            if (obj is TData[] entries)
             {
-                _rows = rows;
+                _entries = entries;
             }
             else
             {
-                _rows = Array.Empty<TData>();
+                _entries = Array.Empty<TData>();
                 LogIfCannotCast(obj, this);
             }
         }
