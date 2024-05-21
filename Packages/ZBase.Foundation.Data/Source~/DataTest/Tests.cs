@@ -11,6 +11,7 @@
 namespace MyGame
 {
     using System;
+    using System.Runtime.InteropServices;
     using Newtonsoft.Json;
     using UnityEngine;
     using ZBase.Foundation.Data;
@@ -49,7 +50,7 @@ namespace MyGame
             this.value = value;
         }
 
-        public IntWrapper Convert(int value) => new(value);
+        public readonly IntWrapper Convert(int value) => new(value);
     }
 
     [Serializable]
@@ -62,7 +63,7 @@ namespace MyGame
             this.value = value;
         }
 
-        public FloatWrapper Convert(float value) => new(value);
+        public readonly FloatWrapper Convert(float value) => new(value);
     }
 
     public struct IntWrapperConverter
@@ -92,7 +93,9 @@ namespace MyGame
     public partial class GenericData<T> : IData
     {
         [DataProperty]
-        public int Id => Get_Id();
+        public int Id { get => Get_Id(); init => Set_Id(value); }
+
+        public int X { get; init; }
 
         public bool Equals(GenericData<T> other)
         {
@@ -100,6 +103,7 @@ namespace MyGame
         }
     }
 
+    [StructLayout(LayoutKind.Auto)]
     public partial struct StatMultiplierData : IData
     {
         [SerializeField]
@@ -108,8 +112,8 @@ namespace MyGame
         [SerializeField]
         private FloatWrapper _hp;
 
-        [SerializeField]
-        private float _atk;
+        [DataProperty]
+        public readonly float Atk => Get_Atk();
     }
 
     public enum StatKind

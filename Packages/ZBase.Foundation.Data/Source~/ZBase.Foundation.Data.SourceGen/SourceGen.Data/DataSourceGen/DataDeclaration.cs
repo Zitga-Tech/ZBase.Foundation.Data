@@ -56,7 +56,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
             Syntax = candidate;
             Symbol = semanticModel.GetDeclaredSymbol(candidate, context.CancellationToken);
             IsSealed = Symbol.IsSealed || Symbol.IsValueType;
-
+            
             var mutableAttrib = Symbol.GetAttribute(DATA_MUTABLE_ATTRIBUTE);
 
             if (mutableAttrib != null)
@@ -151,6 +151,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
             using var overrideEqualsArrayBuilder = ImmutableArrayBuilder<string>.Rent();
             using var diagnosticBuilder = ImmutableArrayBuilder<DiagnosticInfo>.Rent();
 
+            var allowOnlyPrivateOrInitSetter = IsMutable == false || WithoutPropertySetter;
             var equalityComparer = SymbolEqualityComparer.Default;
             var members = Symbol.GetMembers();
 
@@ -159,80 +160,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 if (member is IFieldSymbol field)
                 {
                     existingFields.Add(field.Name);
-                    continue;
-                }
 
-                if (member is IPropertySymbol property)
-                {
-                    existingProperties.Add(property.Name);
-
-                    if (WithoutPropertySetter && property.SetMethod != null)
-                    {
-                        context.ReportDiagnostic(
-                              DiagnosticDescriptors.PropertySetterIsNotAllowed
-                            , property.SetMethod.DeclaringSyntaxReferences[0].GetSyntax()
-                            , Symbol.Name
-                        );
-                    }
-
-                    continue;
-                }
-                
-                if (member is IMethodSymbol method)
-                {
-                    if (method.Name == "GetHashCode" && method.Parameters.Length == 0)
-                    {
-                        HasGetHashCodeMethod = true;
-                        continue;
-                    }
-
-                    if (method.Name == "Equals" && method.Parameters.Length == 1
-                        && method.ReturnType.SpecialType == SpecialType.System_Boolean
-                    )
-                    {
-                        var param = method.Parameters[0];
-
-                        if (param.Type.SpecialType == SpecialType.System_Object)
-                        {
-                            HasEqualsMethod = true;
-                            continue;
-                        }
-
-                        if (equalityComparer.Equals(Symbol, param.Type))
-                        {
-                            HasIEquatableMethod = true;
-                            continue;
-                        }
-
-                        existingOverrideEquals.Add(param.Type);
-                    }
-                }
-            }
-
-            if (HasBaseType)
-            {
-                var baseType = Symbol.BaseType;
-
-                while (baseType != null)
-                {
-                    if (baseType.ImplementsInterface(IDATA) == false)
-                    {
-                        break;
-                    }
-
-                    if (existingOverrideEquals.Contains(baseType) == false)
-                    {
-                        overrideEqualsArrayBuilder.Add(baseType.ToFullName());
-                    }
-
-                    baseType = baseType.BaseType;
-                }
-            }
-            
-            foreach (var member in members)
-            {
-                if (member is IFieldSymbol field)
-                {
                     if (field.HasAttribute(SERIALIZE_FIELD_ATTRIBUTE) == false
                         && field.HasAttribute(JSON_INCLUDE_ATTRIBUTE) == false
                         && field.HasAttribute(JSON_PROPERTY_ATTRIBUTE) == false
@@ -310,23 +238,26 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
                 if (member is IPropertySymbol property)
                 {
+                    existingProperties.Add(property.Name);
+
+                    if (allowOnlyPrivateOrInitSetter && property.SetMethod != null)
+                    {
+                        var setter = property.SetMethod;
+
+                        if (setter.IsInitOnly == false && setter.DeclaredAccessibility != Accessibility.Private)
+                        {
+                            context.ReportDiagnostic(
+                                  DiagnosticDescriptors.OnlyPrivateOrInitOnlySetterIsAllowed
+                                , property.SetMethod.DeclaringSyntaxReferences[0].GetSyntax()
+                                , Symbol.Name
+                            );
+                        }
+                    }
+
                     var attribute = property.GetAttribute(DATA_PROPERTY_ATTRIBUTE);
 
                     if (attribute == null)
                     {
-                        continue;
-                    }
-
-                    if (IsMutable == false
-                        && property.SetMethod != null
-                        && property.SetMethod.DeclaredAccessibility != Accessibility.Private
-                    )
-                    {
-                        context.ReportDiagnostic(
-                              DiagnosticDescriptors.ImmutableDataPropertySetterMustBePrivate
-                            , property.SetMethod.DeclaringSyntaxReferences[0].GetSyntax()
-                            , Symbol.Name
-                        );
                         continue;
                     }
 
@@ -395,6 +326,56 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
                     propArrayBuilder.Add(propRef);
                     continue;
+                }
+
+                if (member is IMethodSymbol method)
+                {
+                    if (method.Name == "GetHashCode" && method.Parameters.Length == 0)
+                    {
+                        HasGetHashCodeMethod = true;
+                        continue;
+                    }
+
+                    if (method.Name == "Equals" && method.Parameters.Length == 1
+                        && method.ReturnType.SpecialType == SpecialType.System_Boolean
+                    )
+                    {
+                        var param = method.Parameters[0];
+
+                        if (param.Type.SpecialType == SpecialType.System_Object)
+                        {
+                            HasEqualsMethod = true;
+                            continue;
+                        }
+
+                        if (equalityComparer.Equals(Symbol, param.Type))
+                        {
+                            HasIEquatableMethod = true;
+                            continue;
+                        }
+
+                        existingOverrideEquals.Add(param.Type);
+                    }
+                }
+            }
+
+            if (HasBaseType)
+            {
+                var baseType = Symbol.BaseType;
+
+                while (baseType != null)
+                {
+                    if (baseType.ImplementsInterface(IDATA) == false)
+                    {
+                        break;
+                    }
+
+                    if (existingOverrideEquals.Contains(baseType) == false)
+                    {
+                        overrideEqualsArrayBuilder.Add(baseType.ToFullName());
+                    }
+
+                    baseType = baseType.BaseType;
                 }
             }
 

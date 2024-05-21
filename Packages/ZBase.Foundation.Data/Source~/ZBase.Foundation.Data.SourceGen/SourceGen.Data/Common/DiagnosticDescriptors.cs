@@ -66,25 +66,14 @@ namespace ZBase.Foundation.Data.DataSourceGen
             , description: "The data type must already decorated with [DataMutable] to be able have non-private fields."
         );
         
-        public static readonly DiagnosticDescriptor ImmutableDataPropertySetterMustBePrivate = new DiagnosticDescriptor(
+        public static readonly DiagnosticDescriptor OnlyPrivateOrInitOnlySetterIsAllowed = new DiagnosticDescriptor(
               id: "DATA_0005"
-            , title: "Property setters of immutable data must be private"
-            , messageFormat: "\"{0}\" is immutable thus its property setters must be private (are you missing [DataMutable] attribute?)"
+            , title: "Only private setter or init-only setter is allowed because the type is either immutable or decorated with [DataMutable(withoutPropertySetter: true)]"
+            , messageFormat: "Only private setter or init-only setter is allowed because \"{0}\" is either immutable or decorated with [DataMutable(withoutPropertySetter: true)]"
             , category: "DataGenerator"
             , defaultSeverity: DiagnosticSeverity.Error
             , isEnabledByDefault: true
-            , description: "The data type must already decorated with [DataMutable] to be able have non-private property setters."
+            , description: "Use private setter, or init-only setter, or decorate the type with [DataMutable(withoutPropertySetter: false)]."
         );
-        
-        public static readonly DiagnosticDescriptor PropertySetterIsNotAllowed = new DiagnosticDescriptor(
-              id: "DATA_0006"
-            , title: "Property setter is not allowed because the type is decorated with [DataMutable(withoutPropertySetter: true)]"
-            , messageFormat: "Property setter is not allowed because \"{0}\" is decorated with [DataMutable(withoutPropertySetter: true)]"
-            , category: "DataGenerator"
-            , defaultSeverity: DiagnosticSeverity.Error
-            , isEnabledByDefault: true
-            , description: "Property setter is not allowed because the type is decorated with [DataMutable(withoutPropertySetter: true)]."
-        );
-
     }
 }
