@@ -5,9 +5,9 @@ namespace Samples
     public partial struct IdData : IData
     {
         [DataProperty]
-        public readonly EntityKind Kind => Get_Kind();
+        public EntityKind Kind { readonly get => Get_Kind(); init => Set_Kind(value); }
 
         [DataProperty]
-        public readonly int Id => Get_Id();
+        public int Id { readonly get => Get_Id(); init => Set_Id(value); }
     }
 }

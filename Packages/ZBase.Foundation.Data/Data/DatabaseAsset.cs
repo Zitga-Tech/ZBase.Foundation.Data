@@ -83,12 +83,15 @@ namespace ZBase.Foundation.Data
                 return;
             }
 
+            Initialized = false;
+
             foreach (var asset in _nameToAsset.Values)
             {
                 asset.Deinitialize();
             }
 
-            Initialized = false;
+            _nameToAsset.Clear();
+            _typeToAsset.Clear();
         }
 
         public bool TryGetDataTableAsset(string name, out DataTableAsset tableAsset)

@@ -47,7 +47,25 @@ namespace ZBase.Foundation.Data
             return false;
         }
 
-        public virtual DataRef<TData> GetRowRef(TId id)
+        public virtual DataMemory<TData> GetRow(TId id)
+        {
+            var span = Rows.Span;
+            var length = span.Length;
+
+            for (var i = 0; i < length; i++)
+            {
+                ref readonly var item = ref span[i];
+
+                if (GetId(item).Equals(id))
+                {
+                    return new(Rows.Slice(i, 1));
+                }
+            }
+
+            return default;
+        }
+        
+        public virtual DataRef<TData> GetRowByRef(TId id)
         {
             var span = Rows.Span;
             var length = span.Length;
@@ -83,7 +101,14 @@ namespace ZBase.Foundation.Data
         [HideInCallstack, DoesNotReturn, Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         protected static void LogIfCannotCast(object obj, UnityEngine.Object context)
         {
-            UnityEngine.Debug.LogError($"Cannot cast {obj.GetType()} into {typeof(TData[])}", context);
+            if (obj == null)
+            {
+                UnityEngine.Debug.LogError($"Cannot cast null into {typeof(TData[])}", context);
+            }
+            else
+            {
+                UnityEngine.Debug.LogError($"Cannot cast {obj.GetType()} into {typeof(TData[])}", context);
+            }
         }
     }
 }
