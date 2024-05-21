@@ -20,8 +20,10 @@ MonoBehaviour:
       _rarity: 1
     _name: Wolf
     _stat:
-      _hp: 1
-      _atk: 1
+      _hp:
+        value: 1
+      _atk:
+        value: 1
   - _id:
       _kindId:
         _kind: 1
@@ -29,5 +31,7 @@ MonoBehaviour:
       _rarity: 2
     _name: Goblin
     _stat:
-      _hp: 2
-      _atk: 2
+      _hp:
+        value: 2
+      _atk:
+        value: 2

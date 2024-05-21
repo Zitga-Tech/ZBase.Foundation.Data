@@ -2,12 +2,12 @@ using ZBase.Foundation.Data;
 
 namespace Samples
 {
-    public partial class IdData : IData
+    public partial struct IdData : IData
     {
         [DataProperty]
-        public EntityKind Kind => Get_Kind();
+        public readonly EntityKind Kind => Get_Kind();
 
         [DataProperty]
-        public int Id => Get_Id();
+        public readonly int Id => Get_Id();
     }
 }

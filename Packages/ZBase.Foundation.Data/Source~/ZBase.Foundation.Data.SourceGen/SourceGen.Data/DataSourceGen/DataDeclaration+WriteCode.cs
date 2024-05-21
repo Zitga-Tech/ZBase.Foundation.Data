@@ -56,6 +56,8 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 _ => "private",
             };
 
+            var readonlyKeyword = Symbol.IsValueType ? "readonly " : "";
+
             foreach (var prop in PropRefs)
             {
                 if (prop.FieldIsImplemented)
@@ -91,7 +93,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 p.PrintEndLine();
 
                 p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
-                p.PrintLine($"private {typeName} Get_{prop.Property.Name}()");
+                p.PrintLine($"private {readonlyKeyword}{typeName} Get_{prop.Property.Name}()");
                 p.OpenScope();
                 {
                     p.PrintLine($"return this.{fieldName};");

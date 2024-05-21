@@ -18,8 +18,10 @@ MonoBehaviour:
       _id: 1
     _name: Richard
     _stat:
-      _hp: 10
-      _atk: 1
+      _hp:
+        value: 10
+      _atk:
+        value: 1
     _multipliers:
     - _level: 1
       _hp: 1
@@ -35,8 +37,10 @@ MonoBehaviour:
       _id: 2
     _name: Maverick
     _stat:
-      _hp: 8
-      _atk: 2
+      _hp:
+        value: 8
+      _atk:
+        value: 2
     _multipliers:
     - _level: 1
       _hp: 1
