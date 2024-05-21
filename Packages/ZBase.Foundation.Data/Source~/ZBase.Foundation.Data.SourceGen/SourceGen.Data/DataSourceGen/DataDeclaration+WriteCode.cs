@@ -26,8 +26,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 .PrintEndLine();
             p.OpenScope();
             {
-                WriteFields(ref p);
-                WriteProperties(ref p);
+                WriteFieldOrPropertyByOrders(ref p);
                 WriteGetHashCodeMethod(ref p);
                 WriteGetHashCodeInternalMethod(ref p);
                 WriteEqualsMethod(ref p);
@@ -48,195 +47,188 @@ namespace ZBase.Foundation.Data.DataSourceGen
             return p.Result;
         }
 
-        private void WriteFields(ref Printer p)
+        private void WriteFieldOrPropertyByOrders(ref Printer p)
         {
+            var orders = Orders;
+            var propRefs = PropRefs;
+            var fieldRefs = FieldRefs;
+            var readonlyKeyword = Symbol.IsValueType ? "readonly " : "";
             var accessKeyword = FieldPolicy switch {
                 DataFieldPolicy.Public => "public",
                 DataFieldPolicy.Internal => "internal",
                 _ => "private",
             };
 
-            var readonlyKeyword = Symbol.IsValueType ? "readonly " : "";
-
-            foreach (var prop in PropRefs)
+            foreach (var order in orders)
             {
-                if (prop.FieldIsImplemented)
+                var index = order.index;
+
+                if (order.isPropRef)
                 {
-                    continue;
+                    WriteField(ref p, propRefs[index], accessKeyword, readonlyKeyword);
                 }
-
-                var fieldName = prop.FieldName;
-
-                p.PrintLine(string.Format(GENERATED_FIELD_FROM_PROPERTY_ATTRIBUTE, prop.Property.Name));
-                p.PrintLine(GENERATED_CODE);
-
-                var withSerializeField = false;
-
-                foreach (var (fullTypeName, attribute) in prop.ForwardedFieldAttributes)
+                else
                 {
-                    if (fullTypeName == SERIALIZE_FIELD_ATTRIBUTE)
-                    {
-                        withSerializeField = true;
-                    }
-
-                    p.PrintLine($"[{attribute.GetSyntax().ToFullString()}]");
+                    WriteProperty(ref p, fieldRefs[index]);
                 }
-
-                if (withSerializeField == false && ReferenceUnityEngine)
-                {
-                    p.PrintLine($"[{SERIALIZE_FIELD_ATTRIBUTE}]");
-                }
-
-                var typeName = GetPropertyTypeName(prop);
-
-                p.PrintLine($"{accessKeyword} {typeName} {prop.FieldName};");
-                p.PrintEndLine();
-
-                p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
-                p.PrintLine($"private {readonlyKeyword}{typeName} Get_{prop.Property.Name}()");
-                p.OpenScope();
-                {
-                    p.PrintLine($"return this.{fieldName};");
-                }
-                p.CloseScope();
-                p.PrintEndLine();
-
-                p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
-                p.PrintLine($"private void Set_{prop.Property.Name}({typeName} value)");
-                p.OpenScope();
-                {
-                    p.PrintLine($"this.{fieldName} = value;");
-                }
-                p.CloseScope();
-                p.PrintEndLine();
             }
         }
 
-        private static string GetPropertyTypeName(PropertyRef prop)
+        private void WriteField(ref Printer p, PropertyRef prop, string accessKeyword, string readonlyKeyword)
         {
-            switch (prop.CollectionKind)
+            if (prop.FieldIsImplemented)
             {
-                case CollectionKind.ReadOnlyMemory:
-                case CollectionKind.Memory:
-                case CollectionKind.ReadOnlySpan:
-                case CollectionKind.Span:
+                return;
+            }
+
+            var fieldName = prop.FieldName;
+
+            p.PrintLine(string.Format(GENERATED_FIELD_FROM_PROPERTY_ATTRIBUTE, prop.Property.Name));
+            p.PrintLine(GENERATED_CODE);
+
+            var withSerializeField = false;
+
+            foreach (var (fullTypeName, attribute) in prop.ForwardedFieldAttributes)
+            {
+                if (fullTypeName == SERIALIZE_FIELD_ATTRIBUTE)
                 {
-                    return $"{prop.CollectionElementType.ToFullName()}[]";
+                    withSerializeField = true;
                 }
 
-                case CollectionKind.ReadOnlyList:
+                p.PrintLine($"[{attribute.GetSyntax().ToFullString()}]");
+            }
+
+            if (withSerializeField == false && ReferenceUnityEngine)
+            {
+                p.PrintLine($"[{SERIALIZE_FIELD_ATTRIBUTE}]");
+            }
+
+            var typeName = GetPropertyTypeName(prop);
+
+            p.PrintLine($"{accessKeyword} {typeName} {prop.FieldName};");
+            p.PrintEndLine();
+
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
+            p.PrintLine($"private {readonlyKeyword}{typeName} Get_{prop.Property.Name}()");
+            p.OpenScope();
+            {
+                p.PrintLine($"return this.{fieldName};");
+            }
+            p.CloseScope();
+            p.PrintEndLine();
+
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE).PrintLine(AGGRESSIVE_INLINING);
+            p.PrintLine($"private void Set_{prop.Property.Name}({typeName} value)");
+            p.OpenScope();
+            {
+                p.PrintLine($"this.{fieldName} = value;");
+            }
+            p.CloseScope();
+            p.PrintEndLine();
+        }
+
+        private void WriteProperty(ref Printer p, FieldRef field)
+        {
+            if (field.PropertyIsImplemented)
+            {
+                return;
+            }
+
+            var fieldName = field.Field.Name;
+            string mutableTypeName;
+            string immutableTypeName;
+            var sameType = false;
+
+            switch (field.CollectionKind)
+            {
+                case CollectionKind.Array:
                 {
-                    return $"{LIST_TYPE_T}{prop.CollectionElementType.ToFullName()}>";
+                    mutableTypeName = $"{field.CollectionElementType.ToFullName()}[]";
+                    immutableTypeName = $"global::System.ReadOnlyMemory<{field.CollectionElementType.ToFullName()}>";
+                    break;
                 }
 
-                case CollectionKind.ReadOnlyDictionary:
+                case CollectionKind.List:
                 {
-                    var keyType = prop.CollectionKeyType.ToFullName();
-                    var valueType = prop.CollectionElementType.ToFullName();
-                    return $"{DICTIONARY_TYPE_T}{keyType}, {valueType}>";
+                    mutableTypeName = $"global::System.Collections.Generic.List<{field.CollectionElementType.ToFullName()}>";
+                    immutableTypeName = $"global::System.Collections.Generic.IReadOnlyList<{field.CollectionElementType.ToFullName()}>";
+                    break;
+                }
+
+                case CollectionKind.Dictionary:
+                {
+                    mutableTypeName = $"global::System.Collections.Generic.Dictionary<{field.CollectionKeyType.ToFullName()}, {field.CollectionElementType.ToFullName()}>";
+                    immutableTypeName = $"global::System.Collections.Generic.IReadOnlyDictionary<{field.CollectionKeyType.ToFullName()}, {field.CollectionElementType.ToFullName()}>";
+                    break;
+                }
+
+                case CollectionKind.HashSet:
+                {
+                    mutableTypeName = $"global::System.Collections.Generic.HashSet<{field.CollectionElementType.ToFullName()}>";
+                    immutableTypeName = $"global::System.Collections.Generic.IReadOnlyCollection<{field.CollectionElementType.ToFullName()}>";
+                    break;
+                }
+
+                case CollectionKind.Queue:
+                {
+                    mutableTypeName = $"global::System.Collections.Generic.Queue<{field.CollectionElementType.ToFullName()}>";
+                    immutableTypeName = $"global::System.Collections.Generic.IReadOnlyCollection<{field.CollectionElementType.ToFullName()}>";
+                    break;
+                }
+
+                case CollectionKind.Stack:
+                {
+                    mutableTypeName = $"global::System.Collections.Generic.Stack<{field.CollectionElementType.ToFullName()}>";
+                    immutableTypeName = $"global::System.Collections.Generic.IReadOnlyCollection<{field.CollectionElementType.ToFullName()}>";
+                    break;
                 }
 
                 default:
                 {
-                    return prop.Type.ToFullName();
+                    mutableTypeName = field.Type.ToFullName();
+                    immutableTypeName = field.Type.ToFullName();
+                    sameType = true;
+                    break;
                 }
             }
-        }
 
-        private void WriteProperties(ref Printer p)
-        {
-            foreach (var field in FieldRefs)
+            p.PrintLine(string.Format(GENERATED_PROPERTY_FROM_FIELD_ATTRIBUTE, fieldName, field.Type.ToFullName()));
+            p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
+
+            foreach (var attribute in field.ForwardedPropertyAttributes)
             {
-                if (field.PropertyIsImplemented)
-                {
-                    continue;
-                }
-
-                var fieldName = field.Field.Name;
-                string typeName;
-
-                switch (field.CollectionKind)
-                {
-                    case CollectionKind.Array:
-                    {
-                        typeName = IsMutable
-                            ? $"{field.CollectionElementType.ToFullName()}[]"
-                            : $"global::System.ReadOnlyMemory<{field.CollectionElementType.ToFullName()}>";
-                        break;
-                    }
-
-                    case CollectionKind.List:
-                    {
-                        typeName = IsMutable
-                            ? $"global::System.Collections.Generic.List<{field.CollectionElementType.ToFullName()}>"
-                            : $"global::System.Collections.Generic.IReadOnlyList<{field.CollectionElementType.ToFullName()}>";
-                        break;
-                    }
-
-                    case CollectionKind.Dictionary:
-                    {
-                        typeName = IsMutable
-                            ? $"global::System.Collections.Generic.Dictionary<{field.CollectionKeyType.ToFullName()}, {field.CollectionElementType.ToFullName()}>"
-                            : $"global::System.Collections.Generic.IReadOnlyDictionary<{field.CollectionKeyType.ToFullName()}, {field.CollectionElementType.ToFullName()}>";
-                        break;
-                    }
-
-                    case CollectionKind.HashSet:
-                    {
-                        typeName = IsMutable
-                            ? $"global::System.Collections.Generic.HashSet<{field.CollectionElementType.ToFullName()}>"
-                            : $"global::System.Collections.Generic.IReadOnlyCollection<{field.CollectionElementType.ToFullName()}>";
-                        break;
-                    }
-
-                    case CollectionKind.Queue:
-                    {
-                        typeName = IsMutable
-                            ? $"global::System.Collections.Generic.Queue<{field.CollectionElementType.ToFullName()}>"
-                            : $"global::System.Collections.Generic.IReadOnlyCollection<{field.CollectionElementType.ToFullName()}>";
-                        break;
-                    }
-
-                    case CollectionKind.Stack:
-                    {
-                        typeName = IsMutable
-                            ? $"global::System.Collections.Generic.Stack<{field.CollectionElementType.ToFullName()}>"
-                            : $"global::System.Collections.Generic.IReadOnlyCollection<{field.CollectionElementType.ToFullName()}>";
-                        break;
-                    }
-
-                    default:
-                    {
-                        typeName = field.Type.ToFullName();
-                        break;
-                    }
-                }
-
-                p.PrintLine(string.Format(GENERATED_PROPERTY_FROM_FIELD_ATTRIBUTE, fieldName, field.Type.ToFullName()));
-                p.PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-
-                foreach (var attribute in field.ForwardedPropertyAttributes)
-                {
-                    p.PrintLine($"[{attribute.GetSyntax().ToFullString()}]");
-                }
-
-                p.PrintLine($"public {typeName} {field.PropertyName}");
-                p.OpenScope();
-                {
-                    p.PrintLine(AGGRESSIVE_INLINING);
-                    p.PrintLine($"get => this.{fieldName};");
-
-                    if (IsMutable && WithoutPropertySetter == false)
-                    {
-                        p.PrintEndLine();
-                        p.PrintLine(AGGRESSIVE_INLINING);
-                        p.PrintLine($"set => this.{fieldName} = value;");
-                    }
-                }
-                p.CloseScope();
-                p.PrintEndLine();
+                p.PrintLine($"[{attribute.GetSyntax().ToFullString()}]");
             }
 
+            var typeName = IsMutable ? mutableTypeName : immutableTypeName;
+
+            p.PrintLine($"public {typeName} {field.PropertyName}");
+            p.OpenScope();
+            {
+                p.PrintLine(AGGRESSIVE_INLINING);
+                p.PrintLine($"get => this.{fieldName};");
+
+                p.PrintEndLine();
+                p.PrintLine(AGGRESSIVE_INLINING);
+
+                if (IsMutable && WithoutPropertySetter == false)
+                {
+                    p.PrintLine($"set => this.{fieldName} = value;");
+                }
+                else if ((IsMutable && field.CollectionKind == CollectionKind.Array) || sameType)
+                {
+                    p.PrintLine($"init => this.{fieldName} = value;");
+                }
+                else if (field.CollectionKind == CollectionKind.Array)
+                {
+                    p.PrintLine($"init => this.{fieldName} = value.ToArray();");
+                }
+                else
+                {
+                    p.PrintLine($"init => this.{fieldName} = ({mutableTypeName})value;");
+                }
+            }
+            p.CloseScope();
             p.PrintEndLine();
         }
 
@@ -497,6 +489,37 @@ namespace ZBase.Foundation.Data.DataSourceGen
             }
             p.CloseScope();
             p.PrintEndLine();
+        }
+
+        private static string GetPropertyTypeName(PropertyRef prop)
+        {
+            switch (prop.CollectionKind)
+            {
+                case CollectionKind.ReadOnlyMemory:
+                case CollectionKind.Memory:
+                case CollectionKind.ReadOnlySpan:
+                case CollectionKind.Span:
+                {
+                    return $"{prop.CollectionElementType.ToFullName()}[]";
+                }
+
+                case CollectionKind.ReadOnlyList:
+                {
+                    return $"{LIST_TYPE_T}{prop.CollectionElementType.ToFullName()}>";
+                }
+
+                case CollectionKind.ReadOnlyDictionary:
+                {
+                    var keyType = prop.CollectionKeyType.ToFullName();
+                    var valueType = prop.CollectionElementType.ToFullName();
+                    return $"{DICTIONARY_TYPE_T}{keyType}, {valueType}>";
+                }
+
+                default:
+                {
+                    return prop.Type.ToFullName();
+                }
+            }
         }
     }
 }

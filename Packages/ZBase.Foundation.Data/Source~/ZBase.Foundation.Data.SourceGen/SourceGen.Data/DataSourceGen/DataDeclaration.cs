@@ -31,6 +31,8 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
         public bool ReferenceUnityEngine { get; }
 
+        public ImmutableArray<Order> Orders { get; }
+
         public ImmutableArray<FieldRef> FieldRefs { get; }
 
         public ImmutableArray<PropertyRef> PropRefs { get; }
@@ -146,6 +148,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
             var existingProperties = new HashSet<string>();
             var existingOverrideEquals = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
+            using var orderBuilder = ImmutableArrayBuilder<Order>.Rent();
             using var fieldArrayBuilder = ImmutableArrayBuilder<FieldRef>.Rent();
             using var propArrayBuilder = ImmutableArrayBuilder<PropertyRef>.Rent();
             using var overrideEqualsArrayBuilder = ImmutableArrayBuilder<string>.Rent();
@@ -231,6 +234,9 @@ namespace ZBase.Foundation.Data.DataSourceGen
                             fieldRef.CollectionElementType = stackType.TypeArguments[0];
                         }
                     }
+
+                    var index = fieldArrayBuilder.Count;
+                    orderBuilder.Add(new Order { index = index });
 
                     fieldArrayBuilder.Add(fieldRef);
                     continue;
@@ -324,6 +330,9 @@ namespace ZBase.Foundation.Data.DataSourceGen
                         }
                     }
 
+                    var index = propArrayBuilder.Count;
+                    orderBuilder.Add(new Order { index = index, isPropRef = true });
+
                     propArrayBuilder.Add(propRef);
                     continue;
                 }
@@ -377,6 +386,15 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
                     baseType = baseType.BaseType;
                 }
+            }
+
+            if (orderBuilder.Count > 0)
+            {
+                Orders = orderBuilder.ToImmutable();
+            }
+            else
+            {
+                Orders = ImmutableArray<Order>.Empty;
             }
 
             if (fieldArrayBuilder.Count > 0)
@@ -449,6 +467,12 @@ namespace ZBase.Foundation.Data.DataSourceGen
             public bool FieldIsImplemented { get; set; }
             
             public ImmutableArray<(string, AttributeInfo)> ForwardedFieldAttributes { get; set; }
+        }
+
+        public struct Order
+        {
+            public int index;
+            public bool isPropRef;
         }
 
         public enum DataFieldPolicy
