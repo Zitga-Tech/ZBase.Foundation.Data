@@ -1,7 +1,7 @@
 using System;
 using ZBase.Foundation.Data;
 
-namespace Samples
+namespace ZBase.Foundation.Data.Samples
 {
     public partial class HeroData : IData
     {

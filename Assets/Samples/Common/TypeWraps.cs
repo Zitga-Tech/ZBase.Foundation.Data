@@ -4,7 +4,7 @@
 
 using System;
 
-namespace Samples
+namespace ZBase.Foundation.Data.Samples
 {
     [Serializable]
     public struct IntWrapper : IEquatable<IntWrapper>

@@ -1,6 +1,6 @@
 using ZBase.Foundation.Data.Authoring;
 
-namespace Samples.Authoring
+namespace ZBase.Foundation.Data.Samples.Authoring
 {
     [Database(NamingStrategy.SnakeCase, typeof(FloatWrapperConverter))]
     public partial class DatabaseDefinition

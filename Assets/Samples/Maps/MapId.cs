@@ -8,7 +8,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Samples
+namespace ZBase.Foundation.Data.Samples
 {
     [StructLayout(LayoutKind.Explicit)]
     public readonly partial struct MapId

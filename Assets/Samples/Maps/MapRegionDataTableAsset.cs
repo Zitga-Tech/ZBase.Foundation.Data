@@ -1,7 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using ZBase.Foundation.Data;
 
-namespace Samples
+namespace ZBase.Foundation.Data.Samples
 {
     public sealed partial class MapRegionDataTableAsset : DataTableAsset<MapRegionIdData, MapRegionData, MapRegionId>
     {

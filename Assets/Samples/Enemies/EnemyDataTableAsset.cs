@@ -1,6 +1,6 @@
 ﻿using ZBase.Foundation.Data;
 
-namespace Samples
+namespace ZBase.Foundation.Data.Samples
 {
     public partial class EnemyDataTableAsset : DataTableAsset<EnemyIdData, EnemyData>
     {

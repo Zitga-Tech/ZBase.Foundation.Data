@@ -3,7 +3,7 @@
 using System.Runtime.CompilerServices;
 using ZBase.Foundation.Data;
 
-namespace Samples
+namespace ZBase.Foundation.Data.Samples
 {
     public partial struct MapRegionIdData : IData
     {

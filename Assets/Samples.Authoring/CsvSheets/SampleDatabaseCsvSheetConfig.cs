@@ -2,7 +2,7 @@ using Cathei.BakingSheet.Unity;
 using UnityEngine;
 using ZBase.Foundation.Data.Authoring.Configs.CsvSheets;
 
-namespace Samples.Authoring.Csv
+namespace ZBase.Foundation.Data.Samples.Authoring.Csv
 {
     [CreateAssetMenu(fileName = nameof(SampleDatabaseCsvSheetConfig), menuName = "Sample Database Csv Sheet Config", order = 0)]
     public partial class SampleDatabaseCsvSheetConfig : DatabaseCsvSheetConfig<DatabaseDefinition.SheetContainer>

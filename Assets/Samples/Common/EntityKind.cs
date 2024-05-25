@@ -1,4 +1,4 @@
-namespace Samples
+namespace ZBase.Foundation.Data.Samples
 {
     public enum EntityKind
     {

@@ -1,8 +1,8 @@
 {
-    "name": "Samples.Authoring",
-    "rootNamespace": "Samples.Authoring",
+    "name": "ZBase.Foundation.Data.Samples.Authoring",
+    "rootNamespace": "ZBase.Foundation.Data.Samples.Authoring",
     "references": [
-        "Samples",
+        "ZBase.Foundation.Data.Samples",
         "BakingSheet",
         "ZBase.Foundation.Data",
         "ZBase.Foundation.Data.Authoring",

@@ -1,1 +1,1 @@
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Samples.Authoring")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("ZBase.Foundation.Data.Samples.Authoring")]
