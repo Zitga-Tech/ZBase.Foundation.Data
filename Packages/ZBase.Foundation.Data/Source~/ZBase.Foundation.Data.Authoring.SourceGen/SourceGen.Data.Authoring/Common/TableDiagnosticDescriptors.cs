@@ -41,14 +41,14 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             , description: "The type must not be generic to be considered a valid table."
         );
 
-        public static readonly DiagnosticDescriptor NotDerivedFromDataTableAsset = new DiagnosticDescriptor(
+        public static readonly DiagnosticDescriptor MustBeDerivedFromDataTableAsset = new DiagnosticDescriptor(
               id: "DATABASE_TABLE_0005"
-            , title: "Type is not derived from DataTableAsset<TId, TData>"
-            , messageFormat: "The type \"{0}\" must be derived from DataTableAsset<TId, TData>"
+            , title: "Type must be derived from either DataTableAsset<TDataId, TData> or DataTableAsset<TDataId, TData, TConvertedId>"
+            , messageFormat: "The type \"{0}\" must be derived from either DataTableAsset<TDataId, TData> or DataTableAsset<TDataId, TData, TConvertedId>"
             , category: "DatabaseGenerator"
             , defaultSeverity: DiagnosticSeverity.Error
             , isEnabledByDefault: true
-            , description: "The type must not be derived from DataTableAsset<TId, TData>."
+            , description: "The type must be derived from either DataTableAsset<TDataId, TData> or DataTableAsset<TDataId, TData, TConvertedId>."
         );
     }
 }

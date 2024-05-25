@@ -29,10 +29,10 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 p.PrintEndLine();
 
                 p.PrintLine(AGGRESSIVE_INLINING).PrintLine(GENERATED_CODE).PrintLine(EXCLUDE_COVERAGE);
-                p.PrintLine($"protected override {idTypeName} GetId(in {dataTypeName} row)");
+                p.PrintLine($"protected override {idTypeName} GetId(in {dataTypeName} data)");
                 p.OpenScope();
                 {
-                    p.PrintLine($"return row.Id;");
+                    p.PrintLine($"return data.Id;");
                 }
                 p.CloseScope();
             }

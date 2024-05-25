@@ -67,7 +67,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
             while (baseType != null)
             {
-                if (baseType.ToFullName().StartsWith(DATA_TABLE_ASSET_T) && baseType.TypeArguments.Length == 2)
+                if (baseType.ToFullName().StartsWith(DATA_TABLE_ASSET_T) && baseType.TypeArguments.Length > 1)
                 {
                     return new DataTableAssetRef {
                         Syntax = classSyntax,
@@ -150,7 +150,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
             = new("SG_DATA_TABLE_ASSET_01"
                 , "Data Table Asset Generator Error"
                 , "This error indicates a bug in the Data Table Asset source generators. Error message: '{0}'."
-                , "ZBase.Foundation.Data.DataTableAsset<TId, TData>"
+                , "ZBase.Foundation.Data.DataTableAsset<TDataId, TData>"
                 , DiagnosticSeverity.Error
                 , isEnabledByDefault: true
                 , description: ""

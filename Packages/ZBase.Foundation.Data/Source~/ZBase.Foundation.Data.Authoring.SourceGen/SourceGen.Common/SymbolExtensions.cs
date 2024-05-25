@@ -353,6 +353,35 @@ namespace ZBase.Foundation.SourceGen
             result = null;
             return false;
         }
+
+        public static bool TryGetGenericType(
+              this INamedTypeSymbol symbol
+            , string startWith
+            , int genericArgumentCount1
+            , int genericArgumentCount2
+            , out INamedTypeSymbol result
+        )
+        {
+            var baseType = symbol;
+
+            while (baseType != null)
+            {
+                if (baseType.ToFullName().StartsWith(startWith)
+                    && (baseType.TypeArguments.Length == genericArgumentCount1 
+                        || baseType.TypeArguments.Length == genericArgumentCount2
+                    )
+                )
+                {
+                    result = baseType;
+                    return true;
+                }
+
+                baseType = baseType.BaseType;
+            }
+
+            result = null;
+            return false;
+        }
     }
 }
 
