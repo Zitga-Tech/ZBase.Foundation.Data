@@ -9,5 +9,7 @@ namespace Samples.Authoring
         [Table] public HeroDataTableAsset Heroes { get; }
 
         [Table] public EnemyDataTableAsset Enemies { get; }
+
+        [Table] public MapRegionDataTableAsset MapRegions { get; }
     }
 }

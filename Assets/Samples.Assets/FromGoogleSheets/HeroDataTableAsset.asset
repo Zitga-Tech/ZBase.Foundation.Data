@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4515ad1362f30a944986a2ff8cdfe646, type: 3}
   m_Name: HeroDataTableAsset
   m_EditorClassIdentifier: 
-  _rows:
+  _entries:
   - _id:
       _kind: 0
       _id: 1

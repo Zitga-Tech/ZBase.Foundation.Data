@@ -15,4 +15,5 @@ MonoBehaviour:
   _assetRefs:
   - {fileID: 11400000, guid: c0f0767f69c7ae844b418e759d512470, type: 2}
   - {fileID: 11400000, guid: be71d04fceaecd14195fc9bf355e0fc2, type: 2}
+  - {fileID: 11400000, guid: 58c9bf116c2b787408ac0813f88b73c1, type: 2}
   _redundantAssetRefs: []
