@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3756d2e62817804e8c5a71bab9ea285, type: 3}
+  m_Name: SampleDatabaseGoogleSheetConfig
+  m_EditorClassIdentifier: 
+  _relativeServiceAccountFilePath: ../Credentials/google-service-account.json
+  _relativeSpreadsheetIdFilePath: ../Credentials/spreadsheet-id.txt
+  _listOfSpreadsheets: 1
+  _relativeAssetOutputFolderPath: Samples.Assets/FromGoogleSheets
+  _relativeCsvOutputFolderPath: Samples.Authoring/CsvSheets/sample-csv
+  _csvFolderPerSpreadsheet: 1
+  _cleanCsvOutputFolder: 0
+  _cleanCsvOutputSubFolders: 1
+  _commentOutFileNameIfPossible: 1

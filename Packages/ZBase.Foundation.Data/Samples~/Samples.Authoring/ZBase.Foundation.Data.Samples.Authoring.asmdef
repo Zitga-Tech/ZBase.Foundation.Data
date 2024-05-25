@@ -1,0 +1,23 @@
+{
+    "name": "ZBase.Foundation.Data.Samples.Authoring",
+    "rootNamespace": "ZBase.Foundation.Data.Samples.Authoring",
+    "references": [
+        "ZBase.Foundation.Data.Samples",
+        "BakingSheet",
+        "ZBase.Foundation.Data",
+        "ZBase.Foundation.Data.Authoring",
+        "ZBase.Foundation.Data.Authoring.Configs",
+        "UniTask"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

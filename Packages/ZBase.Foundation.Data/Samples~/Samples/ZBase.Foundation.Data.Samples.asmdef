@@ -1,0 +1,16 @@
+{
+    "name": "ZBase.Foundation.Data.Samples",
+    "rootNamespace": "ZBase.Foundation.Data.Samples",
+    "references": [
+        "ZBase.Foundation.Data"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

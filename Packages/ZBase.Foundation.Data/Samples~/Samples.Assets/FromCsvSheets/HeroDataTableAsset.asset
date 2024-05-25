@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4515ad1362f30a944986a2ff8cdfe646, type: 3}
+  m_Name: HeroDataTableAsset
+  m_EditorClassIdentifier: 
+  _entries:
+  - _id:
+      _kind: 0
+      _id: 1
+    _name: Richard
+    _stat:
+      _hp:
+        value: 10
+      _atk:
+        value: 1
+    _multipliers:
+    - _level: 1
+      _hp: 1
+      _atk: 1
+    - _level: 2
+      _hp: 2
+      _atk: 2
+    - _level: 3
+      _hp: 3
+      _atk: 3
+  - _id:
+      _kind: 0
+      _id: 2
+    _name: Maverick
+    _stat:
+      _hp:
+        value: 8
+      _atk:
+        value: 2
+    _multipliers:
+    - _level: 1
+      _hp: 1
+      _atk: 1
+    - _level: 2
+      _hp: 1
+      _atk: 3
+    - _level: 3
+      _hp: 2
+      _atk: 4
