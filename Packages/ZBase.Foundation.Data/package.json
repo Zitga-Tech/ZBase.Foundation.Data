@@ -1,7 +1,7 @@
 {
   "name": "com.zbase.foundation.data",
   "displayName": "ZBase.Foundation.Data",
-  "version": "1.11.3",
+  "version": "1.11.4",
   "unity": "2022.2",
   "documentationUrl": "https://github.com/Zitga-Tech/ZBase.Foundation.Data/blob/main/README.md",
   "type": "library",
@@ -12,9 +12,9 @@
   "description": "A tool to export ScriptableObject database from either Google Spreadsheet, CSV, or JSON by utilising cathei/BakingSheet and C# Source Genetor.",
   "samples": [
     {
-       "displayName": "Samples",
-       "description": "Demonstrate how to use this package",
-       "path": "Samples~"
+      "displayName": "Samples",
+      "description": "Demonstrate how to use this package",
+      "path": "Samples~"
     }
   ]
 }
