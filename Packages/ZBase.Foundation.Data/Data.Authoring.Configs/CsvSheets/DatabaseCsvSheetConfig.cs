@@ -63,6 +63,9 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
 #else
             UnityEditor.EditorUtility
                 .DisplayDialog("Missing packages", "Requires \"UniTask\" and \"Editor Coroutines\" packages", "OK");
+            
+            args.ResultCallback?.Invoke(false);
+
             yield break;
 #endif
         }

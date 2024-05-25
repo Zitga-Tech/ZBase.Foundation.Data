@@ -41,6 +41,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
                 return;
             }
 
+#if USE_UNITY_EDITORCOROUTINES
             var args = new ExportAllAssetsArgs {
                 SheetContainer = CreateSheetContainer(),
                 DatabaseAssetName = databaseAssetName,
@@ -53,6 +54,10 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
             };
 
             EditorCoroutineUtility.StartCoroutine(Export(args), this);
+#else
+            Debug.LogError("Requires \"Editor Coroutines\" package");
+            resultCallback?.Invoke(false);
+#endif
         }
 
         public override void ExportDataTableAssets()

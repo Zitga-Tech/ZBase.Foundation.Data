@@ -34,6 +34,7 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
                 return;
             }
 
+#if USE_UNITY_EDITORCOROUTINES
             var args = new ExportArgs {
                 SheetContainer = CreateSheetContainer(),
                 DatabaseAssetName = databaseAssetName,
@@ -46,6 +47,10 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
             };
 
             EditorCoroutineUtility.StartCoroutine(Export(args), this);
+#else
+            Debug.LogError("Requires \"Editor Coroutines\" package");
+            resultCallback?.Invoke(false);
+#endif
         }
 
         public override void ExportDataTableAssets()

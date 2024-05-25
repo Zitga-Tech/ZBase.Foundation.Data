@@ -2,9 +2,6 @@
 using System.IO;
 using UnityEngine;
 
-#if USE_CYSHARP_UNITASK
-#endif
-
 namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
 {
     public abstract class DatabaseCsvSheetConfigBase : ScriptableObject
