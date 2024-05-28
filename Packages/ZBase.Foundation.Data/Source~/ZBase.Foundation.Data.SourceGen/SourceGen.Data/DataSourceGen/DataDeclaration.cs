@@ -51,12 +51,13 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
         public DataDeclaration(
               SourceProductionContext context
-            , TypeDeclarationSyntax candidate
+            , TypeDeclarationSyntax syntax
+            , INamedTypeSymbol symbol
             , SemanticModel semanticModel
         )
         {
-            Syntax = candidate;
-            Symbol = semanticModel.GetDeclaredSymbol(candidate, context.CancellationToken);
+            Syntax = syntax;
+            Symbol = symbol;
             IsSealed = Symbol.IsSealed || Symbol.IsValueType;
             
             var mutableAttrib = Symbol.GetAttribute(DATA_MUTABLE_ATTRIBUTE);
@@ -110,7 +111,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
             {
                 var classNameSb = new StringBuilder(Syntax.Identifier.Text);
 
-                if (candidate.TypeParameterList is TypeParameterListSyntax typeParamList
+                if (syntax.TypeParameterList is TypeParameterListSyntax typeParamList
                     && typeParamList.Parameters.Count > 0
                 )
                 {

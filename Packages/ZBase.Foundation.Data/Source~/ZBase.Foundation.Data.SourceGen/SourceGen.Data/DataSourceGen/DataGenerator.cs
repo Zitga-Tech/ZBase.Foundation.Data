@@ -19,7 +19,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
             var dataRefProvider = context.SyntaxProvider.CreateSyntaxProvider(
                 predicate: static (node, token) => GeneratorHelper.IsStructOrClassSyntaxMatch(node, token),
                 transform: static (syntaxContext, token) => GetSemanticMatch(syntaxContext, token)
-            ).Where(static t => t is { });
+            ).Where(static t => t.syntax is { } && t.symbol is { });
 
             var combined = dataRefProvider
                 .Combine(context.CompilationProvider)
@@ -36,43 +36,37 @@ namespace ZBase.Foundation.Data.DataSourceGen
             });
         }
 
-        public static TypeDeclarationSyntax GetSemanticMatch(
+        public static (TypeDeclarationSyntax syntax, INamedTypeSymbol symbol) GetSemanticMatch(
               GeneratorSyntaxContext context
             , CancellationToken token
         )
         {
             if (context.SemanticModel.Compilation.IsValidCompilation() == false
-                || context.Node is not TypeDeclarationSyntax typeSyntax
-                || typeSyntax.Modifiers.Any(SyntaxKind.ReadOnlyKeyword)
-                || typeSyntax.Kind() is not (SyntaxKind.ClassDeclaration or SyntaxKind.StructDeclaration)
-                || typeSyntax.BaseList == null
+                || context.Node is not TypeDeclarationSyntax syntax
+                || syntax.Modifiers.Any(SyntaxKind.ReadOnlyKeyword)
+                || syntax.Kind() is not (SyntaxKind.ClassDeclaration or SyntaxKind.StructDeclaration)
+                || syntax.BaseList == null
             )
             {
-                return null;
+                return default;
             }
 
             var semanticModel = context.SemanticModel;
-            
-            foreach (var baseType in typeSyntax.BaseList.Types)
+            var symbol = semanticModel.GetDeclaredSymbol(syntax, token);
+
+            if (symbol is null)
             {
-                var typeInfo = semanticModel.GetTypeInfo(baseType.Type, token);
-
-                if (typeInfo.Type is INamedTypeSymbol typeSymbol
-                    && typeSymbol.ToFullName() == IDATA
-                )
-                {
-                    return typeSyntax;
-                }
-
-                if (DoesMatchInterface(typeInfo.Type.Interfaces)
-                    || DoesMatchInterface(typeInfo.Type.AllInterfaces)
-                )
-                {
-                    return typeSyntax;
-                }
+                return default;
             }
 
-            return null;
+            if (DoesMatchInterface(symbol.Interfaces)
+                || DoesMatchInterface(symbol.AllInterfaces)
+            )
+            {
+                return (syntax, symbol);
+            }
+
+            return default;
 
             static bool DoesMatchInterface(ImmutableArray<INamedTypeSymbol> interfaces)
             {
@@ -91,12 +85,14 @@ namespace ZBase.Foundation.Data.DataSourceGen
         private static void GenerateOutput(
               SourceProductionContext context
             , Compilation compilation
-            , TypeDeclarationSyntax candidate
+            , (TypeDeclarationSyntax syntax, INamedTypeSymbol symbol) candidate
             , string projectPath
             , bool outputSourceGenFiles
         )
         {
-            if (candidate == null)
+            var (syntax, symbol) = candidate;
+
+            if (syntax == null || symbol == null)
             {
                 return;
             }
@@ -107,9 +103,9 @@ namespace ZBase.Foundation.Data.DataSourceGen
             {
                 SourceGenHelpers.ProjectPath = projectPath;
 
-                var syntaxTree = candidate.SyntaxTree;
+                var syntaxTree = syntax.SyntaxTree;
                 var semanticModel = compilation.GetSemanticModel(syntaxTree);
-                var declaration = new DataDeclaration(context, candidate, semanticModel);
+                var declaration = new DataDeclaration(context, syntax, symbol, semanticModel);
 
                 if (declaration.IsValid == false)
                 {
@@ -142,7 +138,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                       s_errorDescriptor
-                    , candidate.GetLocation()
+                    , syntax.GetLocation()
                     , e.ToUnityPrintableString()
                 ));
             }
