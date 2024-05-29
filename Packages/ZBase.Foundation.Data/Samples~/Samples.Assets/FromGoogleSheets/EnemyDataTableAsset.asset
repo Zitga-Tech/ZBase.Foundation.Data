@@ -16,7 +16,7 @@ MonoBehaviour:
   - _id:
       _kindId:
         _kind: 1
-        _id: 1
+        _subId: 1
       _rarity: 1
     _name: Wolf
     _stat:
@@ -27,7 +27,7 @@ MonoBehaviour:
   - _id:
       _kindId:
         _kind: 1
-        _id: 1
+        _subId: 1
       _rarity: 2
     _name: Goblin
     _stat:

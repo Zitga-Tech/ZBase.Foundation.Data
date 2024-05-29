@@ -13,9 +13,9 @@ namespace ZBase.Foundation.Data.Samples
             _db.Initialize();
             _db.TryGetDataTableAsset<HeroDataTableAsset>(out var table);
 
-            var id = new IdData {
+            var id = new EntityIdData {
                 Kind = EntityKind.Hero,
-                Id = 1,
+                SubId = 1,
             };
 
             var entryRef = table.GetEntryByRef(id);

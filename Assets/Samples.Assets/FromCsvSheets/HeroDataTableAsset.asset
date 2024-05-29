@@ -15,7 +15,7 @@ MonoBehaviour:
   _entries:
   - _id:
       _kind: 0
-      _id: 1
+      _subId: 1
     _name: Richard
     _stat:
       _hp:
@@ -34,7 +34,7 @@ MonoBehaviour:
       _atk: 3
   - _id:
       _kind: 0
-      _id: 2
+      _subId: 2
     _name: Maverick
     _stat:
       _hp:

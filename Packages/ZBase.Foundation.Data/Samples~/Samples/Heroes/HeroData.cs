@@ -6,7 +6,7 @@ namespace ZBase.Foundation.Data.Samples
     public partial class HeroData : IData
     {
         [DataProperty]
-        public IdData Id => Get_Id();
+        public EntityIdData Id => Get_Id();
 
         [DataProperty]
         public string Name => Get_Name();

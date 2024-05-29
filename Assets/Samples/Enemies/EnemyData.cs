@@ -6,7 +6,7 @@ namespace ZBase.Foundation.Data.Samples
     public partial class EnemyIdData : IData
     {
         [SerializeField]
-        private IdData _kindId;
+        private EntityIdData _kindId;
 
         [SerializeField]
         private int _rarity;
