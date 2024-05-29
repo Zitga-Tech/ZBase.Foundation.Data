@@ -167,7 +167,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             {
                 context.ReportDiagnostic(
                       ConverterDiagnosticDescriptors.NotTypeOfExpression
-                    , attrib.ApplicationSyntaxReference.GetSyntax()
+                    , attrib.ApplicationSyntaxReference.GetSyntax(context.CancellationToken)
                 );
                 return false;
             }
@@ -200,7 +200,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             {
                 context?.ReportDiagnostic(
                       ConverterDiagnosticDescriptors.AbstractTypeNotSupported
-                    , syntaxRef?.GetSyntax() ?? outerNode
+                    , syntaxRef?.GetSyntax(context?.CancellationToken ?? default) ?? outerNode
                     , converterType.Name
                 );
 
@@ -212,7 +212,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             {
                 context?.ReportDiagnostic(
                       ConverterDiagnosticDescriptors.OpenGenericTypeNotSupported
-                    , syntaxRef?.GetSyntax() ?? outerNode
+                    , syntaxRef?.GetSyntax(context?.CancellationToken ?? default) ?? outerNode
                     , converterType.Name
                 );
 
@@ -245,7 +245,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     context?.ReportDiagnostic(
                           ConverterDiagnosticDescriptors.MissingDefaultConstructor
-                        , syntaxRef?.GetSyntax() ?? outerNode
+                        , syntaxRef?.GetSyntax(context?.CancellationToken ?? default) ?? outerNode
                         , converterType.Name
                     );
 
@@ -314,7 +314,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                 context?.ReportDiagnostic(
                       diagnostic
-                    , syntaxRef?.GetSyntax() ?? outerNode
+                    , syntaxRef?.GetSyntax(context?.CancellationToken ?? default) ?? outerNode
                     , converterType.Name
                 );
 
@@ -333,7 +333,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                 context?.ReportDiagnostic(
                       diagnostic
-                    , syntaxRef?.GetSyntax() ?? outerNode
+                    , syntaxRef?.GetSyntax(context?.CancellationToken ?? default) ?? outerNode
                     , converterType.Name
                     , returnType?.ToFullName() ?? string.Empty
                 );
@@ -366,7 +366,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
 
                 context?.ReportDiagnostic(
                       diagnostic
-                    , syntaxRef?.GetSyntax() ?? outerNode
+                    , syntaxRef?.GetSyntax(context?.CancellationToken ?? default) ?? outerNode
                     , converterType.Name
                     , returnType?.ToFullName() ?? string.Empty
                 );
@@ -442,7 +442,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
             {
                 context.ReportDiagnostic(
                       ConverterDiagnosticDescriptors.NotTypeOfExpressionAt
-                    , attrib.ApplicationSyntaxReference.GetSyntax()
+                    , attrib.ApplicationSyntaxReference.GetSyntax(context.CancellationToken)
                     , position
                 );
 
@@ -488,7 +488,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     context.ReportDiagnostic(
                           ConverterDiagnosticDescriptors.ConverterAmbiguity
-                        , attrib.ApplicationSyntaxReference?.GetSyntax() ?? outerNode
+                        , attrib.ApplicationSyntaxReference?.GetSyntax(context.CancellationToken) ?? outerNode
                         , converterRef.ConverterType.Name
                         , anotherConverter.ConverterType.Name
                         , anotherConverter.TargetType.ToFullName()

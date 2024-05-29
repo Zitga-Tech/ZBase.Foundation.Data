@@ -22,8 +22,15 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 .Print($"partial {keyword} ").Print(ClassName)
                 .Print(" : ")
                 .PrintIf(HasBaseType, $"{BaseTypeName}, ")
-                .Print($"global::System.IEquatable<{ClassName}>")
-                .PrintEndLine();
+                .Print($"global::System.IEquatable<{ClassName}>");
+
+            if (IdPropertyType != null)
+            {
+                p.Print(", global::ZBase.Foundation.Data.IDataWithId<")
+                    .Print(IdPropertyType.ToFullName()).Print(">");
+            }
+
+            p.PrintEndLine();
             p.OpenScope();
             {
                 WriteFieldOrPropertyByOrders(ref p);

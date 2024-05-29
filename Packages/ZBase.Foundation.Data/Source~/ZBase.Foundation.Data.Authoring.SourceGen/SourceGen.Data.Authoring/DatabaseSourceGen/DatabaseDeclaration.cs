@@ -88,7 +88,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     context.ReportDiagnostic(
                           TableDiagnosticDescriptors.AbstractTypeNotSupported
-                        , attrib.ApplicationSyntaxReference.GetSyntax()
+                        , attrib.ApplicationSyntaxReference.GetSyntax(context.CancellationToken)
                         , type.Name
                     );
                     continue;
@@ -98,7 +98,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     context.ReportDiagnostic(
                           TableDiagnosticDescriptors.GenericTypeNotSupported
-                        , attrib.ApplicationSyntaxReference.GetSyntax()
+                        , attrib.ApplicationSyntaxReference.GetSyntax(context.CancellationToken)
                         , type.Name
                     );
                     continue;
@@ -110,7 +110,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     context.ReportDiagnostic(
                           TableDiagnosticDescriptors.MustBeDerivedFromDataTableAsset
-                        , attrib.ApplicationSyntaxReference.GetSyntax()
+                        , attrib.ApplicationSyntaxReference.GetSyntax(context.CancellationToken)
                         , type.Name
                     );
                     continue;
@@ -171,7 +171,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     context.ReportDiagnostic(
                           VerticalListDiagnosticDescriptors.NotTypeOfExpression
-                        , attrib.ApplicationSyntaxReference.GetSyntax()
+                        , attrib.ApplicationSyntaxReference.GetSyntax(context.CancellationToken)
                     );
                     continue;
                 }
@@ -180,7 +180,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     context.ReportDiagnostic(
                           VerticalListDiagnosticDescriptors.AbstractTypeNotSupported
-                        , attrib.ApplicationSyntaxReference.GetSyntax()
+                        , attrib.ApplicationSyntaxReference.GetSyntax(context.CancellationToken)
                         , targetType.Name
                     );
                     continue;
@@ -190,7 +190,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     context.ReportDiagnostic(
                           VerticalListDiagnosticDescriptors.NotImplementIData
-                        , attrib.ApplicationSyntaxReference.GetSyntax()
+                        , attrib.ApplicationSyntaxReference.GetSyntax(context.CancellationToken)
                         , targetType.Name
                     );
                     continue;
@@ -200,7 +200,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     context.ReportDiagnostic(
                           VerticalListDiagnosticDescriptors.InvalidPropertyName
-                        , attrib.ApplicationSyntaxReference.GetSyntax()
+                        , attrib.ApplicationSyntaxReference.GetSyntax(context.CancellationToken)
                     );
                     continue;
                 }

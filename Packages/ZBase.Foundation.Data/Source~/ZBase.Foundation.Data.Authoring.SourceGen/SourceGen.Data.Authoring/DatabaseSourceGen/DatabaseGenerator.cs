@@ -178,7 +178,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 {
                     context.ReportDiagnostic(
                           s_errorDescriptor
-                        , candidate.Attribute.ApplicationSyntaxReference.GetSyntax()
+                        , candidate.Attribute.ApplicationSyntaxReference.GetSyntax(context.CancellationToken)
                         , e.ToUnityPrintableString()
                     );
                 }

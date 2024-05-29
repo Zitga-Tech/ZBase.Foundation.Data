@@ -102,6 +102,28 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
             try
             {
+                if (candidate.IdType.TypeKind is not (TypeKind.Struct or TypeKind.Class or TypeKind.Enum))
+                {
+                    context.ReportDiagnostic(
+                          DiagnosticDescriptors.MustBeApplicableForTypeArgument
+                        , candidate.Syntax
+                        , candidate.IdType.Name
+                        , "TDataId"
+                    );
+                    return;
+                }
+                
+                if (candidate.DataType.TypeKind is not (TypeKind.Struct or TypeKind.Class or TypeKind.Enum))
+                {
+                    context.ReportDiagnostic(
+                          DiagnosticDescriptors.MustBeApplicableForTypeArgument
+                        , candidate.Syntax
+                        , candidate.IdType.Name
+                        , "TData"
+                    );
+                    return;
+                }
+
                 SourceGenHelpers.ProjectPath = projectPath;
 
                 var syntaxTree = syntax.SyntaxTree;
@@ -155,6 +177,5 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 , isEnabledByDefault: true
                 , description: ""
             );
-
     }
 }

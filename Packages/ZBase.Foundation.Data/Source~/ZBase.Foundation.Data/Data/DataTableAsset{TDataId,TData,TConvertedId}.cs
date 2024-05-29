@@ -8,7 +8,7 @@ using UnityEngine;
 namespace ZBase.Foundation.Data
 {
     public abstract class DataTableAsset<TDataId, TData, TConvertedId> : DataTableAsset
-        where TData : IData
+        where TData : IData, IDataWithId<TDataId>
     {
         [SerializeField]
         private TData[] _entries;

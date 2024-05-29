@@ -9,7 +9,7 @@ using UnityEngine.Serialization;
 namespace ZBase.Foundation.Data
 {
     public abstract class DataTableAsset<TDataId, TData> : DataTableAsset
-        where TData : IData
+        where TData : IData, IDataWithId<TDataId>
     {
         [SerializeField, FormerlySerializedAs("_rows")]
         private TData[] _entries;

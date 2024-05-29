@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
@@ -47,6 +48,8 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
         public bool HasIEquatableMethod { get; }
 
+        public ITypeSymbol IdPropertyType { get; }
+
         public bool IsValid { get; }
 
         public DataDeclaration(
@@ -80,7 +83,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
             {
                 context.ReportDiagnostic(
                       DiagnosticDescriptors.CannotDecorateImmutableDataWithFieldPolicyAttribute
-                    , fieldPolicyAttrib.ApplicationSyntaxReference.GetSyntax()
+                    , fieldPolicyAttrib.ApplicationSyntaxReference.GetSyntax(context.CancellationToken)
                     , Symbol.Name
                 );
                 return;
@@ -177,7 +180,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     {
                         context.ReportDiagnostic(
                               DiagnosticDescriptors.ImmutableDataFieldMustBePrivate
-                            , field.DeclaringSyntaxReferences[0].GetSyntax()
+                            , field.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken)
                             , Symbol.Name
                         );
                         continue;
@@ -240,6 +243,24 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     orderBuilder.Add(new Order { index = index });
 
                     fieldArrayBuilder.Add(fieldRef);
+
+                    if (string.Equals(propertyName, "Id", StringComparison.Ordinal))
+                    {
+                        if (fieldRef.CollectionKind != CollectionKind.NotCollection)
+                        {
+                            context.ReportDiagnostic(
+                                  DiagnosticDescriptors.CollectionIsNotApplicableForProperty
+                                , field.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken)
+                                , field.Type.ToDisplayString()
+                                , "Id"
+                            );
+                        }
+                        else
+                        {
+                            IdPropertyType = field.Type;
+                        }
+                    }
+
                     continue;
                 }
 
@@ -255,7 +276,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                         {
                             context.ReportDiagnostic(
                                   DiagnosticDescriptors.OnlyPrivateOrInitOnlySetterIsAllowed
-                                , property.SetMethod.DeclaringSyntaxReferences[0].GetSyntax()
+                                , property.SetMethod.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken)
                                 , Symbol.Name
                             );
                         }
@@ -335,6 +356,24 @@ namespace ZBase.Foundation.Data.DataSourceGen
                     orderBuilder.Add(new Order { index = index, isPropRef = true });
 
                     propArrayBuilder.Add(propRef);
+
+                    if (string.Equals(property.Name, "Id", StringComparison.Ordinal))
+                    {
+                        if (propRef.CollectionKind != CollectionKind.NotCollection)
+                        {
+                            context.ReportDiagnostic(
+                                  DiagnosticDescriptors.CollectionIsNotApplicableForProperty
+                                , property.SetMethod.DeclaringSyntaxReferences[0].GetSyntax(context.CancellationToken)
+                                , property.Type.ToDisplayString()
+                                , "Id"
+                            );
+                        }
+                        else
+                        {
+                            IdPropertyType = property.Type;
+                        }
+                    }
+
                     continue;
                 }
 

@@ -219,7 +219,7 @@ namespace MyGame.Enemies
         private Stack<float> _floatStack;
     }
 
-    public abstract class EnemyDataTableAsset<T> : DataTableAsset<IdData, T> where T : IData
+    public abstract class EnemyDataTableAsset<T> : DataTableAsset<IdData, T> where T : IDataWithId<IdData>
     {
     }
 

@@ -75,5 +75,25 @@ namespace ZBase.Foundation.Data.DataSourceGen
             , isEnabledByDefault: true
             , description: "Use private setter, or init-only setter, or decorate the type with [DataMutable(withoutPropertySetter: false)]."
         );
+        
+        public static readonly DiagnosticDescriptor CollectionIsNotApplicableForProperty = new DiagnosticDescriptor(
+              id: "DATA_0006"
+            , title: "Collection type is not applicable for the property"
+            , messageFormat: "Type \"{0}\" is a collection thus it is not applicable for the \"{1}\" property"
+            , category: "DataGenerator"
+            , defaultSeverity: DiagnosticSeverity.Warning
+            , isEnabledByDefault: true
+            , description: "Collection type is not applicable for the property."
+        );
+        
+        public static readonly DiagnosticDescriptor MustBeApplicableForTypeArgument = new DiagnosticDescriptor(
+              id: "DATA_0010"
+            , title: "Must be either a struct, a class or an enum to replace type argument"
+            , messageFormat: "Type \"{0}\" is not applicable to replace \"{1}\", must be either a struct, a class or an enum"
+            , category: "DataTableAssetGenerator"
+            , defaultSeverity: DiagnosticSeverity.Error
+            , isEnabledByDefault: true
+            , description: "Must be either a struct, a class or an enum."
+        );
     }
 }
