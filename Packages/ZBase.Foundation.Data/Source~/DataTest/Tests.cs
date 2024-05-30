@@ -176,18 +176,18 @@ namespace MyGame.Heroes
         private Dictionary<StatKind, StatMultiplierData> _statMap;
     }
 
-    public partial class HeroDataTableAsset : DataTableAsset<IdData, HeroData>
+    public partial class HeroDataTableAsset : DataTableAsset<IdData, HeroData>, IDataTableAsset
     {
     }
 
-    public partial class NewHeroData : HeroData
+    public partial class NewHeroData : HeroData, IData
     {
         [DataProperty]
         [field: SerializeField]
         public ReadOnlyMemory<int> NewValues => Get_NewValues();
     }
 
-    public partial class NewHeroDataTableAsset : DataTableAsset<IdData, NewHeroData>
+    public partial class NewHeroDataTableAsset : DataTableAsset<IdData, NewHeroData>, IDataTableAsset
     {
     }
 }
@@ -219,23 +219,23 @@ namespace MyGame.Enemies
         private Stack<float> _floatStack;
     }
 
-    public abstract class EnemyDataTableAsset<T> : DataTableAsset<IdData, T> where T : IDataWithId<IdData>
+    public abstract class EnemyDataTableAsset<T> : DataTableAsset<IdData, T>, IDataTableAsset where T : IDataWithId<IdData>
     {
     }
 
-    public partial class EnemyDataTableAsset : EnemyDataTableAsset<EnemyData>
+    public partial class EnemyDataTableAsset : EnemyDataTableAsset<EnemyData>, IDataTableAsset
     {
     }
 
-    public partial class NewEnemyDataTableAsset : EnemyDataTableAsset<EnemyData>
+    public partial class NewEnemyDataTableAsset : EnemyDataTableAsset<EnemyData>, IDataTableAsset
     {
     }
 
-    public abstract class GenericDataTableAsset<T> : DataTableAsset<int, GenericData<T>>
+    public abstract class GenericDataTableAsset<T> : DataTableAsset<int, GenericData<T>>, IDataTableAsset
     {
     }
 
-    public partial class GenericDataTableAsset : GenericDataTableAsset<int> { }
+    public partial class GenericDataTableAsset : GenericDataTableAsset<int>, IDataTableAsset { }
 }
 
 #if UNITY_EDITOR

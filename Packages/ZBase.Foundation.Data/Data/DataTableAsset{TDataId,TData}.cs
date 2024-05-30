@@ -8,7 +8,7 @@ using UnityEngine.Serialization;
 
 namespace ZBase.Foundation.Data
 {
-    public abstract class DataTableAsset<TDataId, TData> : DataTableAsset
+    public abstract class DataTableAsset<TDataId, TData> : DataTableAsset, IDataTableAsset
         where TData : IData, IDataWithId<TDataId>
     {
         [SerializeField, FormerlySerializedAs("_rows")]
@@ -87,7 +87,7 @@ namespace ZBase.Foundation.Data
             => value.ToString();
 
         [HideInCallstack, DoesNotReturn, Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
-        protected static void ErrorDuplicateId(TDataId id, int index, DataTableAsset<TDataId, TData> context)
+        protected static void ErrorDuplicateId(TDataId id, int index, [NotNull] DataTableAsset<TDataId, TData> context)
         {
             UnityEngine.Debug.LogErrorFormat(
                   context

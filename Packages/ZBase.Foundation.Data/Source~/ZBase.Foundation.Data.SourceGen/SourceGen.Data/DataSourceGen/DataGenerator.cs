@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Immutable;
+using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -17,13 +17,14 @@ namespace ZBase.Foundation.Data.DataSourceGen
             var projectPathProvider = SourceGenHelpers.GetSourceGenConfigProvider(context);
 
             var dataRefProvider = context.SyntaxProvider.CreateSyntaxProvider(
-                predicate: static (node, token) => GeneratorHelper.IsStructOrClassSyntaxMatch(node, token),
-                transform: static (syntaxContext, token) => GetSemanticMatch(syntaxContext, token)
+                predicate: IsStructOrClassSyntaxMatch,
+                transform: GetSemanticMatch
             ).Where(static t => t.syntax is { } && t.symbol is { });
 
             var combined = dataRefProvider
                 .Combine(context.CompilationProvider)
-                .Combine(projectPathProvider);
+                .Combine(projectPathProvider)
+                .Where(static t => t.Left.Right.IsValidCompilation());
 
             context.RegisterSourceOutput(combined, static (sourceProductionContext, source) => {
                 GenerateOutput(
@@ -36,13 +37,25 @@ namespace ZBase.Foundation.Data.DataSourceGen
             });
         }
 
+        public static bool IsStructOrClassSyntaxMatch(SyntaxNode syntaxNode, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+
+            return syntaxNode is TypeDeclarationSyntax typeSyntax
+                && typeSyntax.Kind() is (SyntaxKind.ClassDeclaration or SyntaxKind.StructDeclaration)
+                && typeSyntax.BaseList != null
+                && typeSyntax.BaseList.Types.Count > 0
+                && typeSyntax.BaseList.Types.Any(
+                    static x => x.Type.IsTypeNameCandidate("ZBase.Foundation.Data", "IData")
+                );
+        }
+
         public static (TypeDeclarationSyntax syntax, INamedTypeSymbol symbol) GetSemanticMatch(
               GeneratorSyntaxContext context
             , CancellationToken token
         )
         {
-            if (context.SemanticModel.Compilation.IsValidCompilation() == false
-                || context.Node is not TypeDeclarationSyntax syntax
+            if (context.Node is not TypeDeclarationSyntax syntax
                 || syntax.Modifiers.Any(SyntaxKind.ReadOnlyKeyword)
                 || syntax.Kind() is not (SyntaxKind.ClassDeclaration or SyntaxKind.StructDeclaration)
                 || syntax.BaseList == null
@@ -59,27 +72,7 @@ namespace ZBase.Foundation.Data.DataSourceGen
                 return default;
             }
 
-            if (DoesMatchInterface(symbol.Interfaces)
-                || DoesMatchInterface(symbol.AllInterfaces)
-            )
-            {
-                return (syntax, symbol);
-            }
-
-            return default;
-
-            static bool DoesMatchInterface(ImmutableArray<INamedTypeSymbol> interfaces)
-            {
-                foreach (var interfaceSymbol in interfaces)
-                {
-                    if (interfaceSymbol.ToFullName() == IDATA)
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
+            return (syntax, symbol);
         }
 
         private static void GenerateOutput(

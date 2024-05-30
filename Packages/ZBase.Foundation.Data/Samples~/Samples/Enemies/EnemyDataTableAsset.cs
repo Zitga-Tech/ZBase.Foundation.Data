@@ -2,7 +2,7 @@
 
 namespace ZBase.Foundation.Data.Samples
 {
-    public partial class EnemyDataTableAsset : DataTableAsset<EnemyIdData, EnemyData>
+    public partial class EnemyDataTableAsset : DataTableAsset<EnemyIdData, EnemyData>, IDataTableAsset
     {
     }
 }

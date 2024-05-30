@@ -1,4 +1,6 @@
-﻿namespace ZBase.Foundation.Data
+﻿#pragma warning disable CA1040 // Avoid empty interfaces
+
+namespace ZBase.Foundation.Data
 {
     public interface IData { }
 

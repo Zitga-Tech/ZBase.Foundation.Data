@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Threading;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ZBase.Foundation.SourceGen;
 
 namespace ZBase.Foundation.Data.DataSourceGen
@@ -16,25 +13,6 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
         public static bool IsValidCompilation(this Compilation compilation)
             => compilation.Assembly.HasAttribute(DISABLE_ATTRIBUTE) == false;
-
-        public static bool IsClassSyntaxMatch(SyntaxNode syntaxNode, CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-
-            return syntaxNode is ClassDeclarationSyntax classSyntax
-                && classSyntax.BaseList != null
-                && classSyntax.BaseList.Types.Count > 0;
-        }
-
-        public static bool IsStructOrClassSyntaxMatch(SyntaxNode syntaxNode, CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-
-            return syntaxNode is TypeDeclarationSyntax typeSyntax
-                && typeSyntax.Kind() is (SyntaxKind.ClassDeclaration or SyntaxKind.StructDeclaration)
-                && typeSyntax.BaseList != null
-                && typeSyntax.BaseList.Types.Count > 0;
-        }
 
         public static string ToPropertyName(this IFieldSymbol field)
         {

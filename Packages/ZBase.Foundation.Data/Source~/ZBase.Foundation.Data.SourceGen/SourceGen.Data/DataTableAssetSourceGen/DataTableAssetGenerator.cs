@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -16,13 +17,14 @@ namespace ZBase.Foundation.Data.DataSourceGen
             var projectPathProvider = SourceGenHelpers.GetSourceGenConfigProvider(context);
 
             var dataRefProvider = context.SyntaxProvider.CreateSyntaxProvider(
-                predicate: static (node, token) => GeneratorHelper.IsClassSyntaxMatch(node, token),
-                transform: static (syntaxContext, token) => GetSemanticMatch(syntaxContext, token)
+                predicate: IsClassSyntaxMatch,
+                transform: GetSemanticMatch
             ).Where(static t => t is { });
 
             var combined = dataRefProvider
                 .Combine(context.CompilationProvider)
-                .Combine(projectPathProvider);
+                .Combine(projectPathProvider)
+                .Where(static t => t.Left.Right.IsValidCompilation());
 
             context.RegisterSourceOutput(combined, static (sourceProductionContext, source) => {
                 GenerateOutput(
@@ -35,13 +37,24 @@ namespace ZBase.Foundation.Data.DataSourceGen
             });
         }
 
+        public static bool IsClassSyntaxMatch(SyntaxNode syntaxNode, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+
+            return syntaxNode is ClassDeclarationSyntax classSyntax
+                && classSyntax.BaseList != null
+                && classSyntax.BaseList.Types.Count > 0
+                && classSyntax.BaseList.Types.Any(
+                    static x => x.Type.IsTypeNameCandidate("ZBase.Foundation.Data", "IDataTableAsset")
+                );
+        }
+
         public static DataTableAssetRef GetSemanticMatch(
               GeneratorSyntaxContext context
             , CancellationToken token
         )
         {
-            if (context.SemanticModel.Compilation.IsValidCompilation() == false
-                || context.Node is not ClassDeclarationSyntax classSyntax
+            if (context.Node is not ClassDeclarationSyntax classSyntax
                 || classSyntax.BaseList == null
             )
             {
