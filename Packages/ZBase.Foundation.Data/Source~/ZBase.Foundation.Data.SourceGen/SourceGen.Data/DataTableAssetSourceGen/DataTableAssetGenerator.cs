@@ -80,13 +80,22 @@ namespace ZBase.Foundation.Data.DataSourceGen
 
             while (baseType != null)
             {
-                if (baseType.ToFullName().StartsWith(DATA_TABLE_ASSET_T) && baseType.TypeArguments.Length > 1)
+                var typeArguments = baseType.TypeArguments;
+
+                if (typeArguments.Length < 2)
+                {
+                    continue;
+                }
+
+                var fullName = baseType.ToFullName();
+
+                if (fullName.StartsWith(DATA_TABLE_ASSET))
                 {
                     return new DataTableAssetRef {
                         Syntax = classSyntax,
                         Symbol = symbol,
-                        IdType = baseType.TypeArguments[0],
-                        DataType = baseType.TypeArguments[1],
+                        IdType = typeArguments[0],
+                        DataType = typeArguments[1],
                     };
                 }
 

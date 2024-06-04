@@ -6,7 +6,7 @@
         public const string DATA_TABLE_ASSET_GENERATOR_NAME = nameof(DataTableAssetGenerator);
 
         public const string IDATA = "global::ZBase.Foundation.Data.IData";
-        public const string DATA_TABLE_ASSET_T = "global::ZBase.Foundation.Data.DataTableAsset<";
+        public const string DATA_TABLE_ASSET = "global::ZBase.Foundation.Data.DataTableAsset";
         public const string DATA_PROPERTY_ATTRIBUTE = "global::ZBase.Foundation.Data.DataPropertyAttribute";
         public const string DATA_CONVERTER_ATTRIBUTE = "global::ZBase.Foundation.Data.DataConverterAttribute";
         public const string SERIALIZE_FIELD_ATTRIBUTE = "global::UnityEngine.SerializeField";

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -7,20 +6,11 @@ using UnityEngine;
 
 namespace ZBase.Foundation.Data
 {
-    public abstract class DataTableAsset<TDataId, TData, TConvertedId> : DataTableAsset, IDataTableAsset
+    public abstract class DataTableAsset<TDataId, TData, TConvertedId> : DataTableAssetBase<TDataId, TData>, IDataTableAsset
         where TData : IData, IDataWithId<TDataId>
     {
-        [SerializeField]
-        private TData[] _entries;
-
         private readonly Dictionary<TConvertedId, int> _idToIndexMap = new();
-
-        public ReadOnlyMemory<TData> Entries
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => _entries;
-        }
-
+        
         protected Dictionary<TConvertedId, int> IdToIndexMap
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -66,21 +56,6 @@ namespace ZBase.Foundation.Data
             return _idToIndexMap.TryGetValue(id, out var index) ? new(Entries.Span.Slice(index, 1)) : default;
         }
 
-        internal sealed override void SetEntries(object obj)
-        {
-            if (obj is TData[] entries)
-            {
-                _entries = entries;
-            }
-            else
-            {
-                _entries = Array.Empty<TData>();
-                ErrorCannotCast(obj, this);
-            }
-        }
-
-        protected abstract TDataId GetId(in TData data);
-
         protected abstract TConvertedId Convert(TDataId value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -96,19 +71,6 @@ namespace ZBase.Foundation.Data
                 , context.ToString(id)
                 , index
             );
-        }
-
-        [HideInCallstack, DoesNotReturn, Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
-        protected static void ErrorCannotCast(object obj, UnityEngine.Object context)
-        {
-            if (obj == null)
-            {
-                UnityEngine.Debug.LogError($"Cannot cast null into {typeof(TData[])}", context);
-            }
-            else
-            {
-                UnityEngine.Debug.LogError($"Cannot cast {obj.GetType()} into {typeof(TData[])}", context);
-            }
         }
     }
 }

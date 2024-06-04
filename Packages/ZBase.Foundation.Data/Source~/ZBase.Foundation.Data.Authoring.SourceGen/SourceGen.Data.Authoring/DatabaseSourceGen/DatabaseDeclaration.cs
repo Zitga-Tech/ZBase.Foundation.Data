@@ -105,7 +105,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
                 }
 
                 if (type.BaseType == null
-                    || type.TryGetGenericType(DATA_TABLE_ASSET_T, 3, 2, out var baseType) == false
+                    || type.TryGetGenericType(DATA_TABLE_ASSET, 3, 2, out var baseType) == false
                 )
                 {
                     context.ReportDiagnostic(

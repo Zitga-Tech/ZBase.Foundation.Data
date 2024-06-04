@@ -10,7 +10,7 @@ namespace ZBase.Foundation.Data.DatabaseSourceGen
         public const string GENERATOR_NAME = nameof(DatabaseGenerator);
 
         public const string IDATA = "global::ZBase.Foundation.Data.IData";
-        public const string DATA_TABLE_ASSET_T = "global::ZBase.Foundation.Data.DataTableAsset<";
+        public const string DATA_TABLE_ASSET = "global::ZBase.Foundation.Data.DataTableAsset";
         public const string DATABASE_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.DatabaseAttribute";
         public const string TABLE_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.TableAttribute";
         public const string VERTICAL_LIST_ATTRIBUTE = "global::ZBase.Foundation.Data.Authoring.VerticalListAttribute";

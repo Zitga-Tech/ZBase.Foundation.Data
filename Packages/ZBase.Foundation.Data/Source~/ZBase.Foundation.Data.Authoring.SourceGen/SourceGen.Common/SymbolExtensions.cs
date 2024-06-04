@@ -339,12 +339,13 @@ namespace ZBase.Foundation.SourceGen
 
             while (baseType != null)
             {
-                if (baseType.ToFullName().StartsWith(startWith)
-                    && baseType.TypeArguments.Length == genericArgumentCount
-                )
+                if (baseType.TypeArguments.Length == genericArgumentCount)
                 {
-                    result = baseType;
-                    return true;
+                    if (baseType.ToFullName().StartsWith(startWith))
+                    {
+                        result = baseType;
+                        return true;
+                    }
                 }
 
                 baseType = baseType.BaseType;
@@ -366,14 +367,17 @@ namespace ZBase.Foundation.SourceGen
 
             while (baseType != null)
             {
-                if (baseType.ToFullName().StartsWith(startWith)
-                    && (baseType.TypeArguments.Length == genericArgumentCount1 
-                        || baseType.TypeArguments.Length == genericArgumentCount2
-                    )
+                var typeArguments = baseType.TypeArguments;
+
+                if (typeArguments.Length == genericArgumentCount1
+                    || typeArguments.Length == genericArgumentCount2
                 )
                 {
-                    result = baseType;
-                    return true;
+                    if (baseType.ToFullName().StartsWith(startWith))
+                    {
+                        result = baseType;
+                        return true;
+                    }
                 }
 
                 baseType = baseType.BaseType;
