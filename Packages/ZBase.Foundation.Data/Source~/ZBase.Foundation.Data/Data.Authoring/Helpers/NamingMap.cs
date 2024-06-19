@@ -8,6 +8,7 @@ namespace ZBase.Foundation.Data.Authoring
         private static readonly CamelCaseNamingStrategy s_camelNaming = new();
         private static readonly SnakeCaseNamingStrategy s_snakeNaming = new();
         private static readonly KebabCaseNamingStrategy s_kebabNaming = new();
+        private static readonly DefaultNamingStrategy s_defaultNaming = new();
 
         private readonly Dictionary<string, string> _serializedNameToProperName = new();
         private readonly Dictionary<string, string> _properNameToSerializedName = new();
@@ -23,7 +24,7 @@ namespace ZBase.Foundation.Data.Authoring
             if (string.IsNullOrWhiteSpace(properName))
                 return;
 
-            var serializedName = ToSerializedName(_strategy, properName);
+            var serializedName = ConvertName(properName, _strategy);
             _serializedNameToProperName[serializedName] = properName;
             _properNameToSerializedName[properName] = serializedName;
         }
@@ -58,13 +59,13 @@ namespace ZBase.Foundation.Data.Authoring
             return serializedName;
         }
 
-        private static string ToSerializedName(NamingStrategy namingStrategy, string properName)
+        public static string ConvertName(string name, NamingStrategy namingStrategy)
         {
             return namingStrategy switch {
-                NamingStrategy.CamelCase => s_camelNaming.GetPropertyName(properName, false),
-                NamingStrategy.SnakeCase => s_snakeNaming.GetPropertyName(properName, false),
-                NamingStrategy.KebabCase => s_kebabNaming.GetPropertyName(properName, false),
-                _ => properName
+                NamingStrategy.CamelCase => s_camelNaming.GetPropertyName(name, false),
+                NamingStrategy.SnakeCase => s_snakeNaming.GetPropertyName(name, false),
+                NamingStrategy.KebabCase => s_kebabNaming.GetPropertyName(name, false),
+                _ => s_defaultNaming.GetPropertyName(name, false),
             };
         }
     }
