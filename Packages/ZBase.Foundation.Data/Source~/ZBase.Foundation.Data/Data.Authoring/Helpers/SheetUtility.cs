@@ -1,13 +1,18 @@
-﻿namespace ZBase.Foundation.Data.Authoring
+﻿using System;
+
+namespace ZBase.Foundation.Data.Authoring
 {
     public static class SheetUtility
     {
-        public static bool ValidateSheetName(string name, bool allowComments = false)
+        public static bool ValidateSheetName(string name, bool allowComments = false, bool allowWhiteSpaces = false)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return false;
 
             name = name.Trim();
+            
+            if (allowWhiteSpaces == false && name.Contains(' ', StringComparison.Ordinal))
+                return false;
 
             if (allowComments)
             {
@@ -29,7 +34,7 @@
 
             if (name.StartsWith('<') || name.EndsWith('>'))
             {
-                return $"${name.Replace("<", "").Replace(">", "")}";
+                return $"${name.Replace("<", "", StringComparison.Ordinal).Replace(">", "", StringComparison.Ordinal)}";
             }
 
             return name;
@@ -44,7 +49,7 @@
 
             if (name.StartsWith('<') || name.EndsWith('>'))
             {
-                return $"${name.Replace("<", "").Replace(">", "")}";
+                return $"${name.Replace("<", "", StringComparison.Ordinal).Replace(">", "", StringComparison.Ordinal)}";
             }
 
             return name;
