@@ -12,12 +12,14 @@ using Cysharp.Threading.Tasks;
 
 namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 {
+    [Obsolete("DatabaseGoogleSheetConfig is deprecated. Use DatabaseConfig instead.", false)]
     public abstract partial class DatabaseGoogleSheetConfig<TSheetContainer>
         : DatabaseGoogleSheetConfig<DatabaseAsset, TSheetContainer>
         where TSheetContainer : DataSheetContainerBase
     {
     }
 
+    [Obsolete("DatabaseGoogleSheetConfig is deprecated. Use DatabaseConfig instead.", false)]
     public abstract partial class DatabaseGoogleSheetConfig<TDatabaseAsset, TSheetContainer>
         : DatabaseGoogleSheetConfigBase
         where TDatabaseAsset : DatabaseAsset

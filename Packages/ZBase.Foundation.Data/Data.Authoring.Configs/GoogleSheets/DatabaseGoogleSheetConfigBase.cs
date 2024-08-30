@@ -6,6 +6,7 @@ using UnityEngine.Serialization;
 
 namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 {
+    [Obsolete("DatabaseGoogleSheetConfigBase is deprecated. Use DatabaseConfigBase instead.", false)]
     public abstract partial class DatabaseGoogleSheetConfigBase : ScriptableObject
     {
         [SerializeField]

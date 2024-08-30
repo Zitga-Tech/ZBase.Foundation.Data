@@ -1,9 +1,13 @@
+using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
 
 namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 {
+    using Object = UnityEngine.Object;
+
+    [Obsolete("DatabaseGoogleSheetConfigBase is deprecated. Use DatabaseConfig instead.", false)]
     [CustomEditor(typeof(DatabaseGoogleSheetConfigBase), true)]
     internal class DatabaseGoogleSheetConfigBaseEditor : UnityEditor.Editor
     {
@@ -83,6 +87,12 @@ namespace ZBase.Foundation.Data.Authoring.Configs.GoogleSheets
 
         public override void OnInspectorGUI()
         {
+            EditorGUILayout.BeginVertical();
+            {
+                EditorGUILayout.HelpBox("DatabaseCsvSheetConfig is deprecated. Use DatabaseConfig instead.", MessageType.Warning);
+            }
+            EditorGUILayout.EndVertical();
+
             if (this.target is not DatabaseGoogleSheetConfigBase config)
             {
                 OnInspectorGUI();

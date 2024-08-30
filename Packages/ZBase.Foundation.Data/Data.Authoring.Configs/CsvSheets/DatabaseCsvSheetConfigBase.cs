@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
 {
+    [Obsolete("DatabaseCsvSheetConfigBase is deprecated. Use DatabaseConfigBase instead.", false)]
     public abstract class DatabaseCsvSheetConfigBase : ScriptableObject
     {
         [SerializeField]

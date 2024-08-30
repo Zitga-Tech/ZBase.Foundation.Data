@@ -8,11 +8,13 @@ using Cysharp.Threading.Tasks;
 
 namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
 {
+    [Obsolete("DatabaseCsvSheetConfig is deprecated. Use DatabaseConfig instead.", false)]
     public abstract partial class DatabaseCsvSheetConfig<TSheetContainer> : DatabaseCsvSheetConfig<DatabaseAsset, TSheetContainer>
         where TSheetContainer : DataSheetContainerBase
     {
     }
 
+    [Obsolete("DatabaseCsvSheetConfig is deprecated. Use DatabaseConfig instead.", false)]
     public abstract partial class DatabaseCsvSheetConfig<TDatabaseAsset, TSheetContainer> : DatabaseCsvSheetConfigBase
         where TDatabaseAsset : DatabaseAsset
         where TSheetContainer : DataSheetContainerBase

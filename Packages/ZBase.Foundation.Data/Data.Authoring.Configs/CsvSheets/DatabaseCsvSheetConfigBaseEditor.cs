@@ -1,9 +1,13 @@
+using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
 
 namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
 {
+    using Object = UnityEngine.Object;
+
+    [Obsolete("DatabaseCsvSheetConfigBase is deprecated. Use DatabaseConfigBase instead.", false)]
     [CustomEditor(typeof(DatabaseCsvSheetConfigBase), true)]
     internal class DatabaseCsvSheetConfigBaseEditor : UnityEditor.Editor
     {
@@ -49,6 +53,12 @@ namespace ZBase.Foundation.Data.Authoring.Configs.CsvSheets
 
         public override void OnInspectorGUI()
         {
+            EditorGUILayout.BeginVertical();
+            {
+                EditorGUILayout.HelpBox("DatabaseCsvSheetConfig is deprecated. Use DatabaseConfig instead.", MessageType.Warning);
+            }
+            EditorGUILayout.EndVertical();
+
             if (this.target is not DatabaseCsvSheetConfigBase config)
             {
                 OnInspectorGUI();
