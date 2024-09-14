@@ -22,11 +22,11 @@ namespace ZBase.Foundation.Data.Authoring
 
         public DatabaseExcelSheetConverter(
               string loadPath
-            , int emptyRowStreakThreshold
             , TimeZoneInfo timeZoneInfo = null
             , string extension = "xlsx"
             , IFileSystem fileSystem = null
             , IFormatProvider formatProvider = null
+            , int emptyRowStreakThreshold = 5
             , bool includeCommentedFiles = false
         )
             : base(timeZoneInfo, formatProvider, emptyRowStreakThreshold)
